@@ -1,0 +1,45 @@
+{
+  "id": "child-4-whisper-transcript-pipeline",
+  "name": "child-4-whisper-transcript-pipeline",
+  "title": "Child 4: local Whisper transcript pipeline",
+  "description": "",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "jym",
+  "assignee": "jym",
+  "createdAt": "2026-06-29",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "06-29-parent-1-benchmark-account-tracking",
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {
+    "workflow_mode": "staged_overlay",
+    "staged_delivery": {
+      "phase": "implementation",
+      "plan_confirmed": true,
+      "implementation_task_submitted": true,
+      "completion_signal_received": true,
+      "commit_allowed": true,
+      "soft_archive_completed": false,
+      "trellis_archive_completed": false
+    },
+    "product": {
+      "parent_scope": "benchmark_account_tracking",
+      "requirement_ids": [
+        "P1-REQ-020",
+        "P1-REQ-060",
+        "P1-REQ-100"
+      ]
+    }
+  }
+}
