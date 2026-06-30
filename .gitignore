@@ -7,6 +7,9 @@ tmp/
 
 .agents/
 .codex/
+.claude/
+CLAUDE.md
+.local-state.git/
 .trellis/*
 !.trellis/.gitignore
 !.trellis/workflow.md
