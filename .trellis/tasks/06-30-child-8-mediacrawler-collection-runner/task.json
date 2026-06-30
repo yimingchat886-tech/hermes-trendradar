@@ -1,0 +1,43 @@
+{
+  "id": "child-8-mediacrawler-collection-runner",
+  "name": "child-8-mediacrawler-collection-runner",
+  "title": "Child 8: MediaCrawler collection runner dry-run",
+  "description": "",
+  "status": "planning",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "jym",
+  "assignee": "jym",
+  "createdAt": "2026-06-30",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "codex/parent-task-1-child-3",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "06-29-parent-1-benchmark-account-tracking",
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {
+    "workflow_mode": "staged_overlay",
+    "staged_delivery": {
+      "phase": "child_planning",
+      "plan_confirmed": false,
+      "implementation_task_submitted": false,
+      "completion_signal_received": false,
+      "commit_allowed": false,
+      "soft_archive_completed": false,
+      "trellis_archive_completed": false
+    },
+    "product": {
+      "parent_scope": "benchmark_account_tracking",
+      "requirement_ids": ["P1-REQ-045", "P1-REQ-100"],
+      "mvp_mode": "dry_run_fake_command_fixture_output",
+      "real_call_scope": "parent_final_acceptance"
+    }
+  }
+}
