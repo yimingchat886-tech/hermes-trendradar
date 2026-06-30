@@ -1,0 +1,80 @@
+[
+  {
+    "platform": "douyin",
+    "platform_content_id": "dy-fixture-001",
+    "url": "https://fixture.invalid/douyin/content/dy-fixture-001",
+    "title": "Fixture Douyin benchmark post",
+    "caption": "A fixture row shaped like a MediaCrawler result.",
+    "published_at": "2026-06-29T08:00:00-07:00",
+    "crawled_at": "2026-06-30T00:00:00-07:00",
+    "author_handle": "placeholder_market_watch_s",
+    "metrics": {"likes": 1200, "comments": 45, "shares": 67},
+    "hashtags": ["AI", "stock"],
+    "topics": ["benchmark", "finance"],
+    "comments_summary": "Comments discuss repeatable opening hooks."
+  },
+  {
+    "platform": "douyin",
+    "platform_content_id": "dy-fixture-001-duplicate-url",
+    "url": "https://fixture.invalid/douyin/content/dy-fixture-001",
+    "title": "Duplicate URL row",
+    "caption": "Should collapse by exact URL.",
+    "published_at": "2026-06-29T08:05:00-07:00",
+    "crawled_at": "2026-06-30T00:00:00-07:00",
+    "author_handle": "placeholder_market_watch_s",
+    "metrics": {"likes": 999, "comments": 99, "shares": 9},
+    "hashtags": ["duplicate"],
+    "topics": ["dedup"],
+    "comments_summary": "Duplicate by URL."
+  },
+  {
+    "platform": "douyin",
+    "platform_content_id": "dy-fixture-001",
+    "url": "https://fixture.invalid/douyin/content/dy-fixture-001-alt",
+    "title": "Duplicate platform ID row",
+    "caption": "Should collapse by exact platform content ID.",
+    "published_at": "2026-06-29T08:10:00-07:00",
+    "crawled_at": "2026-06-30T00:00:00-07:00",
+    "author_handle": "placeholder_market_watch_s",
+    "metrics": {"likes": 888, "comments": 88, "shares": 8},
+    "hashtags": ["duplicate"],
+    "topics": ["dedup"],
+    "comments_summary": "Duplicate by platform content ID."
+  },
+  {
+    "platform": "xiaohongshu",
+    "note_id": "xhs-fixture-001",
+    "source_url": "https://fixture.invalid/xiaohongshu/content/xhs-fixture-001",
+    "desc": "Fixture Xiaohongshu row with weak evidence.",
+    "publish_time": "2026-06-29T10:00:00-07:00",
+    "crawl_time": "2026-06-30T00:00:00-07:00",
+    "user_id": "placeholder_value_notes",
+    "like_count": 240,
+    "hashtags": ["stock"],
+    "topics": ["weak-evidence"]
+  },
+  {
+    "platform": "douyin",
+    "platform_content_id": "dy-fixture-unknown-author",
+    "url": "https://fixture.invalid/douyin/content/unknown-author",
+    "title": "Unknown author row",
+    "caption": "Should become a source health warning.",
+    "published_at": "2026-06-29T12:00:00-07:00",
+    "crawled_at": "2026-06-30T00:00:00-07:00",
+    "author_handle": "placeholder_not_in_registry",
+    "metrics": {"likes": 1, "comments": 1, "shares": 1},
+    "comments_summary": "Unknown account."
+  },
+  {
+    "platform": "bilibili",
+    "platform_content_id": "bili-fixture-001",
+    "url": "https://fixture.invalid/bilibili/content/bili-fixture-001",
+    "title": "Unsupported platform row",
+    "caption": "Should become a source health warning.",
+    "published_at": "2026-06-29T13:00:00-07:00",
+    "crawled_at": "2026-06-30T00:00:00-07:00",
+    "author_handle": "placeholder_market_watch_s",
+    "metrics": {"likes": 1, "comments": 1, "shares": 1},
+    "comments_summary": "Unsupported platform."
+  }
+]

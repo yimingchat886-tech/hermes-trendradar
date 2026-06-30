@@ -61,6 +61,9 @@ class BenchmarkContent(TypedDict, total=False):
     crawled_at: str
     metrics: dict[str, int]
     hashtags: list[str]
+    topics: list[str]
+    comments_summary: str
+    raw_source_url: str
     evidence_state: EvidenceState
     trace: Trace
 
