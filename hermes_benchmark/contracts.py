@@ -10,6 +10,7 @@ AccountLevel = Literal["S", "A", "B", "C"]
 TranscriptStatus = Literal["pending", "done", "failed", "not_applicable"]
 EvidenceState = Literal["sufficient", "insufficient", "placeholder"]
 HealthStatus = Literal["ok", "warning", "failed"]
+SourceStatus = Literal["placeholder", "verified"]
 
 
 class Trace(TypedDict, total=False):
@@ -42,6 +43,8 @@ class BenchmarkAccount(TypedDict, total=False):
     owner: str
     daily_tracking: bool
     notes: str
+    verified: bool
+    source_status: SourceStatus
     trace: Trace
 
 
