@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/project/staged-delivery-overlay.md", "reason": "verify staged child evidence and no premature commit/archive"}
+{"file": ".trellis/spec/project/ponytail-boundary.md", "reason": "verify no vendored external code, queue/daemon, or long-term video storage slipped in"}
+{"file": ".trellis/spec/project/oracle-review-policy.md", "reason": "verify external runtime and credential-risk review decision is recorded"}
+{"file": ".trellis/spec/project/rtm-guidelines.md", "reason": "verify final smoke evidence is traceable to parent requirements"}

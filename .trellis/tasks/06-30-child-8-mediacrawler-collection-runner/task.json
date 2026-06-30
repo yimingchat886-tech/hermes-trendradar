@@ -1,0 +1,53 @@
+{
+  "id": "child-8-mediacrawler-collection-runner",
+  "name": "child-8-mediacrawler-collection-runner",
+  "title": "Child 8: External runtimes adapter and local deployment smoke test",
+  "description": "",
+  "status": "planning",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "jym",
+  "assignee": "jym",
+  "createdAt": "2026-06-30",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "codex/parent-task-1-child-3",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "06-29-parent-1-benchmark-account-tracking",
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {
+    "workflow_mode": "staged_overlay",
+    "staged_delivery": {
+      "phase": "child_planning",
+      "plan_confirmed": false,
+      "implementation_task_submitted": false,
+      "completion_signal_received": false,
+      "commit_allowed": false,
+      "soft_archive_completed": false,
+      "trellis_archive_completed": false
+    },
+    "product": {
+      "parent_scope": "benchmark_account_tracking",
+      "requirement_ids": [
+        "P1-REQ-045",
+        "P1-REQ-060",
+        "P1-REQ-065",
+        "P1-REQ-100",
+        "P1-REQ-110"
+      ],
+      "mvp_mode": "external_cli_process_adapters_local_deployment",
+      "external_workspace": "/home/jym/workspace/_external",
+      "adapter_mode": "cli_process",
+      "whisper_impl": "openai-whisper",
+      "future_reserved": "queue_concurrency_daemon",
+      "retention": "transcripts_logs_and_reusable_external_runtime_cache"
+    }
+  }
+}
