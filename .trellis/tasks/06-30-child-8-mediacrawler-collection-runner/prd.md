@@ -16,6 +16,7 @@ Create the final external-runtime child for benchmark account tracking. MediaCra
 - Reserve queue, concurrency, and daemon/service mode for future development.
 - Install external projects under `/home/jym/workspace/_external` with independent virtual environments.
 - The user will provide temporary cookies for testing; they do not enter the repo.
+- Real smoke target account/video are local-only inputs and are not taken from the committed placeholder registry.
 - Use `openai-whisper`.
 - GPU scope is detection, device selection, and CPU fallback only.
 - Final smoke standard: 1 account, 1 public video, MediaCrawler raw artifact importable, and Whisper succeeds on a video/audio sample or records explicit fallback.
@@ -29,9 +30,12 @@ Create the final external-runtime child for benchmark account tracking. MediaCra
 - Document or verify `/home/jym/workspace/_external` layout and independent venv usage.
 - Support dry-run/fake-command mode before real external execution.
 - Use temporary user-provided cookies only from local ignored files or environment variables.
+- Reject real execution when cookie values or cookie file paths are tracked, unignored inside the repo, or not redacted in manifests/logs.
+- Reject real execution when external runtime paths, venvs, model caches, run temp roots, or cleanup targets are inside unsafe locations.
 - Run one real local MediaCrawler smoke test against 1 user-provided account and 1 public video.
-- Prove the MediaCrawler raw artifact is importable by the child 3 import boundary before cleanup.
+- Prove the MediaCrawler raw artifact is importable by normalizing it into child 3's accepted row shape and calling `import_mediacrawler_rows(rows, accounts=[smoke_account])` before cleanup.
 - Run openai-whisper against one video/audio sample or record explicit CPU/GPU fallback/blocker.
+- Copy user-provided audio/video samples into the run temp directory before passing them to cleanup-capable transcript code.
 - Detect GPU availability, choose device when available, and fall back to CPU when needed.
 - Write run manifests and logs with `run_id`, account/source IDs, platform, command summary, redacted sensitive inputs, mode, timestamps, exit code, retained transcript/log paths, and cleanup status.
 - Retain transcripts and logs after verification.
@@ -50,13 +54,13 @@ Create the final external-runtime child for benchmark account tracking. MediaCra
 
 ## Acceptance Criteria
 
-- [ ] External runtime layout uses `/home/jym/workspace/_external` and independent venvs.
-- [ ] Main repo contains adapters/runbooks/checks only, not MediaCrawler source, Whisper source, model caches, cookies, or raw videos.
-- [ ] Dry-run/fake-command mode still works before real external execution.
+- [x] External runtime layout uses `/home/jym/workspace/_external` and independent venvs.
+- [x] Main repo contains adapters/runbooks/checks only, not MediaCrawler source, Whisper source, model caches, cookies, or raw videos.
+- [x] Dry-run/fake-command mode still works before real external execution.
 - [ ] Real MediaCrawler smoke test uses 1 user-provided account and 1 public video.
-- [ ] MediaCrawler raw artifact is importable by the child 3 boundary before cleanup.
-- [ ] openai-whisper transcribes one video/audio sample or reports an explicit fallback/blocker.
-- [ ] GPU detection, selected device, and CPU fallback state are recorded.
+- [ ] MediaCrawler raw artifact is normalized and importable by `import_mediacrawler_rows(rows, accounts=[smoke_account])` before cleanup.
+- [ ] openai-whisper records `done`, `fallback_done`, `blocked`, or `failed`; only `done` / `fallback_done` satisfy the success path.
+- [x] GPU detection, selected device, and CPU fallback state are recorded.
 - [ ] Repo/task evidence is limited to transcripts and logs.
 - [ ] External runtime installs, venvs, and model caches remain available outside the repo for reuse.
 - [ ] Raw videos, temporary cookies, temporary raw collection artifacts, and other run-specific test artifacts are deleted after verification.
@@ -65,7 +69,7 @@ Create the final external-runtime child for benchmark account tracking. MediaCra
 
 - T3: external tool install/debug, temporary cookies, real platform collection, and local GPU/runtime behavior.
 - High-risk trial PLAN: yes.
-- Oracle required: decide before implementation or real external execution.
+- Oracle required: completed before implementation; real external execution still needs user-provided local inputs.
 
 ## Completion Signal
 

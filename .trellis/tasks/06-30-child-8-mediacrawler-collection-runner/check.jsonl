@@ -2,3 +2,4 @@
 {"file": ".trellis/spec/project/ponytail-boundary.md", "reason": "verify no vendored external code, queue/daemon, or long-term video storage slipped in"}
 {"file": ".trellis/spec/project/oracle-review-policy.md", "reason": "verify external runtime and credential-risk review decision is recorded"}
 {"file": ".trellis/spec/project/rtm-guidelines.md", "reason": "verify final smoke evidence is traceable to parent requirements"}
+{"file": ".trellis/tasks/06-30-child-8-mediacrawler-collection-runner/research/oracle-plan-review.md", "reason": "Verify Oracle-required preflight, cookie, import, cleanup, and fallback evidence"}

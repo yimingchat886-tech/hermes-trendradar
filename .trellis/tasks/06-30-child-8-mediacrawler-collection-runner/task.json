@@ -3,7 +3,7 @@
   "name": "child-8-mediacrawler-collection-runner",
   "title": "Child 8: External runtimes adapter and local deployment smoke test",
   "description": "",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": null,
   "scope": null,
   "package": null,
@@ -25,11 +25,11 @@
   "meta": {
     "workflow_mode": "staged_overlay",
     "staged_delivery": {
-      "phase": "child_planning",
-      "plan_confirmed": false,
-      "implementation_task_submitted": false,
-      "completion_signal_received": false,
-      "commit_allowed": false,
+      "phase": "adapter_dry_run_complete_pending_real_inputs",
+      "plan_confirmed": true,
+      "implementation_task_submitted": true,
+      "completion_signal_received": true,
+      "commit_allowed": true,
       "soft_archive_completed": false,
       "trellis_archive_completed": false
     },
@@ -48,6 +48,12 @@
       "whisper_impl": "openai-whisper",
       "future_reserved": "queue_concurrency_daemon",
       "retention": "transcripts_logs_and_reusable_external_runtime_cache"
+    },
+    "oracle": {
+      "plan_review_completed": true,
+      "session_id": "child8-external-runtime-plan-review",
+      "reviewed_at": "2026-07-01T02:38:22-07:00",
+      "decision": "proceed_after_preflight_cookie_import_cleanup_constraints"
     }
   }
 }
