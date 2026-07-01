@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 1
+- **Total Sessions**: 2
 - **Last Active**: 2026-07-01
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~47 | Active |
+| `journal-1.md` | ~80 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 2 | 2026-07-01 | PRD version management | `acef576` | `main` |
 | 1 | 2026-07-01 | Parent 1 benchmark tracking closeout | `1915402`, `2888958`, `7e954ba`, `a405031`, `3fcbef6`, `fa1dd00`, `8d5b37b`, `106ecc5` | `codex/parent-task-1-child-6` |
 <!-- @@@/auto:session-history -->
 
