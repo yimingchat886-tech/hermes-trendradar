@@ -3,7 +3,7 @@
   "name": "parent-1-benchmark-account-tracking",
   "title": "Parent 1: benchmark account tracking",
   "description": "Derive the first product implementation parent from PRDv1.3: ship the v1 benchmark account tracking chain before hotspot/RAG/full automation work.",
-  "status": "planning",
+  "status": "completed",
   "dev_type": null,
   "scope": null,
   "package": null,
@@ -11,11 +11,11 @@
   "creator": "jym",
   "assignee": "jym",
   "createdAt": "2026-06-29",
-  "completedAt": null,
+  "completedAt": "2026-07-01",
   "branch": null,
   "base_branch": "main",
   "worktree_path": null,
-  "commit": null,
+  "commit": "1915402,2888958,7e954ba,a405031,3fcbef6,fa1dd00,8d5b37b,106ecc5",
   "pr_url": null,
   "subtasks": [],
   "children": [
@@ -34,13 +34,17 @@
   "meta": {
     "workflow_mode": "staged_overlay",
     "staged_delivery": {
-      "phase": "parent_planning",
-      "plan_confirmed": false,
-      "implementation_task_submitted": false,
-      "completion_signal_received": false,
-      "commit_allowed": false,
-      "soft_archive_completed": false,
-      "trellis_archive_completed": false
+      "phase": "parent_archived",
+      "plan_confirmed": true,
+      "implementation_task_submitted": true,
+      "completion_signal_received": true,
+      "commit_allowed": true,
+      "soft_archive_completed": true,
+      "trellis_archive_completed": true,
+      "completion_signal_received_at": "2026-07-01T07:55:00-07:00",
+      "completion_signal": "提交git，归档parent task 1",
+      "child_soft_archive_completed": true,
+      "trellis_archive_completed_at": "2026-07-01T07:58:00-07:00"
     },
     "product": {
       "source_prd": "docs/PRD/PRDv1.3.md",

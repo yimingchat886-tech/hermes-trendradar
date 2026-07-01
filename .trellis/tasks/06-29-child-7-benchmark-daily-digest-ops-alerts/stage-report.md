@@ -93,3 +93,11 @@ Notes:
 - `.trellis/spec/` update needed: no
 - Reason: no new reusable workflow rule, dependency rule, or cross-project convention was discovered.
 - Contract location: `hermes_benchmark/daily_digest.py` self-check and this stage report.
+
+## Parent Closeout Soft Archive
+
+- User signal: `提交git，归档parent task 1`
+- Received at: 2026-07-01T07:55:00-07:00
+- Soft archive completed: yes
+- Work commit: `8d5b37b`
+- Built-in child archive: not used; staged overlay keeps child evidence directories in place.

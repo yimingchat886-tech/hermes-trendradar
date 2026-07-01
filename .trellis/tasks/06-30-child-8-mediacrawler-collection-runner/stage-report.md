@@ -5,7 +5,7 @@
 - Child task: `06-30-child-8-mediacrawler-collection-runner`
 - Parent: `.trellis/tasks/06-29-parent-1-benchmark-account-tracking`
 - Requirement IDs: `P1-REQ-045`, `P1-REQ-060`, `P1-REQ-065`, `P1-REQ-100`, `P1-REQ-110`
-- Status: adapter/dry-run slice implemented; real external smoke pending local inputs
+- Status: real MediaCrawler and openai-whisper smoke completed; external evidence retained
 
 ## Implemented
 
@@ -48,23 +48,31 @@
 - `npx gitnexus detect-changes --scope staged --repo "Hermes stock"` — HIGH risk from new-module breadth.
   Targeted impact checks above are LOW; affected flows are new external-runtime and import-proof self-check paths.
 - `npx gitnexus status` — up to date at current commit
+- Real MediaCrawler smoke — pass:
+  - platform: Douyin
+  - target video: `7648838418205641994`
+  - run root: `/home/jym/workspace/_external/hermes-stock-runs/run-child8-douyin-mark-codex-login-20260701T063157`
+  - retained log: `logs/mediacrawler-douyin-detail.log`
+  - import proof: `logs/import-proof.json`
+  - result: 1 content row, 114 comment rows, 20 first-level comments, 94 second-level comments, `status=importable`
+- Real openai-whisper smoke — pass:
+  - runtime: `/home/jym/workspace/_external/venvs/openai-whisper`
+  - model cache: `/home/jym/workspace/_external/model-cache/openai-whisper`
+  - sample: first 60 seconds of the Douyin target video
+  - model/device: `tiny` / `cpu`
+  - retained proof: `logs/whisper-proof.json`
+  - retained transcript: `transcripts/douyin-7648838418205641994-60s.txt`
+  - result: `status=done`
 
 ## Pending Real Smoke Inputs
 
-Real external execution was not run because these local-only inputs are still missing:
-
-- temporary cookie source as ignored local file or environment variable;
-- one verified account/handle to use as the smoke target;
-- one public video/audio sample or URL;
-- confirmed local MediaCrawler checkout/venv command path if already installed.
+Completed in local external workspace. Temporary login state, raw JSONL,
+screenshots, downloaded video, and wav sample were kept outside the repo and
+cleaned after proof generation.
 
 ## Not Done Yet
 
-- Real MediaCrawler smoke against one user-provided account and one public video.
-- Real MediaCrawler artifact import proof from actual platform output.
-- Real openai-whisper transcript or explicit runtime blocker/fallback.
-- Cleanup proof from a real run temp directory.
-- Retained real logs/transcripts.
+- No remaining child-8 acceptance blocker for parent task 1 closeout.
 
 ## Kept Out Of Scope
 
@@ -76,17 +84,17 @@ Real external execution was not run because these local-only inputs are still mi
 
 - Completion signal received: yes
 - Commit allowed: yes
-- Soft archive completed: no
+- Soft archive completed: yes
 - Pushed: no
 - Unrelated existing dirty files from Trellis update are excluded from this child implementation.
 
 ## User Completion Signal
 
-- Raw signal: 提交git
-- Received at: 2026-07-01T02:58:42-07:00
+- Raw signal: 提交git，归档parent task 1
+- Received at: 2026-07-01T07:55:00-07:00
 - Allows commit: yes
-- Allows soft archive: no
-- Explicit limits: push not requested; archive not requested
+- Allows soft archive: yes
+- Explicit limits: push not requested; parent archive requested
 - Push allowed: no
 
 ## Spec Update Judgment
@@ -94,3 +102,11 @@ Real external execution was not run because these local-only inputs are still mi
 - `.trellis/spec/` update needed: no
 - Reason: this slice adds child-specific external-runtime smoke contracts, not a reusable repo-wide rule.
 - Contract location: `hermes_benchmark/external_runtime.py`, runbook, and this stage report.
+
+## Parent Closeout Soft Archive
+
+- User signal: `提交git，归档parent task 1`
+- Received at: 2026-07-01T07:55:00-07:00
+- Soft archive completed: yes
+- Work commit: `106ecc5`
+- Built-in child archive: not used; staged overlay keeps child evidence directories in place.

@@ -1,21 +1,21 @@
 {
-  "id": "child-4-whisper-transcript-pipeline",
-  "name": "child-4-whisper-transcript-pipeline",
-  "title": "Child 4: local Whisper transcript pipeline",
+  "id": "child-2-benchmark-account-registry",
+  "name": "child-2-benchmark-account-registry",
+  "title": "Child 2: benchmark account registry",
   "description": "",
   "status": "completed",
   "dev_type": null,
   "scope": null,
   "package": null,
-  "priority": "P2",
+  "priority": "P1",
   "creator": "jym",
   "assignee": "jym",
   "createdAt": "2026-06-29",
   "completedAt": "2026-07-01",
-  "branch": null,
+  "branch": "codex/parent-task-1-child-2",
   "base_branch": "main",
   "worktree_path": null,
-  "commit": "a405031",
+  "commit": "2888958",
   "pr_url": null,
   "subtasks": [],
   "children": [],
@@ -34,13 +34,13 @@
       "trellis_archive_completed": false,
       "soft_archive_completed_at": "2026-07-01T07:55:00-07:00",
       "soft_archive_signal": "提交git，归档parent task 1",
-      "soft_archive_commit": "a405031"
+      "soft_archive_commit": "2888958"
     },
     "product": {
       "parent_scope": "benchmark_account_tracking",
       "requirement_ids": [
-        "P1-REQ-020",
-        "P1-REQ-060",
+        "P1-REQ-010",
+        "P1-REQ-030",
         "P1-REQ-100"
       ]
     }
