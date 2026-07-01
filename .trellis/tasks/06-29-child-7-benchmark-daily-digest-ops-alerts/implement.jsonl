@@ -1,0 +1,5 @@
+{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python3 .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file": ".trellis/spec/guides/project-development.md", "reason": "Codex/Trellis/Ponytail implementation standard"}
+{"file": ".trellis/spec/project/index.md", "reason": "Project staged delivery spec index"}
+{"file": ".trellis/spec/project/staged-delivery-overlay.md", "reason": "Child staged overlay execution and completion rules"}
+{"file": ".trellis/spec/project/ponytail-boundary.md", "reason": "Smallest valid child scope and overbuild guard"}
