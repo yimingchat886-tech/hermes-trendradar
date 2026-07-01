@@ -2,7 +2,8 @@
 
 ## Source
 
-- Repo PRD: `docs/PRD/PRDv1.3.md`
+- Master PRD: `docs/PRD/PRD_MASTER.md`
+- Release PRD: `docs/PRD/releases/PRD_v1.3.md`
 - Parent task: `.trellis/tasks/06-29-parent-1-benchmark-account-tracking`
 
 ## Requirement Trace

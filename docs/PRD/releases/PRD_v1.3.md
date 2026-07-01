@@ -1,3 +1,15 @@
+---
+project: Hermes Agent
+doc_type: release_prd
+version: v1.3
+status: current_draft
+created: 2026-06-29
+updated: 2026-07-01
+owner: Jym
+parent: ../PRD_MASTER.md
+parent_task: ../../../.trellis/tasks/archive/2026-07/06-29-parent-1-benchmark-account-tracking/
+---
+
 # PRDv1.3：基于 Hermes 的 AI 赛道内容选题系统
 
 版本：v1.3 Draft

@@ -7,7 +7,7 @@ soft-archived, and linked to local verification evidence.
 
 ## Created Scope
 
-- Repo PRD copied to `docs/PRD/PRDv1.3.md`.
+- Repo PRD now indexed by `docs/PRD/PRD_MASTER.md`; the v1.3 release PRD lives at `docs/PRD/releases/PRD_v1.3.md`.
 - Parent 1 created for benchmark account tracking.
 - Eight child tasks created and linked.
 - Child 8 updated into the final external-runtimes child, merging MediaCrawler runner and openai-whisper runtime readiness.

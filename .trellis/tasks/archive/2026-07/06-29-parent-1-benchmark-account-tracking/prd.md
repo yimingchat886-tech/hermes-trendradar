@@ -2,7 +2,7 @@
 
 ## Background
 
-`docs/PRD/PRDv1.3.md` is the repository-level product PRD. This parent task is the first implementation subphase derived from it: ship the v1 benchmark account tracking line before hotspot tracking, full RAG, publishing review, or autonomous topic generation.
+`docs/PRD/releases/PRD_v1.3.md` is the release PRD for this parent task, indexed by `docs/PRD/PRD_MASTER.md`. This parent task is the first implementation subphase derived from it: ship the v1 benchmark account tracking line before hotspot tracking, full RAG, publishing review, or autonomous topic generation.
 
 The PRD narrows v1 to "benchmark account tracking + decomposition + cards + topic-pool supplements". Ponytail interpretation: prove that chain with fixtures and stable contracts first, then connect real tools one slice at a time.
 
@@ -33,7 +33,7 @@ The PRD narrows v1 to "benchmark account tracking + decomposition + cards + topi
 
 | ID | Requirement | Source | Acceptance |
 |---|---|---|---|
-| P1-REQ-001 | Keep PRDv1.3 in repo as the product source PRD. | PRDv1.3 section 0 | `docs/PRD/PRDv1.3.md` exists and is referenced by task docs. |
+| P1-REQ-001 | Keep PRDv1.3 in repo as the release source PRD. | PRDv1.3 section 0 | `docs/PRD/releases/PRD_v1.3.md` exists and is indexed by `docs/PRD/PRD_MASTER.md`. |
 | P1-REQ-010 | Model benchmark account registry for about 20 Douyin/Xiaohongshu accounts with S/A/B/C level, enabled state, daily tracking, owner, and notes. | 6.1, 7.2, 11.3, 14.6 | Registry supports fixture data and manual account maintenance. |
 | P1-REQ-020 | Define local contracts for `Source`, `BenchmarkAccount`, `BenchmarkContent`, `Transcript`, `TopicCandidate`, `RAGDocument` placeholder, and `SourceHealth`. | 11.x | Contracts have fixture validation and trace IDs. |
 | P1-REQ-030 | Provide a fixture-first local loop for benchmark tracking before real platform access. | 5.5, 17.4 | A local demo can run without credentials and produce benchmark content outputs. |
@@ -63,7 +63,7 @@ The PRD narrows v1 to "benchmark account tracking + decomposition + cards + topi
 
 ## Acceptance Criteria
 
-- [ ] PRDv1.3 is available in `docs/PRD/PRDv1.3.md`.
+- [ ] PRDv1.3 is available in `docs/PRD/releases/PRD_v1.3.md`.
 - [ ] Parent PRD narrows v1 to benchmark account tracking only.
 - [ ] Child tasks exist and are linked to the parent.
 - [ ] Each child has a PRD and an implementation plan.
@@ -89,7 +89,7 @@ Implementation should follow the first rung that works:
 
 Context: PRDv1.3 describes a broad v1/v2 product system. The repo is a fresh standalone Trellis project with no product runtime yet.
 
-Decision: Treat PRDv1.3 as the repo source PRD, create parent 1 for benchmark account tracking, and decompose implementation into small child tasks. Do not start with Feishu writes, RAG, or hotspot features. Merge the earlier child 8/9 scope into one final child 8: MediaCrawler and openai-whisper stay outside the repo under `/home/jym/workspace/_external`, the main repo uses CLI/process adapters, and the final child runs the local real smoke test.
+Decision: Treat PRDv1.3 as the release source PRD, indexed from the repo master PRD, create parent 1 for benchmark account tracking, and decompose implementation into small child tasks. Do not start with Feishu writes, RAG, or hotspot features. Merge the earlier child 8/9 scope into one final child 8: MediaCrawler and openai-whisper stay outside the repo under `/home/jym/workspace/_external`, the main repo uses CLI/process adapters, and the final child runs the local real smoke test.
 
 Consequences: Earlier children can stay fixture-first. The final child owns local external-runtime deployment evidence, temporary cookies remain outside the repo, queue/concurrency/daemon mode stays future work, and real Whisper/GPU work does not introduce long-term video storage.
 

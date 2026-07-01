@@ -47,7 +47,7 @@
       "trellis_archive_completed_at": "2026-07-01T07:58:00-07:00"
     },
     "product": {
-      "source_prd": "docs/PRD/PRDv1.3.md",
+      "source_prd": "docs/PRD/releases/PRD_v1.3.md",
       "parent_sequence": 1,
       "scope": "benchmark_account_tracking",
       "child_count": 8
