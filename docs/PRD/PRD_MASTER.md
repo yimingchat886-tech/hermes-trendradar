@@ -5,7 +5,7 @@ status: active
 created: 2026-07-01
 updated: 2026-07-01
 owner: Jym
-current_release: releases/PRD_v1.3.md
+current_release: releases/PRD_v1.4_split_index.md
 ---
 
 # Hermes Agent PRD MASTER
@@ -163,7 +163,8 @@ Codex 不作为部署后的飞书字段责任方。
 
 | 版本 | 状态 | 对应 parent task | 范围 |
 |---|---|---|---|
-| v1.3 | current_draft | Parent 1: benchmark account tracking | 对标账号追踪主线，热点系统进入 v2。 |
+| v1.3 | superseded | Parent 1: benchmark account tracking | 对标账号追踪 proof 主线，热点系统进入 v2。 |
+| v1.4 | current_draft | 待创建 | 对标账号追踪生产化闭环：Hermes Runtime profiles + Codex CLI 工具实现。 |
 | v2.0 | planned | 待创建 | 热点信息源、趋势雷达、突发热点和热点 × 对标融合。 |
 | v4/v5 | decision_pending | 待创建 | 判断表 10-12 是否取消，并沉淀为选题筛选 Skill。 |
 
@@ -173,7 +174,8 @@ Codex 不作为部署后的飞书字段责任方。
 
 | 版本 | 状态 | 版本 PRD | 对应 parent task | 版本目标 | child task 管理 |
 |---|---|---|---|---|---|
-| v1.3 | current_draft | [releases/PRD_v1.3.md](releases/PRD_v1.3.md) | [06-29-parent-1-benchmark-account-tracking](../../.trellis/tasks/archive/2026-07/06-29-parent-1-benchmark-account-tracking/) | 先跑通对标账号追踪，热点系统后置到 v2。 | 继续由 `.trellis/tasks/` 管理，不进入 `docs/PRD/`。 |
+| v1.4 | current_draft | [releases/PRD_v1.4_split_index.md](releases/PRD_v1.4_split_index.md) | 待创建 | 生产化对标账号追踪闭环；运行期由 Hermes profiles 约束，工具层由 Codex CLI 实现；v1.4 live 只写表 4 / 状态边界。 | 后续 parent / child task 继续由 `.trellis/tasks/` 管理，不进入 `docs/PRD/`。 |
+| v1.3 | superseded | [releases/PRD_v1.3.md](releases/PRD_v1.3.md) | [06-29-parent-1-benchmark-account-tracking](../../.trellis/tasks/archive/2026-07/06-29-parent-1-benchmark-account-tracking/) | 先跑通对标账号追踪 proof，热点系统后置到 v2。 | 已归档；child task 继续保留在 `.trellis/tasks/`。 |
 
 版本索引维护规则：
 

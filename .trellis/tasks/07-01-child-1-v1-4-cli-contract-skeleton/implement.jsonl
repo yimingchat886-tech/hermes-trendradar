@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/guides/project-development.md", "reason": "repository development, verification, and Ponytail operating standard"}
+{"file": ".trellis/spec/project/staged-delivery-overlay.md", "reason": "child implementation, report, completion-signal, and soft-archive boundaries"}
+{"file": ".trellis/spec/project/git-commit-push-policy.md", "reason": "commit and push are not implied by PLAN confirmation"}
+{"file": ".trellis/spec/project/oracle-review-policy.md", "reason": "confirm Oracle review is not required for this low-risk child"}
+{"file": ".trellis/spec/project/ponytail-boundary.md", "reason": "avoid new CLI framework or broader production surface"}
+{"file": ".trellis/spec/project/cli-contracts.md", "reason": "record v1.4 CLI signatures, JSON envelopes, and invalid-args behavior"}

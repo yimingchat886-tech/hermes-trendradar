@@ -11,6 +11,7 @@ Project specs cover repository-level development workflow rules that are broader
 - Read `pm-intake-protocol.md` before converting non-trivial user input into PRD requirements.
 - Read `oracle-review-policy.md` before marking an Oracle review required or skipped.
 - Read `ponytail-boundary.md` before adding dependencies, architecture, abstractions, or broad workflow surface.
+- Read `cli-contracts.md` before changing `hermes-benchmark` CLI commands, JSON envelopes, or exit codes.
 - Read `rtm-guidelines.md` before updating requirement traceability.
 - Read `git-commit-push-policy.md` before reporting a staged task ready to commit or push.
 
@@ -20,3 +21,4 @@ Project specs cover repository-level development workflow rules that are broader
 - Confirm staged overlay work records `task.json.meta.workflow_mode = "staged_overlay"`.
 - Confirm child soft archive does not call built-in `task.py archive`.
 - Confirm push is never implied by commit approval.
+- Confirm CLI contract changes keep parseable JSON errors for `--json` invalid args.

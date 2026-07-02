@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/guides/project-development.md", "reason": "narrow verification, diff review, and Ponytail check expectations"}
+{"file": ".trellis/spec/project/staged-delivery-overlay.md", "reason": "stage-report and completion-signal verification"}
+{"file": ".trellis/spec/project/git-commit-push-policy.md", "reason": "verify no commit or push before user completion signal"}
+{"file": ".trellis/spec/project/cli-contracts.md", "reason": "verify v1.4 CLI commands, JSON envelopes, and exit codes"}
