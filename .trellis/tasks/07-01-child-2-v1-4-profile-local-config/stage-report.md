@@ -45,6 +45,13 @@
 - Skipped service layers/adapters; profile validation is one small module plus CLI wiring.
 - Ponytail review follow-up: removed an unused loaded-profile field.
 
+## Soft Archive
+
+- Implementation commit: `649d4de`
+- Completed at: 2026-07-01T23:12:39-07:00
+- Soft archive completed: yes
+- Built-in Trellis archive: no
+
 ## User Completion Signal
 
 - Raw signal: 任务完成
