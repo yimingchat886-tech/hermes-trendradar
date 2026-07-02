@@ -63,6 +63,7 @@ Note: an earlier install check using `--no-build-isolation` failed because the f
 
 - Files: current child implementation, child evidence, and current v1.4 PRD/report/runbook files.
 - Message: `feat: add v1.4 cli contract skeleton`
+- Work commit: `a515a9b`
 - Pushed: no
 
 ## User Completion Signal
@@ -77,11 +78,11 @@ Note: an earlier install check using `--no-build-isolation` failed because the f
 ## Soft Archive Plan
 
 - [x] Completion signal received
-- [ ] Commit hash recorded
-- [ ] `task.json.meta.staged_delivery.soft_archive_completed = true`
-- [ ] Child directory kept in place
-- [ ] Child is no longer the active implementation target
+- [x] Commit hash recorded: `a515a9b`
+- [x] `task.json.meta.staged_delivery.soft_archive_completed = true`
+- [x] Child directory kept in place
+- [x] Child is no longer the active implementation target
 
 ## Completion Signal
 
-Waiting for user to say `任务完成`, `验证通过`, `可以提交`, or equivalent.
+Received and recorded. Built-in `task.py archive` was not used for this staged child.
