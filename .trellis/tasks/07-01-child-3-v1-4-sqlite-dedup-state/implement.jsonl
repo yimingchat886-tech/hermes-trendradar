@@ -1,0 +1,7 @@
+{"file":".trellis/tasks/07-01-child-3-v1-4-sqlite-dedup-state/prd.md","reason":"Child 3 goal, requirements, acceptance criteria, and completion rule."}
+{"file":".trellis/tasks/07-01-child-3-v1-4-sqlite-dedup-state/implement.md","reason":"Confirmed implementation plan and stdlib SQLite decision."}
+{"file":".trellis/tasks/07-01-child-3-v1-4-sqlite-dedup-state/research/oracle-plan-review.md","reason":"High-risk T2 Oracle PLAN findings to absorb before implementation."}
+{"file":"docs/PRD/releases/PRD_v1.4_Codex_CLI_Implementation.md","reason":"SQLite objects, dedup levels, no raw full transcript/video, and idempotency requirements."}
+{"file":"docs/PRD/releases/PRD_v1.4_Hermes_Runtime_and_Profiles.md","reason":"Run-lock scope and Hermes runtime boundaries."}
+{"file":".trellis/spec/project/oracle-review-policy.md","reason":"Oracle required checkpoint for high-risk child PLAN."}
+{"file":".trellis/spec/project/ponytail-boundary.md","reason":"No ORM, migration framework, service layer, or future child scope."}

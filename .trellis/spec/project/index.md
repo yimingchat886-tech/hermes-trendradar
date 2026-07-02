@@ -12,6 +12,7 @@ Project specs cover repository-level development workflow rules that are broader
 - Read `oracle-review-policy.md` before marking an Oracle review required or skipped.
 - Read `ponytail-boundary.md` before adding dependencies, architecture, abstractions, or broad workflow surface.
 - Read `cli-contracts.md` before changing `hermes-benchmark` CLI commands, JSON envelopes, or exit codes.
+- Read `sqlite-state.md` before changing local SQLite schema, run state, dedup ledger, or write-audit persistence.
 - Read `rtm-guidelines.md` before updating requirement traceability.
 - Read `git-commit-push-policy.md` before reporting a staged task ready to commit or push.
 
