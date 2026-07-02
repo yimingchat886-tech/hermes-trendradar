@@ -43,3 +43,10 @@
 - Allows soft archive: yes
 - Explicit limits:
 - Push allowed: no
+
+## Soft Archive
+
+- Implementation commit: `e860f3b`
+- Completed at: 2026-07-02T00:41:46-07:00
+- Soft archive completed: yes
+- Built-in Trellis archive: no
