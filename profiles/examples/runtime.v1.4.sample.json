@@ -1,0 +1,11 @@
+{
+  "schema_version": "1.4",
+  "profile_id": "runtime-v1.4-sample",
+  "profile_type": "runtime_profile",
+  "storage_ref": "file:artifacts",
+  "database_ref": "file:state/hermes-benchmark.sqlite",
+  "cdp_endpoint_ref": "env:HERMES_CDP_ENDPOINT",
+  "proxy_url_ref": "env:HERMES_PROXY_URL",
+  "cookie_ref": "env:HERMES_DOUYIN_COOKIE_REF",
+  "login_state_ref": "file:secrets/douyin-login-state.json"
+}

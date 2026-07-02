@@ -7,10 +7,14 @@ import json
 import sys
 from typing import Any, Callable, Sequence
 
+from .profile import ProfileError, load_profile, validate_profile
+
 VERSION = "0.1.0"
 EXIT_OK = 0
 EXIT_CONTRACT_MISMATCH = 2
+EXIT_CONFIG_INVALID = 2
 ERROR_CONTRACT_MISMATCH = "contract_mismatch"
+ERROR_CONFIG_INVALID = "config_invalid"
 
 
 class ContractArgumentParser(argparse.ArgumentParser):
@@ -36,6 +40,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         else:
             print(f"error: {exc}", file=sys.stderr)
         return EXIT_CONTRACT_MISMATCH
+    except ProfileError as exc:
+        payload = config_error_envelope(exc)
+        if wants_json(args_list):
+            print_json(payload)
+        else:
+            print(f"error: {exc}", file=sys.stderr)
+        return EXIT_CONFIG_INVALID
 
     if getattr(args, "json", False):
         print_json(payload)
@@ -67,19 +78,18 @@ def add_command(
     command = subparsers.add_parser(name)
     if profile:
         command.add_argument("--profile", default="", help="Path to a local runtime profile.")
+        command.add_argument("--config", default="", help="Compatibility alias for --profile.")
     command.add_argument("--json", action="store_true", help="Print a JSON envelope.")
     command.set_defaults(handler=handler)
 
 
 def validate_config(args: argparse.Namespace) -> dict[str, Any]:
-    return success_envelope(
-        "validate-config",
-        {
-            "profile": args.profile,
-            "profile_read": False,
-            "validation": "stub",
-        },
-    )
+    profile_path = profile_arg(args, required=True)
+    profile = load_profile(profile_path)
+    summary = validate_profile(profile)
+    summary["profile"] = profile_path
+    summary["validation"] = "ok"
+    return success_envelope("validate-config", summary, mode="profile")
 
 
 def healthcheck(args: argparse.Namespace) -> dict[str, Any]:
@@ -93,10 +103,11 @@ def healthcheck(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def run_daily(args: argparse.Namespace) -> dict[str, Any]:
+    profile_path = profile_arg(args)
     return success_envelope(
         "run-daily",
         {
-            "profile": args.profile,
+            "profile": profile_path,
             "run_started": False,
             "reason": "stub_only",
         },
@@ -104,10 +115,11 @@ def run_daily(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def apply_limited_live(args: argparse.Namespace) -> dict[str, Any]:
+    profile_path = profile_arg(args)
     return success_envelope(
         "apply-limited-live",
         {
-            "profile": args.profile,
+            "profile": profile_path,
             "live_write_attempted": False,
             "allowed_tables": ["table_4"],
             "status_scope": "status_only",
@@ -116,11 +128,22 @@ def apply_limited_live(args: argparse.Namespace) -> dict[str, Any]:
     )
 
 
-def success_envelope(command: str, data: dict[str, Any]) -> dict[str, Any]:
+def profile_arg(args: argparse.Namespace, *, required: bool = False) -> str:
+    profile = getattr(args, "profile", "") or ""
+    config = getattr(args, "config", "") or ""
+    if profile and config and profile != config:
+        raise CliContractError("--profile and --config must reference the same path when both are supplied")
+    selected = profile or config
+    if required and not selected:
+        raise CliContractError("--profile is required")
+    return selected
+
+
+def success_envelope(command: str, data: dict[str, Any], *, mode: str = "stub") -> dict[str, Any]:
     return {
         "ok": True,
         "command": command,
-        "mode": "stub",
+        "mode": mode,
         "data": data,
         "error": None,
     }
@@ -137,6 +160,24 @@ def error_envelope(message: str) -> dict[str, Any]:
             "message": message,
         },
         "exit_code": EXIT_CONTRACT_MISMATCH,
+    }
+
+
+def config_error_envelope(error: ProfileError) -> dict[str, Any]:
+    return {
+        "ok": False,
+        "command": "validate-config",
+        "mode": "profile",
+        "data": {
+            "ok": False,
+            "errors": error.errors,
+        },
+        "error": {
+            "code": ERROR_CONFIG_INVALID,
+            "message": "profile/config validation failed",
+            "errors": error.errors,
+        },
+        "exit_code": EXIT_CONFIG_INVALID,
     }
 
 

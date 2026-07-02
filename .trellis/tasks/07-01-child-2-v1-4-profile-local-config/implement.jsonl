@@ -1,0 +1,7 @@
+{"file":".trellis/tasks/07-01-child-2-v1-4-profile-local-config/prd.md","reason":"Child 2 goal, requirements, acceptance criteria, and staged completion rule."}
+{"file":".trellis/tasks/07-01-child-2-v1-4-profile-local-config/implement.md","reason":"Confirmed implementation plan and parser/dependency decision point."}
+{"file":".trellis/spec/project/cli-contracts.md","reason":"CLI JSON envelope, exit code, --profile command, and --json error contract."}
+{"file":".trellis/spec/project/oracle-review-policy.md","reason":"High-risk T2 PLAN review checkpoint for profile/security boundary."}
+{"file":".trellis/spec/project/ponytail-boundary.md","reason":"No new dependency or abstraction unless necessary; keep validation/security intact."}
+{"file":"docs/PRD/releases/PRD_v1.4_Codex_CLI_Implementation.md","reason":"validate-config schema, sensitive value detection, --config alias, and profile parser scope."}
+{"file":"docs/PRD/releases/PRD_v1.4_Hermes_Runtime_and_Profiles.md","reason":"Runtime/account profile shape, Douyin-only profile rule, and required child profile refs."}

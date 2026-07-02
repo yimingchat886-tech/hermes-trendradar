@@ -1,0 +1,8 @@
+{
+  "schema_version": "1.4",
+  "profile_id": "feishu-v1.4-field-mapping-sample",
+  "profile_type": "feishu_field_mapping_profile",
+  "table_4_id_ref": "env:HERMES_FEISHU_TABLE_4_ID",
+  "status_field_ref": "env:HERMES_FEISHU_TABLE_4_STATUS_FIELD",
+  "analysis_package_ref_field_ref": "env:HERMES_FEISHU_TABLE_4_ANALYSIS_PACKAGE_REF_FIELD"
+}

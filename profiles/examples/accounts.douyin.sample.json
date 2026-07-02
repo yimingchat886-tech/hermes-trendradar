@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.4",
+  "profile_id": "accounts-douyin-sample-v1.4",
+  "profile_type": "account_profile",
+  "platform": "douyin",
+  "required_enabled_accounts": 10,
+  "accounts": [
+    {"account_id": "douyin_sample_001", "platform": "douyin", "display_name": "sample 001", "profile_url": "https://www.douyin.com/user/sample_001", "enabled": true, "priority": "A", "crawl_frequency": "daily", "owner_note": "redacted sample"},
+    {"account_id": "douyin_sample_002", "platform": "douyin", "display_name": "sample 002", "profile_url": "https://www.douyin.com/user/sample_002", "enabled": true, "priority": "A", "crawl_frequency": "daily", "owner_note": "redacted sample"},
+    {"account_id": "douyin_sample_003", "platform": "douyin", "display_name": "sample 003", "profile_url": "https://www.douyin.com/user/sample_003", "enabled": true, "priority": "A", "crawl_frequency": "daily", "owner_note": "redacted sample"},
+    {"account_id": "douyin_sample_004", "platform": "douyin", "display_name": "sample 004", "profile_url": "https://www.douyin.com/user/sample_004", "enabled": true, "priority": "A", "crawl_frequency": "daily", "owner_note": "redacted sample"},
+    {"account_id": "douyin_sample_005", "platform": "douyin", "display_name": "sample 005", "profile_url": "https://www.douyin.com/user/sample_005", "enabled": true, "priority": "A", "crawl_frequency": "daily", "owner_note": "redacted sample"},
+    {"account_id": "douyin_sample_006", "platform": "douyin", "display_name": "sample 006", "profile_url": "https://www.douyin.com/user/sample_006", "enabled": true, "priority": "A", "crawl_frequency": "daily", "owner_note": "redacted sample"},
+    {"account_id": "douyin_sample_007", "platform": "douyin", "display_name": "sample 007", "profile_url": "https://www.douyin.com/user/sample_007", "enabled": true, "priority": "A", "crawl_frequency": "daily", "owner_note": "redacted sample"},
+    {"account_id": "douyin_sample_008", "platform": "douyin", "display_name": "sample 008", "profile_url": "https://www.douyin.com/user/sample_008", "enabled": true, "priority": "A", "crawl_frequency": "daily", "owner_note": "redacted sample"},
+    {"account_id": "douyin_sample_009", "platform": "douyin", "display_name": "sample 009", "profile_url": "https://www.douyin.com/user/sample_009", "enabled": true, "priority": "A", "crawl_frequency": "daily", "owner_note": "redacted sample"},
+    {"account_id": "douyin_sample_010", "platform": "douyin", "display_name": "sample 010", "profile_url": "https://www.douyin.com/user/sample_010", "enabled": true, "priority": "A", "crawl_frequency": "daily", "owner_note": "redacted sample"}
+  ]
+}

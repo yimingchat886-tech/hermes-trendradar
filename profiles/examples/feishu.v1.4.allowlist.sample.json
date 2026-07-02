@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.4",
+  "profile_id": "feishu-v1.4-allowlist-sample",
+  "profile_type": "feishu_limited_live_profile",
+  "base_config_ref": "env:HERMES_FEISHU_BASE_CONFIG",
+  "field_mapping_ref": "file:profiles/examples/feishu.v1.4.field-mapping.sample.json",
+  "authorization_profile_ref": "env:HERMES_V14_AUTHORIZATION_PROFILE",
+  "allowed_tables": ["table_4"],
+  "allowed_mutations": ["status_update"]
+}

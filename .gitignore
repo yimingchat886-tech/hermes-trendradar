@@ -4,6 +4,10 @@ out/
 coverage/
 tmp/
 *.log
+profiles/**/*.local.*
+profiles/**/*.production.*
+!profiles/**/*.sample.json
+!profiles/**/*.example.json
 
 .agents/
 .codex/

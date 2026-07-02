@@ -1,0 +1,7 @@
+{
+  "schema_version": "1.4",
+  "profile_id": "analysis-v1.4-sample",
+  "profile_type": "analysis_profile",
+  "analysis_mode": "hermes-handoff",
+  "handoff_package_ref": "file:artifacts/hermes-handoff"
+}

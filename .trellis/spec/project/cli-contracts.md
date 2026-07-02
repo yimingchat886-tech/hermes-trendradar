@@ -64,3 +64,75 @@ hermes-benchmark validate-config --profile missing.yaml --json
 hermes-benchmark validate-config --profile missing.yaml --json
 # returns stub JSON with "profile_read": false
 ```
+
+## Scenario: v1.4 Profile Validation
+
+### 1. Scope / Trigger
+
+- Trigger: `validate-config` reads a local v1.4 runtime profile.
+- Scope: local profile parsing, child `file:` refs, summary hash, and validation only.
+- Out of scope: resolving secrets, connecting to CDP or Feishu, SQLite state, collection, transcription, scheduler, and live writes.
+
+### 2. Signatures
+
+- `hermes-benchmark validate-config --profile <path> --json`
+- `hermes-benchmark validate-config --config <path> --json`
+
+`--config` is a compatibility alias. If both are supplied with different paths, reject the command as `contract_mismatch`.
+
+### 3. Contracts
+
+Valid profile JSON envelope:
+
+```json
+{"ok":true,"command":"validate-config","mode":"profile","data":{"ok":true,"profile_hash":"sha256:...","enabled_account_count":10,"required_enabled_accounts":10,"errors":[]},"error":null}
+```
+
+Invalid profile JSON envelope:
+
+```json
+{"ok":false,"command":"validate-config","mode":"profile","data":{"ok":false,"errors":["..."]},"error":{"code":"config_invalid","message":"profile/config validation failed","errors":["..."]},"exit_code":2}
+```
+
+Current implementation uses stdlib JSON profile files. Do not add a YAML dependency unless a future task explicitly approves that dependency.
+
+### 4. Validation & Error Matrix
+
+| Condition | Exit | JSON error |
+|---|---:|---|
+| Valid v1.4 profile with 10 enabled Douyin accounts | 0 | none |
+| Missing `--profile` / `--config` | 2 | `contract_mismatch` |
+| Conflicting `--profile` and `--config` | 2 | `contract_mismatch` |
+| Missing or invalid profile file | 2 | `config_invalid` |
+| Enabled non-Douyin account | 2 | `config_invalid` |
+| Plaintext cookie/token/password/CDP endpoint/proxy/login state | 2 | `config_invalid` |
+
+### 5. Good/Base/Bad Cases
+
+- Good: sample profile reports `enabled_account_count = 10` and `profile_hash` starts with `sha256:`.
+- Base: `--config <path>` returns the same validation result as `--profile <path>`.
+- Bad: plaintext sensitive values fail without echoing the plaintext value in JSON output.
+
+### 6. Tests Required
+
+- Assert valid sample profile returns `mode = profile` and 10 enabled accounts.
+- Assert root and child profile sensitive plaintext values fail.
+- Assert enabled non-Douyin accounts fail.
+- Assert profile hash is deterministic.
+- Assert `--config` alias works and conflicting args fail.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```bash
+hermes-benchmark validate-config --profile local.production.json --json
+# validates by connecting to CDP, reading secrets, or printing plaintext values
+```
+
+#### Correct
+
+```bash
+hermes-benchmark validate-config --profile profiles/examples/hermes.v1.4.douyin.sample.json --json
+# validates local files only, returns a redacted JSON envelope, and never dereferences secrets
+```
