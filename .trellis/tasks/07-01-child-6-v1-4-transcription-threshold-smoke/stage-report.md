@@ -105,6 +105,7 @@ No source code was modified for Child 6.
   - `.trellis/tasks/07-01-child-6-v1-4-transcription-threshold-smoke/{task.json,prd.md,implement.md,implement.jsonl,check.jsonl,research/oracle-plan-review.md,research/input-source-preflight.md,stage-report.md}`
 - Message: `test: run v1.4 transcription threshold smoke`
 - Pushed: no
+- Implementation commit: `2c842c1d232af66a038bd10b54299962712fbecb`
 
 ## User Completion Signal
 
@@ -118,8 +119,15 @@ No source code was modified for Child 6.
 ## Soft Archive Plan
 
 - [x] Completion signal received
-- [ ] Commit hash recorded
-- [ ] `task.json.meta.staged_delivery.soft_archive_completed = true`
-- [ ] Child directory kept in place
+- [x] Commit hash recorded
+- [x] `task.json.meta.staged_delivery.soft_archive_completed = true`
+- [x] Child directory kept in place
 - Built-in Trellis archive: no
+- Pushed: no
+
+## Soft Archive
+
+- Completed at: `2026-07-03T05:48:08-07:00`
+- Implementation commit: `2c842c1d232af66a038bd10b54299962712fbecb`
+- Built-in Trellis archive called: no
 - Pushed: no

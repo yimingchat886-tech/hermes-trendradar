@@ -15,7 +15,7 @@
   "branch": "codex/v1-4-child-6-transcription-threshold-smoke",
   "base_branch": "main",
   "worktree_path": "/home/jym/workspace/Hermes-stock-child6",
-  "commit": null,
+  "commit": "2c842c1d232af66a038bd10b54299962712fbecb",
   "pr_url": null,
   "subtasks": [],
   "children": [],
@@ -25,7 +25,7 @@
   "meta": {
     "workflow_mode": "staged_overlay",
     "staged_delivery": {
-            "phase": "reported",
+            "phase": "soft_archived",
             "plan_confirmed": true,
             "plan_confirmed_at": "2026-07-03T01:22:30-07:00",
             "plan_confirmation": "执行child task 6",
@@ -35,7 +35,9 @@
             "completion_signal_received_at": "2026-07-03T05:45:54-07:00",
             "completion_signal": "可以提交并归档",
             "commit_allowed": true,
-            "soft_archive_completed": false,
+            "implementation_commit": "2c842c1d232af66a038bd10b54299962712fbecb",
+            "soft_archive_completed": true,
+            "soft_archive_completed_at": "2026-07-03T05:48:08-07:00",
             "trellis_archive_completed": false
     },
     "product": {
@@ -80,7 +82,7 @@
         "cache": "/home/jym/workspace/_external/model_cache/whisper",
         "timeout_seconds": 1800
       },
-            "remaining_gate": "user completion signal before commit or soft archive",
+            "remaining_gate": "none; soft archived",
             "smoke_run": {
                 "run_id": "run_868b302404265838",
                 "run_root": "/home/jym/workspace/_external/hermes-stock-runs/run-child6-transcription-threshold-smoke-20260703-local",
