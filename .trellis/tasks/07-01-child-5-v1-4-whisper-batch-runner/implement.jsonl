@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/guides/project-development.md", "reason": "project workflow, verification, and Ponytail gate"}
+{"file": ".trellis/spec/project/staged-delivery-overlay.md", "reason": "child staged overlay PLAN, completion signal, and soft archive rules"}
+{"file": ".trellis/spec/project/oracle-review-policy.md", "reason": "high-risk real Whisper PLAN review requirement"}
+{"file": ".trellis/spec/project/ponytail-boundary.md", "reason": "keep batch runner serial and avoid queue/daemon/downloader overbuild"}
+{"file": ".trellis/spec/project/sqlite-state.md", "reason": "transcript state, deterministic errors, and artifact ref persistence"}
+{"file": ".trellis/spec/project/cli-contracts.md", "reason": "preserve CLI JSON contracts if run-daily wiring changes"}
+{"file": "docs/PRD/releases/PRD_v1.4_Codex_CLI_Implementation.md", "reason": "Batch Whisper and artifact policy source requirement"}
+{"file": "docs/PRD/releases/PRD_v1.4_Hermes_Runtime_and_Profiles.md", "reason": "runtime transcription metric and no-full-transcript boundary"}

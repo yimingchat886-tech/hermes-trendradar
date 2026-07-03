@@ -1,0 +1,55 @@
+{
+  "id": "child-5-v1-4-whisper-batch-runner",
+  "name": "child-5-v1-4-whisper-batch-runner",
+  "title": "Child 5 v1.4: Whisper batch runner",
+  "description": "",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "jym",
+  "assignee": "jym",
+  "createdAt": "2026-07-01",
+  "completedAt": null,
+  "branch": "codex/v1-4-child-5-whisper-batch-runner",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": "490e6b42b3851462294b9959924ec51ca70541bf",
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "07-01-parent-v1-4-benchmark-productionization",
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {
+    "workflow_mode": "staged_overlay",
+    "staged_delivery": {
+      "phase": "soft_archived",
+      "plan_confirmed": true,
+      "implementation_task_submitted": true,
+      "completion_signal_received": true,
+      "commit_allowed": true,
+      "soft_archive_completed": true,
+      "trellis_archive_completed": false,
+      "completion_signal_received_at": "2026-07-02T19:56:12-07:00",
+      "implementation_commit": "490e6b42b3851462294b9959924ec51ca70541bf",
+      "soft_archive_completed_at": "2026-07-02T19:56:12-07:00"
+    },
+    "product": {
+      "parent_scope": "v1.4_benchmark_productionization",
+      "order": 5,
+      "requirement_ids": [
+        "P14-REQ-050"
+      ],
+      "slice": "whisper_batch_runner",
+      "precedes": "07-01-child-6-v1-4-transcription-threshold-smoke"
+    },
+    "oracle": {
+      "plan_review_required": true,
+      "reason": "real local Whisper command/model/device behavior and temp artifact cleanup",
+      "plan_review_session": "child5-whisper-batch-plan-review-6",
+      "plan_review_result": "approved"
+    }
+  }
+}

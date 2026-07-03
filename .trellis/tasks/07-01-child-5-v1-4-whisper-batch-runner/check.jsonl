@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/guides/project-development.md", "reason": "verify scoped diff and required checks"}
+{"file": ".trellis/spec/project/staged-delivery-overlay.md", "reason": "verify child report, completion signal, and no commit before approval"}
+{"file": ".trellis/spec/project/oracle-review-policy.md", "reason": "verify required high-risk PLAN review was honored"}
+{"file": ".trellis/spec/project/ponytail-boundary.md", "reason": "review for avoidable runner complexity"}
+{"file": ".trellis/spec/project/sqlite-state.md", "reason": "verify transcript state, errors, artifact refs, and idempotency"}
+{"file": "docs/PRD/releases/PRD_v1.4_Codex_CLI_Implementation.md", "reason": "verify Batch Whisper acceptance and artifact policy"}
