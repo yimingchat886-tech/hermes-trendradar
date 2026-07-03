@@ -91,7 +91,13 @@
 
 ## Commit / Push
 
-- Completion signal received: no.
-- Commit allowed: no.
-- Soft archive completed: no.
+- Completion signal received: yes.
+- User completion signal: `提交git`.
+- Received at: `2026-07-03T10:31:17-07:00`.
+- Commit allowed: yes.
+- Soft archive allowed: yes.
+- Explicit limits: no push.
+- Implementation commit: `ec87f09d358de180d85092b0a6148704ea8d7196`.
+- Soft archive completed: yes.
+- Built-in Trellis archive called: no.
 - Pushed: no.
