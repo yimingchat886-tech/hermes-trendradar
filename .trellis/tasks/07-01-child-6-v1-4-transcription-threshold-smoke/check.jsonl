@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/project/staged-delivery-overlay.md", "reason": "check staged child completion, report, and no implicit archive/push"}
+{"file": ".trellis/spec/project/oracle-review-policy.md", "reason": "check Oracle PLAN review is present before threshold execution"}
+{"file": ".trellis/spec/project/sqlite-state.md", "reason": "check transcript/error rows store refs and hashes only"}
+{"file": "docs/PRD/releases/PRD_v1.4_Codex_CLI_Implementation.md", "reason": "check P14-REQ-055 threshold and artifact/privacy acceptance"}
+{"file": ".trellis/tasks/07-01-child-5-v1-4-whisper-batch-runner/stage-report.md", "reason": "check child 6 reuses verified child 5 runner without adding runner scope"}
+{"file": ".trellis/tasks/07-01-child-6-v1-4-transcription-threshold-smoke/research/oracle-plan-review.md", "reason": "check approved Oracle PLAN conditions and execution-time blockers"}
+{"file": ".trellis/tasks/07-01-child-6-v1-4-transcription-threshold-smoke/research/input-source-preflight.md", "reason": "check selected source still blocks until 100 eligible local videos exist"}
