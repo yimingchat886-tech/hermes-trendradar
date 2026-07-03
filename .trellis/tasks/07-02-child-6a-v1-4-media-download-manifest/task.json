@@ -15,7 +15,7 @@
   "branch": "codex/v1-4-child-6a-media-download-manifest",
   "base_branch": "main",
   "worktree_path": null,
-  "commit": null,
+  "commit": "208016abf0e2ba9db98c36299118ace728a99360",
   "pr_url": null,
   "subtasks": [],
   "children": [],
@@ -25,15 +25,18 @@
   "meta": {
     "workflow_mode": "staged_overlay",
     "staged_delivery": {
-            "phase": "completion_signal_received",
+            "phase": "soft_archived",
             "plan_confirmed": true,
             "implementation_task_submitted": true,
       "completion_signal_received": true,
       "commit_allowed": true,
-      "soft_archive_completed": false,
+      "soft_archive_completed": true,
       "trellis_archive_completed": false,
       "completion_signal_received_at": "2026-07-03T00:16:35-07:00",
-      "completion_signal": "提交git，归档，视频不要删除了"
+      "completion_signal": "提交git，归档，视频不要删除了",
+      "implementation_commit": "208016abf0e2ba9db98c36299118ace728a99360",
+      "soft_archive_completed_at": "2026-07-03T00:20:54-07:00",
+      "external_media_retained": true
     },
     "product": {
       "parent_scope": "v1.4_benchmark_productionization",

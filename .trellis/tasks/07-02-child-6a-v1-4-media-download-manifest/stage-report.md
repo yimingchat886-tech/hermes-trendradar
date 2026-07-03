@@ -107,6 +107,7 @@
   - `.trellis/tasks/07-02-child-6a-v1-4-media-download-manifest/{task.json,implement.md,research/oracle-plan-review.md,stage-report.md}`
 - Message: `feat: add v1.4 media download manifest`
 - Pushed: no
+- Implementation commit: `208016abf0e2ba9db98c36299118ace728a99360`
 
 ## User Completion Signal
 
@@ -120,10 +121,13 @@
 ## Soft Archive Plan
 
 - [x] Completion signal received
-- [ ] Commit hash recorded
-- [ ] `task.json.meta.staged_delivery.soft_archive_completed = true`
-- [ ] Child directory kept in place
-- [ ] Child is no longer the active implementation target
+- [x] Commit hash recorded
+- [x] `task.json.meta.staged_delivery.soft_archive_completed = true`
+- [x] Child directory kept in place
+- [x] Child is no longer the active implementation target
+- External media retained: yes, per user signal `视频不要删除了`
+- Built-in Trellis archive called: no
+- Pushed: no
 
 ## Completion Signal
 
