@@ -54,13 +54,14 @@
 - Raw signal:
 - Received at:
 - Allows commit: yes/no
-- Allows soft archive: yes/no
+- Allows soft archive: yes for child unless explicitly limited
 - Explicit limits:
 - Push allowed: no, unless explicitly requested
 
 ## Soft Archive Plan
 
 - [ ] Completion signal received
+- [ ] Commit approval includes soft archive unless explicitly limited
 - [ ] Commit hash recorded
 - [ ] `task.json.meta.staged_delivery.soft_archive_completed = true`
 - [ ] Child directory kept in place
@@ -68,4 +69,4 @@
 
 ## Completion Signal
 
-Waiting for user to say `任务完成`, `验证通过`, `可以提交`, or equivalent.
+Waiting for user to say `任务完成`, `验证通过`, `验收`, `可以提交`, or equivalent.

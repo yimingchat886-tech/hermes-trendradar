@@ -78,6 +78,12 @@ After child work is verified and reported, stop and wait for a completion signal
 
 If the same user message includes a limit such as `先别提交`, `不要归档`, or `还要改`, the limit wins.
 
+For staged child tasks, commit approval is also soft-archive approval by
+default. A signal such as `可以提交`, `提交git`, `验收`, or `验证通过` means:
+commit the approved child scope and soft archive the child in the same close-out.
+Do not wait for a second archive-specific approval unless the user explicitly
+limits the signal.
+
 Record the signal before committing:
 
 ```md
@@ -86,7 +92,7 @@ Record the signal before committing:
 - Raw signal:
 - Received at:
 - Allows commit: yes/no
-- Allows soft archive: yes/no
+- Allows soft archive: yes for child unless explicitly limited
 - Explicit limits:
 - Push allowed: no, unless the same message explicitly says push
 ```
@@ -95,7 +101,7 @@ Record the signal before committing:
 
 For staged child tasks, soft archive means:
 
-1. Commit only the approved child task files after completion signal.
+1. Commit only the approved child task files after completion or commit-approval signal.
 2. Record commit hash in `stage-report.md`.
 3. Record commit hash and `soft_archive_completed = true` in `task.json.meta.staged_delivery`.
 4. Keep the child task directory in place so the parent can aggregate evidence.
@@ -103,3 +109,19 @@ For staged child tasks, soft archive means:
 Do not call built-in `task.py archive` for a child soft archive.
 
 After soft archive, the child task remains evidence only. It is no longer the active implementation target, even if the session's current task still points at it. Any further implementation needs a new child task or an explicit user decision to reopen the soft-archived child.
+
+## Parent Acceptance And Archive
+
+For staged parent tasks, parent acceptance means the full parent scope is ready
+to close after its required child evidence has been aggregated.
+
+When the user accepts the parent task with a signal such as `验收`,
+`验收通过`, `可以验收`, `任务完成`, or `可以提交`, do both unless the user
+explicitly limits the signal:
+
+1. Commit only approved parent evidence and task metadata.
+2. Archive the parent task with the built-in Trellis archive flow.
+
+Parent archive is not child soft archive. Use built-in archive for the parent so
+the task moves out of the active task tree. Push still requires explicit user
+approval.

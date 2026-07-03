@@ -26,6 +26,11 @@ Completion signal examples:
 
 If the user says `先别提交`, `不要归档`, `等等`, `还要改`, or `先不要动`, do not commit or archive.
 
+For staged child tasks, commit approval also allows soft archive by default. A
+signal such as `可以提交`, `提交git`, `验收`, or `验证通过` means commit the
+approved child scope and soft archive the child in the same close-out, unless
+the user explicitly excludes either action.
+
 Record the signal in the stage report:
 
 ```md
@@ -34,7 +39,7 @@ Record the signal in the stage report:
 - Raw signal:
 - Received at:
 - Allows commit: yes/no
-- Allows soft archive: yes/no
+- Allows soft archive: yes for child unless explicitly limited
 - Explicit limits:
 - Push allowed: no, unless explicitly requested
 ```
@@ -42,6 +47,13 @@ Record the signal in the stage report:
 ## Commit
 
 After completion signal, commit only approved current-task files. Exclude unrelated dirty files.
+
+For staged child tasks, record the commit hash and complete the soft archive
+metadata immediately after the approved commit. Do not ask for a second archive
+approval unless the user limited the original signal.
+
+For staged parent tasks, parent acceptance means commit approved parent evidence
+and archive the parent task with the built-in Trellis archive flow.
 
 ## Force-Adding Task Evidence
 

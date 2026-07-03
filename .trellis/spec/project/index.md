@@ -21,7 +21,9 @@ Project specs cover repository-level development workflow rules that are broader
 
 - Confirm ordinary low-risk work can still use default Trellis.
 - Confirm staged overlay work records `task.json.meta.workflow_mode = "staged_overlay"`.
+- Confirm staged child commit approval is paired with soft archive unless the user explicitly limits it.
 - Confirm child soft archive does not call built-in `task.py archive`.
+- Confirm staged parent acceptance commits parent evidence and runs built-in archive unless the user explicitly limits it.
 - Confirm push is never implied by commit approval.
 - Confirm CLI contract changes keep parseable JSON errors for `--json` invalid args.
 - Confirm ASR runtime changes keep third-party source, venvs, model cache, temp media, and smoke outputs outside the main repo.
