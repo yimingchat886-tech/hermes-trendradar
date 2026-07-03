@@ -1,0 +1,11 @@
+{"file":".trellis/spec/guides/project-development.md","reason":"Repository development, Trellis, Ponytail, dependency, and verification rules before implementation."}
+{"file":".trellis/spec/project/index.md","reason":"Project spec routing for staged/high-risk runtime work."}
+{"file":".trellis/spec/project/staged-delivery-overlay.md","reason":"Task uses staged overlay metadata and completion-signal rules."}
+{"file":".trellis/spec/project/oracle-review-policy.md","reason":"Decide Oracle PLAN review before external runtime/CDP work."}
+{"file":".trellis/spec/project/cli-contracts.md","reason":"Healthcheck/run-daily JSON envelope and exit-code compatibility."}
+{"file":".trellis/spec/project/sqlite-state.md","reason":"Run lock, deterministic errors, and ledger behavior constraints."}
+{"file":"docs/PRD/releases/PRD_v1.4_split_index.md","reason":"v1.4 responsibility split and profile-driven runtime constraints."}
+{"file":"docs/PRD/releases/PRD_v1.4_Codex_CLI_Implementation.md","reason":"Healthcheck, CDP runtime, MediaCrawler runner, and test requirements."}
+{"file":"docs/PRD/releases/PRD_v1.4_Hermes_Runtime_and_Profiles.md","reason":"Hermes scheduler/profile/retry boundaries and CLI invocation contracts."}
+{"file":"/mnt/c/Users/Jym/Downloads/tele/mediacrawler_stability_plan.md","reason":"User-provided stability plan to remain compatible with Phase 0/1."}
+{"file":".trellis/tasks/07-01-child-4-v1-4-douyin-collection-runner/stage-report.md","reason":"Existing real smoke/full-run evidence and failure classification baseline."}

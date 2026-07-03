@@ -1,0 +1,4 @@
+{"file":".trellis/spec/guides/project-development.md","reason":"Repository development, Trellis task artifact, verification, and commit rules."}
+{"file":".trellis/spec/project/task-sizing.md","reason":"Classify this as low-risk default Trellis configuration hygiene."}
+{"file":".trellis/spec/project/pm-intake-protocol.md","reason":"Translate the user's gitignore policy into executable requirements."}
+{"file":".trellis/spec/project/ponytail-boundary.md","reason":"Keep the change scoped to direct ignore rules without new workflow surface."}

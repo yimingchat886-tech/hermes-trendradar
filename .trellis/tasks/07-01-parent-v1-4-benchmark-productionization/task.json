@@ -1,0 +1,61 @@
+{
+  "id": "parent-v1-4-benchmark-productionization",
+  "name": "parent-v1-4-benchmark-productionization",
+  "title": "Parent v1.4: benchmark productionization",
+  "description": "Create the v1.4 staged parent for Hermes benchmark-account productionization from the split PRDs.",
+  "status": "planning",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "jym",
+  "assignee": "jym",
+  "createdAt": "2026-07-01",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "07-01-child-1-v1-4-cli-contract-skeleton",
+    "07-01-child-2-v1-4-profile-local-config",
+    "07-01-child-3-v1-4-sqlite-dedup-state",
+    "07-01-child-4-v1-4-douyin-collection-runner",
+    "07-01-child-5-v1-4-whisper-batch-runner",
+    "07-01-child-6-v1-4-transcription-threshold-smoke",
+    "07-01-child-7-v1-4-hermes-handoff-package",
+    "07-01-child-8-v1-4-feishu-limited-live-table4",
+    "07-01-child-9-v1-4-production-hardening",
+    "07-02-child-6a-v1-4-media-download-manifest"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {
+    "workflow_mode": "staged_overlay",
+    "staged_delivery": {
+      "phase": "planning",
+      "plan_confirmed": false,
+      "implementation_task_submitted": false,
+      "completion_signal_received": false,
+      "commit_allowed": false,
+      "soft_archive_completed": false,
+      "trellis_archive_completed": false
+    },
+    "product": {
+      "release": "v1.4",
+      "source_prds": [
+        "docs/PRD/releases/PRD_v1.4_split_index.md",
+        "docs/PRD/releases/PRD_v1.4_Hermes_Runtime_and_Profiles.md",
+        "docs/PRD/releases/PRD_v1.4_Codex_CLI_Implementation.md"
+      ],
+      "scope": "benchmark_account_tracking_productionization",
+      "child_count": 9,
+      "live_boundary": "table_4_and_status_only",
+      "account_source": "local_profile_manual_input",
+      "transcription_threshold_order": "batch_runner_before_threshold_smoke"
+    }
+  }
+}

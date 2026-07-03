@@ -10,7 +10,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from hermes_benchmark.cli import EXIT_CONFIG_INVALID, EXIT_CONTRACT_MISMATCH, EXIT_OK, main
+from hermes_benchmark.cli import EXIT_CONFIG_INVALID, EXIT_CONTRACT_MISMATCH, EXIT_OK, _classify_mediacrawler_failure, main
+from test_runtime_cdp import free_port, write_temp_profile
 
 SAMPLE_PROFILE = ROOT / "profiles" / "examples" / "hermes.v1.4.douyin.sample.json"
 
@@ -132,6 +133,35 @@ def test_config_alias_matches_profile() -> None:
     assert json.loads(stdout)["error"]["code"] == "contract_mismatch"
 
 
+def test_healthcheck_with_profile_reports_runtime_contract_without_raw_endpoint() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        profile_path = write_temp_profile(Path(tmp), free_port())
+        code, stdout, stderr = run_cli("healthcheck", "--profile", str(profile_path), "--json")
+
+    assert code == EXIT_OK
+    assert stderr == ""
+    payload = json.loads(stdout)
+    assert payload["ok"] is True
+    assert payload["mode"] == "runtime"
+    assert payload["data"]["schema_version"] == "1.4"
+    assert "runtime_effective_status" in payload["data"]
+    assert payload["data"]["checks"]["cdp"]["endpoint_ref"] == "redacted"
+    assert "http://127.0.0.1" not in stdout
+
+
+def test_mediacrawler_page_timeout_is_not_unknown_error() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        stderr_path = Path(tmp) / "stderr.log"
+        stderr_path.write_text('Page.goto: Timeout 30000ms exceeded navigating to "https://www.douyin.com/"', encoding="utf-8")
+
+        code, message = _classify_mediacrawler_failure({"stderr_path": str(stderr_path)})
+
+    assert code == "DOUYIN_UI_CHANGED"
+    assert not code.startswith("CDP_")
+    assert code != "UNKNOWN_ERROR"
+    assert "after CDP connection" in message
+
+
 def test_invalid_args_json_contract() -> None:
     code, stdout, stderr = run_cli("missing-command", "--json")
     assert code == EXIT_CONTRACT_MISMATCH
@@ -150,4 +180,6 @@ if __name__ == "__main__":
     test_validate_config_rejects_enabled_non_douyin_accounts()
     test_profile_hash_is_deterministic()
     test_config_alias_matches_profile()
+    test_healthcheck_with_profile_reports_runtime_contract_without_raw_endpoint()
+    test_mediacrawler_page_timeout_is_not_unknown_error()
     test_invalid_args_json_contract()

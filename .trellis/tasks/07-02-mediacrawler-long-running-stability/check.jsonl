@@ -1,0 +1,8 @@
+{"file":".trellis/spec/guides/project-development.md","reason":"Quality gate, scoped diff, and Ponytail verification rules."}
+{"file":".trellis/spec/project/staged-delivery-overlay.md","reason":"Verify staged overlay evidence and completion-signal handling."}
+{"file":".trellis/spec/project/oracle-review-policy.md","reason":"Verify required PLAN review or recorded downgrade before implementation."}
+{"file":".trellis/spec/project/cli-contracts.md","reason":"Check parseable CLI JSON behavior for healthcheck/runtime failures."}
+{"file":".trellis/spec/project/sqlite-state.md","reason":"Check run lock and deterministic error persistence if state changes."}
+{"file":"docs/PRD/releases/PRD_v1.4_Codex_CLI_Implementation.md","reason":"Verify healthcheck, CDP runtime, MediaCrawler runner, external smoke, redaction, and idempotency requirements."}
+{"file":"docs/PRD/releases/PRD_v1.4_Hermes_Runtime_and_Profiles.md","reason":"Verify scheduler/profile/retry boundaries stay compatible with Hermes runtime."}
+{"file":"/mnt/c/Users/Jym/Downloads/tele/mediacrawler_stability_plan.md","reason":"Verify Phase 0/1 stability acceptance and error layering compatibility."}

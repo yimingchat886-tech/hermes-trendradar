@@ -1,0 +1,3 @@
+{"file":".trellis/spec/guides/project-development.md","reason":"Quality gate, scoped diff, and verification reporting rules."}
+{"file":".trellis/spec/project/task-sizing.md","reason":"Confirm staged overlay is not required for this T1 gitignore update."}
+{"file":".trellis/spec/project/ponytail-boundary.md","reason":"Review the diff for avoidable complexity before committing."}
