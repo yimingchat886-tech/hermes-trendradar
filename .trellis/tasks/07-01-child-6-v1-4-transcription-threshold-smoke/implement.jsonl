@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/project/staged-delivery-overlay.md", "reason": "staged child gate, completion signal, soft archive rules"}
+{"file": ".trellis/spec/project/oracle-review-policy.md", "reason": "Oracle is required before this high-risk threshold smoke"}
+{"file": ".trellis/spec/project/ponytail-boundary.md", "reason": "prevent child 6 from growing downloader, daemon, alternate runner, or new dependency scope"}
+{"file": ".trellis/spec/project/sqlite-state.md", "reason": "verify transcript/error rows and artifact refs through existing SQLite state contracts"}
+{"file": "docs/PRD/releases/PRD_v1.4_Codex_CLI_Implementation.md", "reason": "source requirement for 100 queued, 80 success, deterministic errors, temp cleanup, transcript artifact refs"}
+{"file": ".trellis/tasks/07-01-child-5-v1-4-whisper-batch-runner/stage-report.md", "reason": "child 5 verified runner contract and constraints reused by child 6"}
+{"file": ".trellis/tasks/07-01-child-6-v1-4-transcription-threshold-smoke/research/oracle-plan-review.md", "reason": "approved Oracle PLAN review and remaining execution-time gates"}
+{"file": ".trellis/tasks/07-01-child-6-v1-4-transcription-threshold-smoke/research/input-source-preflight.md", "reason": "records selected Child 4 source count check and current 99-video blocker"}
