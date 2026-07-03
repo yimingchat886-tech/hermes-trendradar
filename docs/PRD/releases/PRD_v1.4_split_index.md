@@ -19,7 +19,7 @@
 | 文档 | 目标读者 | 主要内容 | 不包含 |
 |---|---|---|---|
 | `PRD_v1.4_Hermes_Runtime_and_Profiles.md` | Hermes Runtime、radar-ops、内容+技术内部群 | CLI 使用方式、profiles 配置、调度配置、Hermes 分析职责、Feishu limited-live 授权、运行期验收 | CLI 内部实现细节、DB 表结构迁移、工程测试清单 |
-| `PRD_v1.4_Codex_CLI_Implementation.md` | Codex / 工程执行者 | CLI 命令、配置解析、运行编排、CDP 采集、Whisper 转录、dedup、SQLite、apply-limited-live backend、测试与验收 | Hermes 调度策略决策、LLM 内容判断、运行期字段决策 |
+| `PRD_v1.4_Codex_CLI_Implementation.md` | Codex / 工程执行者 | CLI 命令、配置解析、运行编排、CDP 采集、FunASR 转录、dedup、SQLite、apply-limited-live backend、测试与验收 | Hermes 调度策略决策、LLM 内容判断、运行期字段决策 |
 
 ---
 
@@ -64,7 +64,7 @@ write-audit、run summary、error summary 持久化
 | 平台范围 | account profile | v1.4 production profile 为 `douyin` only，v1.5 可扩展 |
 | CDP endpoint / profile | env / secrets / runtime ref | 源码和示例不保存敏感值 |
 | Feishu table / field mapping | Feishu mapping profile | 不在业务代码中写死 table_id / field_id |
-| Whisper model / device / 并发 | transcription profile | 由 profile 控制，不在流程中写死 |
+| FunASR model / device / 并发 | transcription profile | 由 profile 控制，不在流程中写死 |
 | Hermes model / 清洗策略 | analysis profile | v1.4 可临时用模型自有能力，后续 Skill 化 |
 
 ---

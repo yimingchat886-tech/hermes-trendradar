@@ -121,7 +121,7 @@ Impact:
 
 Partially present:
 
-- Transcript wrapper and one Whisper smoke proof exist.
+- Transcript wrapper and one historical Whisper smoke proof exist; current production tests use FunASR.
 
 Missing:
 
@@ -212,7 +212,7 @@ Impact:
 | Tool loads real benchmark accounts | Placeholder registry only | Add local account config or Feishu read path. |
 | Tool collects new blogger content | One smoke proof only | Add daily multi-account MediaCrawler runner. |
 | Tool dedups/imports content | Fixture import exists | Connect real output to import and persist dedup state. |
-| Tool transcribes videos | Wrapper/smoke exists | Add production batch Whisper runner. |
+| Tool transcribes videos | Wrapper/smoke exists | Add production batch FunASR runner. |
 | Hermes decomposes content | Mock output exists | Add real Hermes call and prompt/version contract. |
 | Tool creates cards | Dry-run field mapping exists | Add live Feishu card write. |
 | Tool supplements topic pool | Dry-run field mapping exists | Add state-machine read/write and version guards. |
@@ -255,7 +255,7 @@ Deliver:
 
 Deliver:
 
-- batch Whisper invocation;
+- batch FunASR invocation;
 - transcript artifact path policy;
 - failed/blocked status handling;
 - no raw video retention.

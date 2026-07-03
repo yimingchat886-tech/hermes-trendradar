@@ -1,4 +1,4 @@
-"""External MediaCrawler and openai-whisper smoke adapter boundary."""
+"""External MediaCrawler and FunASR smoke adapter boundary."""
 
 from __future__ import annotations
 
@@ -34,15 +34,16 @@ SECRET_WORDS = (
 )
 
 Mode = Literal["dry_run", "real"]
-WhisperStatus = Literal["done", "fallback_done", "blocked", "failed"]
+FunasrStatus = Literal["done", "fallback_done", "blocked", "failed"]
 
 
 class RuntimeLayout(TypedDict):
     external_root: str
     mediacrawler_root: str
     mediacrawler_venv: str
-    whisper_venv: str
-    whisper_model_cache: str
+    funasr_root: str
+    funasr_venv: str
+    funasr_model_cache: str
     run_root: str
     run_temp_root: str
     log_dir: str
@@ -71,8 +72,9 @@ def runtime_layout(
         "external_root": str(external_root),
         "mediacrawler_root": str(external_root / "MediaCrawler"),
         "mediacrawler_venv": str(external_root / "venvs" / "mediacrawler"),
-        "whisper_venv": str(external_root / "venvs" / "openai-whisper"),
-        "whisper_model_cache": str(external_root / "model-cache" / "openai-whisper"),
+        "funasr_root": str(external_root / "FunASR"),
+        "funasr_venv": str(external_root / "venvs" / "funasr"),
+        "funasr_model_cache": str(external_root / "model-cache" / "funasr"),
         "run_root": str(run_root),
         "run_temp_root": str(run_root / "tmp"),
         "log_dir": str(run_root / "logs"),
@@ -104,7 +106,7 @@ def validate_preflight(
     if not _inside(run_temp_root, external_root):
         raise ContractError("run temp root must stay under external root")
 
-    for key in ("mediacrawler_root", "mediacrawler_venv", "whisper_venv", "whisper_model_cache"):
+    for key in ("mediacrawler_root", "mediacrawler_venv", "funasr_root", "funasr_venv", "funasr_model_cache"):
         value = Path(layout[key]).resolve()
         if _inside(value, repo):
             raise ContractError(f"{key} must stay outside the main repo")
@@ -257,13 +259,13 @@ def detect_gpu() -> dict[str, Any]:
     }
 
 
-def whisper_status(
+def funasr_status(
     *,
     transcript_path: Path | None = None,
     blocker: str = "",
     exit_code: int | None = None,
     fallback_from: str = "",
-) -> WhisperStatus:
+) -> FunasrStatus:
     if transcript_path is not None and transcript_path.exists():
         return "fallback_done" if fallback_from else "done"
     if blocker:
@@ -302,7 +304,7 @@ def build_manifest(
     layout: Mapping[str, str],
     mediacrawler: ProcessResult,
     import_proof: Mapping[str, Any],
-    whisper: Mapping[str, Any],
+    funasr: Mapping[str, Any],
     cleanup: Mapping[str, Any],
 ) -> dict[str, Any]:
     return {
@@ -319,7 +321,7 @@ def build_manifest(
             "exit_code": mediacrawler.get("exit_code"),
         },
         "import_proof": dict(import_proof),
-        "whisper": dict(whisper),
+        "funasr": dict(funasr),
         "cleanup": dict(cleanup),
     }
 
@@ -455,10 +457,10 @@ def _self_check() -> None:
         transcript = Path(layout["transcript_dir"]) / "sample.txt"
         transcript.parent.mkdir(parents=True, exist_ok=True)
         transcript.write_text("transcript", encoding="utf-8")
-        assert whisper_status(transcript_path=transcript) == "done"
-        assert whisper_status(transcript_path=transcript, fallback_from="cuda") == "fallback_done"
-        assert whisper_status(blocker="missing sample") == "blocked"
-        assert whisper_status(exit_code=1) == "failed"
+        assert funasr_status(transcript_path=transcript) == "done"
+        assert funasr_status(transcript_path=transcript, fallback_from="cuda") == "fallback_done"
+        assert funasr_status(blocker="missing sample") == "blocked"
+        assert funasr_status(exit_code=1) == "failed"
 
         removed = cleanup_run_temp(run_temp, [cleanup_target, copied])
         assert removed
@@ -471,7 +473,7 @@ def _self_check() -> None:
             layout=layout,
             mediacrawler=process,
             import_proof=proof,
-            whisper={"status": "blocked", "blocker": "no real sample supplied", "device": detect_gpu()},
+            funasr={"status": "blocked", "blocker": "no real sample supplied", "device": detect_gpu()},
             cleanup={"removed": removed, "retained": [layout["transcript_dir"]]},
         )
         assert manifest["mediacrawler"]["command"]

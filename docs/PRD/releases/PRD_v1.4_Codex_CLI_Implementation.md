@@ -58,7 +58,7 @@ hermes-benchmark apply-limited-live --profile <profile.yaml> --operations <ops.j
 4. 不实现通用 Feishu live writer。
 5. 不支持任意表、任意字段、delete、schema update 或 bulk unvalidated update。
 6. 不直接调用 Hermes LLM 执行真实 decomposition；只生成 handoff package。
-7. 不把完整 Whisper 分段转录全文或视频文件写入飞书。
+7. 不把完整 ASR 分段转录全文或视频文件写入飞书。
 8. 不在源码、示例、测试 fixture 或文档中包含 Cookie、登录态、代理、CDP endpoint 明文、Feishu token 或绕限制说明。
 9. 不接入热点系统、RSSHub、TrendRadar 或跨源聚类。
 10. 不让 Codex 成为部署后飞书字段责任方。
@@ -118,7 +118,7 @@ hermes-benchmark healthcheck \
 - artifact dir 可读写；
 - Chrome CDP runtime ref 可解析且 endpoint 可达；
 - MediaCrawler runner 可调用；
-- Whisper command / model / device profile 可用；
+- FunASR command / model / device profile 可用；
 - Feishu mapping ref 可解析；
 - lark-cli 或官方 API 薄脚本可用；
 - 不泄露 credential / endpoint / token 明文。
@@ -369,7 +369,7 @@ for account in enabled_douyin_accounts:
 
 ---
 
-## 9. Batch Whisper 转录实现
+## 9. Batch FunASR 转录实现
 
 ### 9.1 转录队列
 
@@ -380,7 +380,7 @@ for account in enabled_douyin_accounts:
 3. 至少 80 条转录成功。
 4. 失败项必须有 deterministic error record。
 5. 视频文件不长期保留。
-6. Whisper 原始转录 artifact 通过 `transcript_artifact_ref` 索引，不写入飞书全文。
+6. FunASR 原始转录 artifact 通过 `transcript_artifact_ref` 索引，不写入飞书全文。
 
 ### 9.2 Artifact 策略
 
@@ -388,7 +388,7 @@ for account in enabled_douyin_accounts:
 |---|---|---|---|
 | 原始采集 JSON | artifact dir / object storage | 可按周期清理 | 否 |
 | 临时视频文件 | temp dir | 转录后删除 | 否 |
-| Whisper 原始转录 | artifact dir / object storage | 可长期保留 | 只写 artifact ref |
+| FunASR 原始转录 | artifact dir / object storage | 可长期保留 | 只写 artifact ref |
 | analysis package | artifact dir | 保留用于 Hermes 分析 | 只写摘要字段 |
 | Feishu operations JSON | artifact dir | 保留审计 | 不直接展示全文 |
 | write-audit | SQLite / artifact | 长期保留 | 可写 audit id |
@@ -597,7 +597,7 @@ P0
 ### CX-FR-006 Batch Transcription Runner
 
 **需求描述**
-实现本地 Whisper 批量转录和 transcript artifact 管理。
+实现本地 FunASR 批量转录和 transcript artifact 管理。
 
 **验收标准**
 - Given 10 个账号，When run-daily，Then 100 条进入转录队列，至少 80 条 success，失败项有 error record。
@@ -648,7 +648,7 @@ P0
 | Unit tests | profile parsing、dedup key、operation hash、auth validation、error schema | 是 |
 | Contract tests | CLI JSON output、exit code、handoff package schema、write-audit schema | 是 |
 | Integration tests | validate-config → healthcheck → run-daily mock → apply-limited-live dry-run | 是 |
-| External runtime smoke | CDP ref 可达、MediaCrawler runner 可调用、Whisper 可调用 | 是 |
+| External runtime smoke | CDP ref 可达、MediaCrawler runner 可调用、FunASR 可调用 | 是 |
 | Idempotency tests | 同 date + profile 重跑不重复 content / operation / write | 是 |
 | Security tests | 明文 Cookie、CDP endpoint、token 被拒绝；日志 redaction | 是 |
 | Feishu limited-live tests | allowlist、read-before-write、noop、fail closed | 是 |
@@ -663,7 +663,7 @@ P0
 | Profile | 支持 `--profile`，调度、账号、runtime、Feishu mapping 均从 profile/ref 读取 | P0 |
 | 不写死 | 代码中不写死具体调度时间、账号 ID、CDP endpoint、table_id、field_id、token | P0 |
 | Douyin-only | production profile 校验 10 个 enabled Douyin accounts | P0 |
-| Healthcheck | DB、artifact、CDP、Whisper、Feishu mapping 可检查 | P0 |
+| Healthcheck | DB、artifact、CDP、FunASR、Feishu mapping 可检查 | P0 |
 | Run-daily | 生成 run_id、run summary、artifact refs、analysis package | P0 |
 | 采集 | 每账号至少跟踪 1 条新内容或记录失败 | P0 |
 | 转录 | 100 条入队，≥80 成功，失败有 deterministic error record | P0 |
@@ -683,7 +683,7 @@ P0
 | M2 Profile system | 配置全部 profile/ref 化 | parser、validator、sensitive detection、hash |
 | M3 Local DB + dedup | 可幂等运行 | SQLite schema、ledger、dedup、run lock |
 | M4 Douyin collection | 10 抖音账号采集 | CDP runtime adapter、MediaCrawler runner、normalize |
-| M5 Transcription | 100 入队 / 80 成功 | Whisper batch、artifact policy、error records |
+| M5 Transcription | 100 入队 / 80 成功 | FunASR batch、artifact policy、error records |
 | M6 Handoff package | Hermes 可分析 | package schema、mock mode、contract tests |
 | M7 Apply limited-live | 受限飞书写入 | auth validation、allowlist、read-before-write、audit |
 | M8 Production hardening | 可验收 | recovery、idempotency tests、runbook、security tests |

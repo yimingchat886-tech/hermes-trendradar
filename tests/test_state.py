@@ -130,7 +130,7 @@ def test_artifact_and_operation_helpers_are_idempotent_refs_only() -> None:
     run = begin_run(conn, "2026-07-01", "sha256:profile")
     content = upsert_content_ledger(conn, run["run_id"], content_item())
 
-    transcript_id = record_transcript_state(conn, content["content_id"], "whisper-small", "done", artifact_ref="file:artifacts/t.json")
+    transcript_id = record_transcript_state(conn, content["content_id"], "funasr-sensevoice", "done", artifact_ref="file:artifacts/t.json")
     package_id = record_analysis_package_ref(conn, run["run_id"], "hermes-handoff", "ready", "file:artifacts/package.json")
     operation_id = record_operation_ref(conn, run["run_id"], "status_update", "table_4", content["content_id"], "sha256:op", "pending")
     audit_id = record_write_audit(conn, operation_id, "sha256:op", content["content_id"], "noop")

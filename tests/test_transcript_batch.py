@@ -140,7 +140,7 @@ def profile_for(root: Path, helper: Path) -> LoadedProfile:
         profiles_by_ref={
             "transcription": {
                 "profile_id": "transcription-test",
-                "provider": "local-whisper",
+                "provider": "local-funasr",
                 "command": [sys.executable, str(helper)],
                 "model": "tiny",
                 "device": "cpu",
@@ -152,14 +152,14 @@ def profile_for(root: Path, helper: Path) -> LoadedProfile:
 
 
 def helper_script(root: Path, mode: str) -> Path:
-    helper = root / f"fake_whisper_{mode}.py"
+    helper = root / f"fake_funasr_{mode}.py"
     if mode == "fail":
         helper.write_text("import sys\nsys.exit(7)\n", encoding="utf-8")
     else:
         helper.write_text(
             "import json, pathlib, sys\n"
             "video = pathlib.Path(sys.argv[1])\n"
-            "out = pathlib.Path(sys.argv[sys.argv.index('--output_dir') + 1])\n"
+            "out = pathlib.Path(sys.argv[sys.argv.index('--output-dir') + 1])\n"
             "out.mkdir(parents=True, exist_ok=True)\n"
             "(out / (video.stem + '.json')).write_text(json.dumps({'text': 'fixture transcript'}), encoding='utf-8')\n",
             encoding="utf-8",

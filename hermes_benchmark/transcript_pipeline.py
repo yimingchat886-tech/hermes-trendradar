@@ -1,4 +1,4 @@
-"""Local Whisper transcript boundary with fixture-friendly checks."""
+"""Local FunASR transcript boundary with fixture-friendly checks."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from .contracts import BenchmarkContent, ContractError, Transcript, TranscriptSt
 
 RUN_ID = "run-child4-transcript-fixture-2026-06-30"
 OBSERVED_AT = "2026-06-30T00:00:00-07:00"
-PROVIDER = "local_whisper"
+PROVIDER = "local_funasr"
 STATUSES = {"pending", "done", "failed", "not_applicable"}
 
 
@@ -115,11 +115,11 @@ def _self_check() -> None:
         video.write_bytes(b"fixture video")
 
         def fail(_: Path) -> Mapping[str, Any]:
-            raise RuntimeError("whisper unavailable")
+            raise RuntimeError("funasr unavailable")
 
         failed = transcribe_temporary_video(content, video, fail)
         assert failed["status"] == "failed"
-        assert "whisper unavailable" in failed["error"]
+        assert "funasr unavailable" in failed["error"]
         assert not video.exists()
 
     build_transcript(content, status="pending")

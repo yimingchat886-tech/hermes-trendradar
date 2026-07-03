@@ -131,7 +131,7 @@ TABLES: dict[str, TableConfig] = {
             "证据状态": "script_generated",
             "是否达到粗爆款阈值": "script_generated",
             "卡片 ID": "script_generated",
-            "Whisper 转录摘要": "hermes_managed",
+            "ASR 转录摘要": "hermes_managed",
             "内容一句话总结": "hermes_managed",
             "开头钩子": "hermes_managed",
             "内容结构": "hermes_managed",
@@ -467,7 +467,7 @@ def _card_row(hermes: HermesDecompositionOutput) -> FeishuRow:
 
 def _hermes_content_fields(hermes: HermesDecompositionOutput) -> dict[str, Any]:
     return {
-        "Whisper 转录摘要": hermes["summary"],
+        "ASR 转录摘要": hermes["summary"],
         "内容一句话总结": hermes["topic_one_liner"],
         "开头钩子": hermes["hook"],
         "内容结构": hermes["structure"],
@@ -537,7 +537,7 @@ def _self_check() -> None:
         assert operation["operation"] == "create"
         if operation["target_table"] == "table_9":
             assert set(operation["field_mapping"]) <= TABLE9_EXTERNAL_FIELDS
-            assert "Whisper 转录摘要" not in operation["field_mapping"]
+            assert "ASR 转录摘要" not in operation["field_mapping"]
 
     existing = {(operation["target_table"], operation["object_id"]): operation["field_mapping"] for operation in operations}
     noops = parent1_feishu_dry_run(existing)

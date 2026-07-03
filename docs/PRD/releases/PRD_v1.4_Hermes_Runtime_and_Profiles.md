@@ -70,10 +70,10 @@ Hermes Runtime 能根据 v1.4 production profile，每日触发 10 个抖音对�
 ## 3. Hermes 侧非目标
 
 1. 不在 Hermes profile 中保存 Cookie、登录态、代理、CDP 明文 endpoint、Feishu token 明文或平台账号敏感信息。
-2. 不由 Hermes 直接实现 MediaCrawler、Whisper、SQLite、dedup 或 Feishu API 细节。
+2. 不由 Hermes 直接实现 MediaCrawler、FunASR、SQLite、dedup 或 Feishu API 细节。
 3. 不让 CLI 自行决定调度时间、retry 策略、账号等级频率或 live mutation 权限。
 4. 不让 CLI 直接执行真实 Hermes LLM 分析；CLI 只输出 handoff package。
-5. 不将完整 Whisper 分段转录全文或视频文件写入飞书。
+5. 不将完整 ASR 分段转录全文或视频文件写入飞书。
 6. 不写表 6 / 7 / 9 的生产 live 流程；v1.4 只做表 2 / 3 / 4 limited-live。
 7. 不接入热点系统、RSSHub、TrendRadar 或跨源聚类。
 
@@ -103,7 +103,7 @@ profiles/
   accounts.douyin.production.yaml           # 10 个抖音账号
   feishu.v1.4.allowlist.yaml                 # 表 2 / 3 / 4 allowlist + field mapping ref
   analysis.v1.4.hermes-handoff.yaml          # 清洗、摘要、拆解策略
-  transcription.v1.4.local-whisper.yaml      # Whisper model / device / batch policy ref
+  transcription.v1.4.local-funasr.yaml       # FunASR model / device / batch policy ref
   runtime.v1.4.local.yaml                    # storage / DB / artifact / env ref
 ```
 
@@ -123,7 +123,7 @@ platform_scope:
 
 account_profile_ref: "file:profiles/accounts.douyin.production.yaml"
 analysis_profile_ref: "file:profiles/analysis.v1.4.hermes-handoff.yaml"
-transcription_profile_ref: "file:profiles/transcription.v1.4.local-whisper.yaml"
+transcription_profile_ref: "file:profiles/transcription.v1.4.local-funasr.yaml"
 runtime_profile_ref: "file:profiles/runtime.v1.4.local.yaml"
 feishu_profile_ref: "file:profiles/feishu.v1.4.allowlist.yaml"
 
@@ -223,7 +223,7 @@ Hermes 分析规则：
 
 1. Hermes 可以把转录全文交给便宜模型做临时清洗和摘要。
 2. v1.4 目标是去除明显转录错误、口头噪声、重复文本和断句错误，并生成摘要归纳。
-3. 清洗后内容字段可写入表 4；完整 Whisper 分段转录全文不得写入飞书。
+3. 清洗后内容字段可写入表 4；完整 ASR 分段转录全文不得写入飞书。
 4. 后续版本将清洗、摘要、拆解沉淀为 versioned Skill。
 
 ### 5.5 Feishu Profile Schema
@@ -283,7 +283,7 @@ Hermes 必须校验：
 4. schedule、retry、runtime、analysis、feishu 子 profile 均存在；
 5. 不存在明文 Cookie、登录态、CDP endpoint、代理、token；
 6. Feishu live mutation allowlist 存在；
-7. storage、artifact、DB、CDP runtime ref、Whisper profile ref、Feishu mapping ref 可解析。
+7. storage、artifact、DB、CDP runtime ref、FunASR profile ref、Feishu mapping ref 可解析。
 
 ### 6.2 健康检查
 
@@ -453,7 +453,7 @@ Hermes 维护字段：
 - `hook_summary`
 - `reusable_angle`
 
-限制：不得写完整 Whisper 分段转录全文或视频文件。
+限制：不得写完整 ASR 分段转录全文或视频文件。
 
 ---
 

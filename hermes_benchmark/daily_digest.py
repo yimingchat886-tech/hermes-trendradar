@@ -279,7 +279,7 @@ def _health_category(health: SourceHealth) -> AlertCategory:
     text = f"{health['id']} {health['message']}".lower()
     if "feishu" in text:
         return "feishu"
-    if "transcript" in text or "whisper" in text:
+    if "transcript" in text or "funasr" in text or "asr" in text or "whisper" in text:
         return "transcript"
     if health["source_id"] == IMPORT_SOURCE_ID or "import" in text or "row" in text:
         return "import"
@@ -340,7 +340,7 @@ def _self_check() -> None:
     assert not any("hotspot" in str(alert).lower() for alert in alerts)
 
     content = import_mediacrawler_rows(load_mediacrawler_fixture())["contents"][0]
-    failed_transcript = build_transcript(content, status="failed", error="whisper unavailable")
+    failed_transcript = build_transcript(content, status="failed", error="funasr unavailable")
     transcript_alerts = build_ops_alerts([], [failed_transcript])
     assert transcript_alerts[0]["category"] == "transcript"
     assert transcript_alerts[0]["content_id"] == content["id"]

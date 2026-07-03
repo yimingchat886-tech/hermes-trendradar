@@ -2,7 +2,7 @@
   "schema_version": "1.4",
   "profile_id": "transcription-v1.4-sample",
   "profile_type": "transcription_profile",
-  "provider": "local-whisper",
-  "model_ref": "env:HERMES_WHISPER_MODEL",
-  "batch_policy_ref": "env:HERMES_WHISPER_BATCH_POLICY"
+  "provider": "local-funasr",
+  "model_ref": "env:HERMES_FUNASR_MODEL",
+  "batch_policy_ref": "env:HERMES_FUNASR_BATCH_POLICY"
 }

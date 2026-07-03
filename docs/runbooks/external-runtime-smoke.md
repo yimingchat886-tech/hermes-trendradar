@@ -2,7 +2,7 @@
 
 ## Scope
 
-Child 8 keeps MediaCrawler and openai-whisper outside this repo.
+Child 8 keeps MediaCrawler and FunASR outside this repo.
 The repo only stores adapters, manifests, logs, transcripts, runbooks, and checks.
 
 ## External Layout
@@ -11,8 +11,9 @@ Use `/home/jym/workspace/_external`:
 
 - `MediaCrawler/` for the external MediaCrawler checkout.
 - `venvs/mediacrawler/` for MediaCrawler dependencies.
-- `venvs/openai-whisper/` for openai-whisper dependencies.
-- `model-cache/openai-whisper/` for reusable Whisper model cache.
+- `FunASR/` for the external FunASR checkout.
+- `venvs/funasr/` for FunASR dependencies.
+- `model-cache/funasr/` for reusable FunASR model/cache files.
 - `hermes-stock-runs/<run_id>/` for run-specific logs, transcripts, and temp files.
 
 ## Real Smoke Inputs
@@ -42,7 +43,7 @@ Retain:
 
 - redacted manifest;
 - logs;
-- transcript or explicit Whisper blocker/fallback;
+- transcript or explicit FunASR blocker/fallback;
 - MediaCrawler import proof.
 
 Delete:
@@ -55,5 +56,5 @@ Delete:
 ## Real Execution Boundary
 
 One account, one public video, one MediaCrawler run, one import proof,
-and one Whisper run or fallback/blocker.
+and one FunASR run or fallback/blocker.
 No queue, concurrency, daemon, scheduler, or long-term video storage.

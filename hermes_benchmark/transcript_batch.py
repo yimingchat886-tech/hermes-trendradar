@@ -1,4 +1,4 @@
-"""Serial Whisper batch runner for v1.4 transcript artifacts."""
+"""Serial FunASR batch runner for v1.4 transcript artifacts."""
 
 from __future__ import annotations
 
@@ -101,8 +101,8 @@ def resolve_transcript_runtime(
         )
         if not value
     ]
-    if provider and provider != "local-whisper":
-        missing.append("provider=local-whisper")
+    if provider and provider != "local-funasr":
+        missing.append("provider=local-funasr")
     if missing:
         raise TranscriptConfigError(f"missing required transcription runtime config: {', '.join(missing)}")
 
@@ -200,7 +200,7 @@ def _process_content(
     process: dict[str, Any] = {}
 
     def transcriber(path: Path) -> Mapping[str, Any]:
-        return _run_local_whisper(runtime, run_id, content_id, path, process, sensitive_values, timeout_seconds)
+        return _run_local_funasr(runtime, run_id, content_id, path, process, sensitive_values, timeout_seconds)
 
     transcript = transcribe_temporary_video(content, video_path, transcriber)
     exists_after = video_path.exists()
@@ -211,7 +211,7 @@ def _process_content(
             runtime,
             content_id,
             ERROR_COMMAND_FAILED,
-            transcript.get("error", "whisper command failed"),
+            transcript.get("error", "funasr command failed"),
             queued=True,
             temp_video_path=video_path,
             temp_video_exists_after=exists_after,
@@ -255,7 +255,7 @@ def _process_content(
         )
 
 
-def _run_local_whisper(
+def _run_local_funasr(
     runtime: TranscriptRuntime,
     run_id: str,
     content_id: str,
@@ -264,7 +264,7 @@ def _run_local_whisper(
     sensitive_values: Iterable[str],
     timeout_seconds: int,
 ) -> Mapping[str, Any]:
-    work_dir = Path(runtime["artifact_root"]) / "transcripts" / run_id / "_whisper" / _safe_name(content_id)
+    work_dir = Path(runtime["artifact_root"]) / "transcripts" / run_id / "_funasr" / _safe_name(content_id)
     command = [
         *runtime["command"],
         str(video_path),
@@ -272,13 +272,13 @@ def _run_local_whisper(
         runtime["model"],
         "--device",
         runtime["device"],
-        "--output_dir",
+        "--output-dir",
         str(work_dir),
-        "--output_format",
+        "--output-format",
         "json",
     ]
     result = run_process(
-        "whisper",
+        "funasr",
         command,
         mode="real",
         log_dir=work_dir / "logs",
@@ -287,12 +287,12 @@ def _run_local_whisper(
     )
     process.update({"redacted_command": result["redacted_command"], "exit_code": result.get("exit_code")})
     if result.get("exit_code") != 0:
-        raise RuntimeError(f"whisper command failed with exit {result.get('exit_code')}")
-    text, segments_path = _read_whisper_output(work_dir, result)
+        raise RuntimeError(f"funasr command failed with exit {result.get('exit_code')}")
+    text, segments_path = _read_funasr_output(work_dir, result)
     return {"text": text, "segments_path": segments_path}
 
 
-def _read_whisper_output(work_dir: Path, result: Mapping[str, Any]) -> tuple[str, str]:
+def _read_funasr_output(work_dir: Path, result: Mapping[str, Any]) -> tuple[str, str]:
     json_paths = sorted(path for path in work_dir.glob("*.json") if path.is_file())
     if json_paths:
         data = json.loads(json_paths[0].read_text(encoding="utf-8"))
@@ -300,7 +300,7 @@ def _read_whisper_output(work_dir: Path, result: Mapping[str, Any]) -> tuple[str
     stdout_path = result.get("stdout_path")
     text = Path(str(stdout_path)).read_text(encoding="utf-8").strip() if stdout_path else ""
     if not text:
-        raise RuntimeError("whisper command produced no transcript JSON or stdout text")
+        raise RuntimeError("funasr command produced no transcript JSON or stdout text")
     return text, ""
 
 
@@ -483,11 +483,11 @@ def _self_check() -> None:
 
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
-        helper = root / "fake_whisper.py"
+        helper = root / "fake_funasr.py"
         helper.write_text(
             "import json, pathlib, sys\n"
             "video = pathlib.Path(sys.argv[1])\n"
-            "out = pathlib.Path(sys.argv[sys.argv.index('--output_dir') + 1])\n"
+            "out = pathlib.Path(sys.argv[sys.argv.index('--output-dir') + 1])\n"
             "out.mkdir(parents=True, exist_ok=True)\n"
             "(out / (video.stem + '.json')).write_text(json.dumps({'text': 'self check transcript'}), encoding='utf-8')\n",
             encoding="utf-8",
@@ -497,7 +497,7 @@ def _self_check() -> None:
             profiles_by_ref={
                 "transcription": {
                     "profile_id": "self-check-transcription",
-                    "provider": "local-whisper",
+                    "provider": "local-funasr",
                     "command": [sys.executable, str(helper)],
                     "model": "tiny",
                     "device": "cpu",

@@ -1,0 +1,43 @@
+{
+  "id": "replace-whisper-with-funasr",
+  "name": "replace-whisper-with-funasr",
+  "title": "brainstorm: replace Whisper production test with FunASR",
+  "description": "",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "jym",
+  "assignee": "jym",
+  "createdAt": "2026-07-03",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "High-risk T2: external runtime replacement, local config deletion, and multi-file text/test cleanup. Oracle API missing OPENAI_API_KEY; browser attempt timed out during attachment upload. Proceeding with local checklist because the user explicitly requested this concrete migration and no repo dependency or public CLI contract is being added.",
+  "meta": {
+    "workflow_mode": "staged_overlay",
+    "staged_delivery": {
+      "phase": "commit",
+      "plan_confirmed": true,
+      "implementation_task_submitted": false,
+      "completion_signal_received": true,
+      "commit_allowed": true,
+      "soft_archive_completed": false,
+      "trellis_archive_completed": false
+    },
+    "oracle_review": {
+      "required": true,
+      "api_attempt": "failed_missing_OPENAI_API_KEY",
+      "browser_attempt": "failed_attachment_upload_timeout",
+      "downgrade": "local_checklist"
+    }
+  }
+}

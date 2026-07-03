@@ -39,11 +39,11 @@ The PRD mentions `trend-cli`, `trend-mcp`, and `lark-cli`, but in the current re
 | Fixture loop | `hermes_benchmark/fixtures.py` | No-credential fixture loop and self-check. |
 | Account registry | `hermes_benchmark/account_registry.py` | 20 placeholder Douyin/Xiaohongshu benchmark accounts and daily tracking plan. |
 | MediaCrawler import | `hermes_benchmark/mediacrawler_import.py` | Fixture-style import and exact dedup by normalized URL plus platform content ID. |
-| Whisper transcript boundary | `hermes_benchmark/transcript_pipeline.py` | Local transcript record wrapper, fixture transcript, status handling, and temp video cleanup wrapper. |
+| FunASR transcript boundary | `hermes_benchmark/transcript_pipeline.py` | Local transcript record wrapper, fixture transcript, status handling, and temp video cleanup wrapper. |
 | Hermes decomposition | `hermes_benchmark/decomposition.py` | Deterministic mock Hermes output contract, card export, topic-pool supplement boundary, and manual-field protections. |
 | Feishu dry-run | `hermes_benchmark/feishu_dry_run.py` | Table mapping and create/update/no-op dry-run operations for parent-1 tables. No live write. |
 | Digest and alerts | `hermes_benchmark/daily_digest.py` | Daily digest object and ops exception alerts assembled from child outputs. No notification sender. |
-| External runtime smoke | `hermes_benchmark/external_runtime.py` | External layout, preflight guards, process redaction, import proof, Whisper status, cleanup, and manifest writing. |
+| External runtime smoke | `hermes_benchmark/external_runtime.py` | External layout, preflight guards, process redaction, import proof, FunASR status, cleanup, and manifest writing. |
 
 ## What Is Production-Ready Today
 
@@ -65,7 +65,7 @@ The PRD mentions `trend-cli`, `trend-mcp`, and `lark-cli`, but in the current re
 - No persistent DB/object storage implementation exists in this repo.
 - No real account registry source-of-truth is committed; accounts are placeholder fixtures.
 - No production MediaCrawler orchestration is committed; external MediaCrawler stays outside this repo.
-- No production Whisper model/runtime management is committed; external venv/cache stays outside this repo.
+- No production FunASR model/runtime management is committed; external venv/cache stays outside this repo.
 - No hotspot/RSS/TrendRadar path is implemented in v1.
 - No RAG ingestion/export pipeline is implemented.
 - No long-term raw video storage is implemented, by design.
@@ -78,8 +78,9 @@ Use `/home/jym/workspace/_external` for external tools and run artifacts:
 /home/jym/workspace/_external/
   MediaCrawler/
   venvs/mediacrawler/
-  venvs/openai-whisper/
-  model-cache/openai-whisper/
+  FunASR/
+  venvs/funasr/
+  model-cache/funasr/
   hermes-stock-runs/<run_id>/
 ```
 
@@ -96,7 +97,7 @@ Retain only redacted manifests, logs, transcripts, and import proofs needed for 
 Child 8 completed one local external-runtime smoke outside the repo:
 
 - MediaCrawler Douyin detail run produced one importable content row and comments.
-- openai-whisper produced a transcript proof from a 60-second local sample.
+- The previous local smoke evidence includes a historical openai-whisper transcript proof from a 60-second local sample; current production tests use FunASR.
 - Evidence was retained under `/home/jym/workspace/_external/hermes-stock-runs/...`.
 - Temporary login state, raw JSONL, screenshots, downloaded video, and wav sample were kept outside the repo and cleaned after proof generation.
 

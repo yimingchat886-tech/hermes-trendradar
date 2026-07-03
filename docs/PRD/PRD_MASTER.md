@@ -25,7 +25,7 @@ Hermes Agent 是面向 AI 赛道内容+技术协作的内容选题系统。
 1. 对标账号跟踪与拆解。
 2. 热点信息跟踪与沉淀。
 
-系统使用 Hermes 作为唯一 LLM 决策层，结合 MediaCrawler、本地 Whisper、TrendRadar/RSSHub、Lark/Feishu CLI 和本地数据存储，把分散的内容信号转为可追踪、可拆解、可评审、可沉淀的选题资产。
+系统使用 Hermes 作为唯一 LLM 决策层，结合 MediaCrawler、本地 FunASR、TrendRadar/RSSHub、Lark/Feishu CLI 和本地数据存储，把分散的内容信号转为可追踪、可拆解、可评审、可沉淀的选题资产。
 
 ---
 
@@ -72,7 +72,7 @@ Hermes Agent 长期解决以下问题：
 
 - 跟踪 AI 赛道对标账号。
 - 结构化采集对标内容、平台指标、评论和来源信息。
-- 使用本地 Whisper 转录视频文案。
+- 使用本地 FunASR 转录视频文案。
 - 使用 Hermes 拆解内容结构、标题钩子、用户痛点和可复用角度。
 - 将摘要、链接、状态、人工操作字段和 Hermes 结论写入飞书多维表格。
 - 生成内部日报、周报、异常提醒和外部卡片。
@@ -84,7 +84,7 @@ Hermes Agent 长期解决以下问题：
 - 不自动发布内容。
 - 不自动成片或自动投放。
 - 不把飞书当作原始数据仓库。
-- 不把大体量全文、视频文件、全量评论原文或 Whisper 分段文本直接塞入飞书。
+- 不把大体量全文、视频文件、全量评论原文或 ASR 分段文本直接塞入飞书。
 - 不开放外部群访问内部多维表格。
 - 不允许普通用户通过聊天修改 Agent 配置。
 - v1 不建设热点雷达、RSSHub/TrendRadar 链路、发布复盘、完整风险审核或正式 RAG。
@@ -99,7 +99,7 @@ Hermes Agent 长期解决以下问题：
 ```text
 外部信息源 / 对标账号 / 本地样例
   ↓
-MediaCrawler / RSSHub / TrendRadar / Whisper / lark-cli / 官方 API 薄脚本
+MediaCrawler / RSSHub / TrendRadar / FunASR / lark-cli / 官方 API 薄脚本
   ↓
 trend-cli / trend-mcp / 本地 DB / 对象存储 / 统一 Schema
   ↓
@@ -119,7 +119,7 @@ Hermes 是唯一运行期 LLM 决策层，负责理解、拆解、归类、选�
 工具层提供确定性能力和标准化输出：
 
 - MediaCrawler：对标账号采集结果读取与导入。
-- Whisper：本地视频转录。
+- FunASR：本地视频转录。
 - TrendRadar/RSSHub：v2 热点信息源和趋势聚合。
 - `trend-cli` / `trend-mcp`：工具调用和标准化接口。
 - `lark-cli` + 官方 API 薄脚本：飞书多维表格读写。
