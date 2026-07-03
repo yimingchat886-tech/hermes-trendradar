@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/project/staged-delivery-overlay.md", "reason": "check staged child evidence and no implicit archive/push"}
+{"file": ".trellis/spec/project/oracle-review-policy.md", "reason": "check Oracle PLAN review before real media download"}
+{"file": ".trellis/spec/project/ponytail-boundary.md", "reason": "check no downloader framework, daemon, or unrelated acquisition scope"}
+{"file": "docs/PRD/releases/PRD_v1.4_Codex_CLI_Implementation.md", "reason": "check media/privacy evidence against P14-REQ-055"}
+{"file": ".trellis/tasks/07-01-child-4-v1-4-douyin-collection-runner/stage-report.md", "reason": "check selected media source comes from Child 4 output"}
+{"file": ".trellis/tasks/07-01-child-6-v1-4-transcription-threshold-smoke/research/input-source-preflight.md", "reason": "check 99-item approved distribution and eligible URL count"}

@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/project/staged-delivery-overlay.md", "reason": "staged child gate and soft archive rules"}
+{"file": ".trellis/spec/project/oracle-review-policy.md", "reason": "Oracle PLAN is required before external media download"}
+{"file": ".trellis/spec/project/ponytail-boundary.md", "reason": "keep download task one-shot, no downloader framework or daemon"}
+{"file": "docs/PRD/releases/PRD_v1.4_Codex_CLI_Implementation.md", "reason": "P14-REQ-055 source requirement for transcription media and artifact/privacy boundaries"}
+{"file": ".trellis/tasks/07-01-child-4-v1-4-douyin-collection-runner/stage-report.md", "reason": "Child 4 source run and raw output evidence for selected URLs"}
+{"file": ".trellis/tasks/07-01-child-6-v1-4-transcription-threshold-smoke/research/input-source-preflight.md", "reason": "approved 99-item source distribution for download manifest"}
