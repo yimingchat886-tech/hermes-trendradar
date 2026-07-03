@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/guides/project-development.md", "reason": "project development workflow, verification, and Ponytail gate"}
+{"file": ".trellis/spec/project/staged-delivery-overlay.md", "reason": "child staged overlay PLAN, completion signal, and soft archive rules"}
+{"file": ".trellis/spec/project/oracle-review-policy.md", "reason": "high-risk child PLAN review requirement and execution gate"}
+{"file": ".trellis/spec/project/ponytail-boundary.md", "reason": "keep runner minimal and avoid queue/concurrency/daemon overbuild"}
+{"file": ".trellis/spec/project/cli-contracts.md", "reason": "preserve CLI JSON contracts if run-daily wiring changes"}
+{"file": ".trellis/spec/project/sqlite-state.md", "reason": "content ledger and deterministic error persistence contracts"}
+{"file": ".trellis/tasks/07-01-child-4-v1-4-douyin-collection-runner/research/oracle-plan-review.md", "reason": "accepted Oracle PLAN review constraints"}

@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/guides/project-development.md", "reason": "verify task-scoped diff and required checks"}
+{"file": ".trellis/spec/project/staged-delivery-overlay.md", "reason": "verify child report and no commit before completion signal"}
+{"file": ".trellis/spec/project/oracle-review-policy.md", "reason": "verify real external execution stayed gated"}
+{"file": ".trellis/spec/project/ponytail-boundary.md", "reason": "review for avoidable runner complexity"}
+{"file": ".trellis/spec/project/sqlite-state.md", "reason": "verify ledger/error/idempotency behavior"}
+{"file": ".trellis/tasks/07-01-child-4-v1-4-douyin-collection-runner/research/oracle-plan-review.md", "reason": "verify Oracle findings were honored"}
