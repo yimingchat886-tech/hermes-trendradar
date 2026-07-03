@@ -136,6 +136,10 @@
 - User completion signal: `提交git`.
 - Received at: `2026-07-02T17:49:15-07:00`.
 - Commit allowed: yes.
-- Explicit limits: commit only; no push and no soft archive.
-- Soft archive completed: no.
+- Initial explicit limits: commit only; no push and no soft archive.
+- Implementation commit: `04efdca32c120234a5cc65dedfa8a88007d40213`.
+- Soft archive signal: `soft archive`.
+- Soft archive signal received at: `2026-07-02T18:38:54-07:00`.
+- Soft archive completed: yes.
+- Built-in Trellis archive called: no.
 - Pushed: no.

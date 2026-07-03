@@ -15,7 +15,7 @@
   "branch": "codex/v1-4-child-4-douyin-collection-runner",
   "base_branch": "main",
   "worktree_path": null,
-  "commit": null,
+  "commit": "04efdca32c120234a5cc65dedfa8a88007d40213",
   "pr_url": null,
   "subtasks": [],
   "children": [],
@@ -25,13 +25,15 @@
   "meta": {
     "workflow_mode": "staged_overlay",
     "staged_delivery": {
-      "phase": "full_comments_run_partial_success_commit_allowed",
+      "phase": "soft_archived",
       "plan_confirmed": true,
       "implementation_task_submitted": true,
       "completion_signal_received": true,
       "commit_allowed": true,
-      "soft_archive_completed": false,
-      "trellis_archive_completed": false
+      "soft_archive_completed": true,
+      "trellis_archive_completed": false,
+      "implementation_commit": "04efdca32c120234a5cc65dedfa8a88007d40213",
+      "soft_archive_completed_at": "2026-07-02T18:38:54-07:00"
     },
     "product": {
       "parent_scope": "v1.4_benchmark_productionization",
