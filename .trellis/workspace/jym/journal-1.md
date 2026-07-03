@@ -82,3 +82,36 @@ Created PRD_MASTER, moved v1.3 release PRD into docs/PRD/releases, and archived 
 ### Next Steps
 
 - None - task complete
+
+
+## Session 3: Replace Whisper production test with FunASR
+
+**Date**: 2026-07-03
+**Task**: Replace Whisper production test with FunASR
+**Branch**: `main`
+
+### Summary
+
+Switched the current production-test transcription runtime to FunASR, refreshed external-runtime docs/spec/tests, preserved run evidence, and archived the task.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a3ef21e` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
