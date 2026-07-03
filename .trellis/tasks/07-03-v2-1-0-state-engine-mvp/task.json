@@ -1,0 +1,44 @@
+{
+  "id": "v2-1-0-state-engine-mvp",
+  "name": "v2-1-0-state-engine-mvp",
+  "title": "v2.1.0 State Engine MVP",
+  "description": "",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "jym",
+  "assignee": "jym",
+  "createdAt": "2026-07-03",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "codex/mediacrawler-long-running-stability",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {
+    "workflow_mode": "staged_overlay",
+    "staged_delivery": {
+      "phase": "implemented_waiting_completion_signal",
+      "plan_confirmed": true,
+      "implementation_task_submitted": true,
+      "completion_signal_received": true,
+      "commit_allowed": true,
+      "soft_archive_completed": false,
+      "trellis_archive_completed": false,
+      "completion_signal_received_at": "2026-07-03T04:31:12-07:00",
+      "completion_signal": "任务完成"
+    },
+    "v2_harness": {
+      "source_reference": ".local-state.git:06-29-v2-0-full-harness-state-machine/v2-1-0-follow-up-reference.md",
+      "target_mode": "harness_state_machine",
+      "current_slice": "v2.1.0 State Engine MVP"
+    }
+  }
+}
