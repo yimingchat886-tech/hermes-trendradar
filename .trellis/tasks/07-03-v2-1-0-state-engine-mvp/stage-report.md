@@ -68,7 +68,7 @@ No `.trellis/spec/` update. The v2.1 behavior is still an opt-in engine prototyp
   - `.trellis/tasks/07-03-v2-1-0-state-engine-mvp/`
 - Message: `feat: add v2.1 trellis state engine`
 - Pushed: no
-- Implementation commit: pending
+- Implementation commit: `7d0905802787bae39bdaa2b60c55675f51bc0e81`
 
 ## User Completion Signal
 
@@ -82,8 +82,8 @@ No `.trellis/spec/` update. The v2.1 behavior is still an opt-in engine prototyp
 ## Soft Archive Plan
 
 - [x] Completion signal received
-- [ ] Commit hash recorded
-- [ ] `task.json.meta.staged_delivery.soft_archive_completed = true`
+- [x] Commit hash recorded
+- [x] `task.json.meta.staged_delivery.soft_archive_completed = true`
 - [x] Task directory kept in place
 - Built-in Trellis archive called: no
 - Pushed: no
