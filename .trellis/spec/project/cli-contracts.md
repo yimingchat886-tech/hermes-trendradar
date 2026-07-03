@@ -136,3 +136,70 @@ hermes-benchmark validate-config --profile local.production.json --json
 hermes-benchmark validate-config --profile profiles/examples/hermes.v1.4.douyin.sample.json --json
 # validates local files only, returns a redacted JSON envelope, and never dereferences secrets
 ```
+
+## Scenario: v1.4 MediaCrawler CDP Healthcheck And Smoke
+
+### 1. Scope / Trigger
+
+- Trigger: `healthcheck` checks runtime dependencies or `smoke-mediacrawler` runs MediaCrawler against a runner-owned Chrome CDP runtime.
+- Scope: CDP preflight, runtime lock, runner-owned Chrome launch, one-account non-production smoke, JSON/Markdown report, redaction.
+- Out of scope: production scheduler, weekly burn-in, MediaCrawler source edits, Feishu live writes, and changing the 10-account production `run-daily` behavior.
+
+### 2. Signatures
+
+- `hermes-benchmark healthcheck --profile <path> --json`
+- `hermes-benchmark smoke-mediacrawler --profile <path> --json`
+
+### 3. Contracts
+
+- `healthcheck` is check-only. It must not launch Chrome, mutate login state, run MediaCrawler, or write smoke artifacts.
+- `healthcheck` returns `runtime_effective_status = ready|launch_required|blocked` and `run_eligible = true|false`.
+- `CDP_HTTP_UNREACHABLE` can still be `run_eligible=true` when runner Chrome is launchable, profile is writable, lock is available, and MediaCrawler is callable.
+- `smoke-mediacrawler` acquires the runtime lock before preflight, launch, or MediaCrawler subprocess.
+- Smoke reports use `result = passed|success_noop|failed`; `NO_NEW_CONTENT` maps to `success_noop`.
+- JSON report is the source of truth. Markdown report is derived from JSON.
+- Committed output must use redacted refs, not raw endpoints, WebSocket URLs, login-state paths, external roots, cookies, tokens, proxies, raw dumps, or raw videos.
+
+### 4. Validation & Error Matrix
+
+| Condition | Exit | JSON error/result |
+|---|---:|---|
+| healthcheck only needs Chrome launch | 0 | `runtime_effective_status=launch_required`, `run_eligible=true` |
+| invalid service on CDP port | 3 | `CDP_VERSION_INVALID` or `CDP_WS_ENDPOINT_MISSING` |
+| runtime lock already held | 9 | `CDP_PORT_PROFILE_LOCK_CONFLICT` |
+| existing CDP is not runner-owned | 3 | `CDP_BROWSER_DETACHED` |
+| post-CDP login UI timeout | 4 | `LOGIN_UI_TIMEOUT` |
+| post-CDP Douyin navigation/page timeout | 4 | `DOUYIN_UI_CHANGED` |
+| account/process guard timeout | 4 | `ACCOUNT_GUARD_TIMEOUT` |
+| no new imported content but mapping succeeds | 0 | `result=success_noop`, no error row |
+| mapper failure | 4 | `MAPPER_SCHEMA_ERROR` |
+
+### 5. Good/Base/Bad Cases
+
+- Good: no listener on configured port, healthcheck returns `launch_required`; smoke launches runner Chrome, final CDP preflight passes, then MediaCrawler starts.
+- Base: repeated smoke with already-seen rows returns `success_noop` and `NO_NEW_CONTENT`, not failure.
+- Bad: a user/default Chrome responds on the CDP port but lacks the runner owner marker; smoke blocks instead of silently attaching.
+
+### 6. Tests Required
+
+- Classify unreachable, invalid JSON, missing `webSocketDebuggerUrl`, and valid `/json/version`.
+- Assert runtime lock conflict prevents launch/preflight.
+- Assert valid but unowned CDP is blocked.
+- Assert healthcheck profile JSON redacts raw endpoint and paths.
+- Assert CLI contract still returns parseable JSON for invalid args with `--json`.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```bash
+hermes-benchmark healthcheck --profile profiles/local/hermes.v1.4.douyin.local.json --json
+# starts Chrome or fails just because no Chrome is currently listening
+```
+
+#### Correct
+
+```bash
+hermes-benchmark healthcheck --profile profiles/local/hermes.v1.4.douyin.local.json --json
+# check-only; returns launch_required + run_eligible=true when smoke/run can launch runner Chrome
+```
