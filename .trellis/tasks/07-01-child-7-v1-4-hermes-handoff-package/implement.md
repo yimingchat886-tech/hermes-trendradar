@@ -37,7 +37,8 @@
 ## Verification
 
 - Command: handoff self-check/test.
-- Command: `hermes-benchmark run-daily ... --analysis-mode mock --json` fixture path when available.
+- Command: `hermes-benchmark run-daily ... --analysis-mode hermes-handoff --json` fixture path when available.
+- Command: invalid package fixture returns exit code `6`.
 - Command: `git diff --check`
 
 ## Rollback
@@ -46,5 +47,5 @@
 
 ## Confirmation Gate
 
-- [ ] User confirmed this PLAN.
-- [ ] `task.json.meta.staged_delivery.plan_confirmed = true`
+- [x] User confirmed this PLAN.
+- [x] `task.json.meta.staged_delivery.plan_confirmed = true`

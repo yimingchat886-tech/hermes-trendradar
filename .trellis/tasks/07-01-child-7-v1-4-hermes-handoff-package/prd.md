@@ -25,10 +25,11 @@ Generate schema-valid Hermes handoff packages and deterministic mock outputs wit
 
 ## Acceptance Criteria
 
-- [ ] Handoff package is schema-valid.
-- [ ] Mock mode remains deterministic.
-- [ ] `run-daily` summary includes `analysis_package_ref`.
-- [ ] Invalid package returns documented error/exit code.
+- [ ] Handoff package validates against the v1.4 schema with `schema_version`, `package_id`, `run_id`, `profile_hash`, `mode`, and `contents[]`.
+- [ ] Each package content item includes `content_id`, `platform`, `account_id`, `account_display_name`, `source_url`, `title_or_caption_raw`, `publish_at`, `collected_at`, `transcript_status`, `transcript_artifact_ref`, and `dedup_key`.
+- [ ] Mock mode remains deterministic and does not create a Hermes handoff package.
+- [ ] `run-daily --analysis-mode hermes-handoff --json` returns `analysis_mode = hermes-handoff`, writes `analysis_package_ref`, and the referenced file passes package schema validation.
+- [ ] Invalid handoff package returns exit code `6` with a JSON error code for package validation failure.
 
 ## Risk Level
 

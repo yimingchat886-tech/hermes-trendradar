@@ -10,7 +10,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+import hermes_benchmark.cli as cli_module
 from hermes_benchmark.cli import EXIT_CONFIG_INVALID, EXIT_CONTRACT_MISMATCH, EXIT_OK, _classify_mediacrawler_failure, main
+from hermes_benchmark.handoff import validate_handoff_package
+from hermes_benchmark.profile import load_profile
+from hermes_benchmark.runtime_cdp import resolve_runtime_config
+from hermes_benchmark.state import begin_run, connect, finish_run, init_schema, record_transcript_state, upsert_content_ledger
 from test_runtime_cdp import free_port, write_temp_profile
 
 SAMPLE_PROFILE = ROOT / "profiles" / "examples" / "hermes.v1.4.douyin.sample.json"
@@ -149,6 +154,63 @@ def test_healthcheck_with_profile_reports_runtime_contract_without_raw_endpoint(
     assert "http://127.0.0.1" not in stdout
 
 
+def test_run_daily_hermes_handoff_writes_schema_valid_package_ref() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        profile_path = write_temp_profile(Path(tmp), free_port())
+        config = seed_handoff_state(profile_path, "2026-07-03")
+        code, stdout, stderr = run_cli(
+            "run-daily",
+            "--profile",
+            str(profile_path),
+            "--date",
+            "2026-07-03",
+            "--analysis-mode",
+            "hermes-handoff",
+            "--json",
+        )
+
+        payload = json.loads(stdout)
+        ref = payload["data"]["analysis_package_ref"]
+        package = json.loads((config.storage_dir / ref.removeprefix("file:")).read_text(encoding="utf-8"))
+
+    assert code == EXIT_OK
+    assert stderr == ""
+    assert payload["ok"] is True
+    assert payload["mode"] == "runtime"
+    assert payload["data"]["analysis_mode"] == "hermes-handoff"
+    assert ref == f"file:{payload['data']['run_id']}/artifacts/analysis_package.json"
+    validate_handoff_package(package)
+    assert package["contents"][0]["account_display_name"] == "sample 001"
+    assert package["contents"][0]["transcript_status"] == "success"
+
+
+def test_run_daily_invalid_handoff_package_returns_exit_6() -> None:
+    old_builder = cli_module.build_handoff_package
+    cli_module.build_handoff_package = lambda *_args, **_kwargs: {"bad": True}
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            profile_path = write_temp_profile(Path(tmp), free_port())
+            code, stdout, stderr = run_cli(
+                "run-daily",
+                "--profile",
+                str(profile_path),
+                "--date",
+                "2026-07-03",
+                "--analysis-mode",
+                "hermes-handoff",
+                "--json",
+            )
+    finally:
+        cli_module.build_handoff_package = old_builder
+
+    assert code == cli_module.EXIT_HANDOFF_PACKAGE_INVALID
+    assert stderr == ""
+    payload = json.loads(stdout)
+    assert payload["ok"] is False
+    assert payload["error"]["code"] == "handoff_package_invalid"
+    assert payload["exit_code"] == 6
+
+
 def test_mediacrawler_page_timeout_is_not_unknown_error() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         stderr_path = Path(tmp) / "stderr.log"
@@ -172,6 +234,36 @@ def test_invalid_args_json_contract() -> None:
     assert payload["exit_code"] == EXIT_CONTRACT_MISMATCH
 
 
+def seed_handoff_state(profile_path: Path, run_date: str):
+    profile = load_profile(profile_path)
+    config = resolve_runtime_config(profile)
+    config.database_path.parent.mkdir(parents=True, exist_ok=True)
+    conn = connect(config.database_path)
+    try:
+        init_schema(conn)
+        run = begin_run(conn, run_date, config.profile_hash, profile_id=config.profile_id)
+        content = upsert_content_ledger(
+            conn,
+            run["run_id"],
+            {
+                "content_id": "content-1",
+                "platform": "douyin",
+                "platform_content_id": "aweme-1",
+                "normalized_source_url": "https://www.douyin.com/video/1",
+                "account_id": "douyin_sample_001",
+                "publish_at": "2026-07-03T00:00:00Z",
+                "normalized_title_or_caption_hash": "sha256:title",
+                "source_url": "https://www.douyin.com/video/1",
+                "status": "seen",
+            },
+        )
+        record_transcript_state(conn, content["content_id"], "funasr:test", "done", artifact_ref="file:transcripts/1.json")
+        finish_run(conn, run["run_id"], "succeeded")
+    finally:
+        conn.close()
+    return config
+
+
 if __name__ == "__main__":
     test_stub_json_contracts()
     test_validate_config_json_contract()
@@ -181,5 +273,7 @@ if __name__ == "__main__":
     test_profile_hash_is_deterministic()
     test_config_alias_matches_profile()
     test_healthcheck_with_profile_reports_runtime_contract_without_raw_endpoint()
+    test_run_daily_hermes_handoff_writes_schema_valid_package_ref()
+    test_run_daily_invalid_handoff_package_returns_exit_6()
     test_mediacrawler_page_timeout_is_not_unknown_error()
     test_invalid_args_json_contract()

@@ -1,1 +1,6 @@
-{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python3 .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file": ".trellis/spec/guides/project-development.md", "reason": "verify scoped diff, checks, and finish reporting"}
+{"file": ".trellis/spec/project/staged-delivery-overlay.md", "reason": "verify staged child evidence and no commit before completion signal"}
+{"file": ".trellis/spec/project/cli-contracts.md", "reason": "verify run-daily JSON and exit-code contract"}
+{"file": ".trellis/spec/project/sqlite-state.md", "reason": "verify package refs and transcript refs stay in local state/artifacts"}
+{"file": ".trellis/spec/project/ponytail-boundary.md", "reason": "review for avoidable package/CLI complexity"}
+{"file": ".trellis/tasks/07-01-child-7-v1-4-hermes-handoff-package/stage-report.md", "reason": "verify acceptance evidence and command results"}

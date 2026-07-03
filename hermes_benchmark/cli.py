@@ -18,6 +18,13 @@ from .collection_runner import (
     mediacrawler_creator_command,
 )
 from .external_runtime import redact_text, run_process
+from .handoff import (
+    HandoffPackageError,
+    account_display_names,
+    build_handoff_package,
+    contents_from_state,
+    write_handoff_package,
+)
 from .mediacrawler_import import import_mediacrawler_rows
 from .profile import ProfileError, load_profile, validate_profile
 from .runtime_cdp import (
@@ -28,7 +35,7 @@ from .runtime_cdp import (
     ensure_runner_cdp,
     resolve_runtime_config,
 )
-from .state import begin_run, connect, finish_run, init_schema, record_error, upsert_content_ledger
+from .state import begin_run, connect, finish_run, init_schema, record_analysis_package_ref, record_error, upsert_content_ledger
 
 VERSION = "0.1.0"
 EXIT_OK = 0
@@ -36,9 +43,11 @@ EXIT_CONTRACT_MISMATCH = 2
 EXIT_CONFIG_INVALID = 2
 EXIT_RUNTIME_UNAVAILABLE = 3
 EXIT_COLLECTION_FAILED = 4
+EXIT_HANDOFF_PACKAGE_INVALID = 6
 EXIT_RUN_LOCK_CONFLICT = 9
 ERROR_CONTRACT_MISMATCH = "contract_mismatch"
 ERROR_CONFIG_INVALID = "config_invalid"
+ERROR_HANDOFF_PACKAGE_INVALID = "handoff_package_invalid"
 
 
 class ContractArgumentParser(argparse.ArgumentParser):
@@ -209,6 +218,8 @@ def smoke_mediacrawler(args: argparse.Namespace) -> dict[str, Any]:
 
 def run_daily(args: argparse.Namespace) -> dict[str, Any]:
     profile_path = profile_arg(args)
+    if args.analysis_mode == "hermes-handoff":
+        return _run_daily_handoff(args, profile_path)
     return success_envelope(
         "run-daily",
         {
@@ -220,6 +231,82 @@ def run_daily(args: argparse.Namespace) -> dict[str, Any]:
             "reason": "stub_only",
         },
     )
+
+
+def _run_daily_handoff(args: argparse.Namespace, profile_path: str) -> dict[str, Any]:
+    if not profile_path:
+        raise CliContractError("--profile is required for hermes-handoff")
+    profile = load_profile(profile_path)
+    config = resolve_runtime_config(profile)
+    run_date = args.date or date.today().isoformat()
+    config.database_path.parent.mkdir(parents=True, exist_ok=True)
+    conn = connect(config.database_path)
+    run_id = ""
+    run_status = ""
+    try:
+        init_schema(conn)
+        run = begin_run(conn, run_date, config.profile_hash, profile_id=config.profile_id)
+        run_id = run["run_id"]
+        run_status = run["status"]
+        if run_status == "locked":
+            return command_error_envelope(
+                "run-daily",
+                "runtime",
+                "run_lock_conflict",
+                "run lock is already held",
+                EXIT_RUN_LOCK_CONFLICT,
+                data={"schema_version": "1.4", "run_id": run_id, "analysis_mode": args.analysis_mode, "errors": ["run_lock_conflict"]},
+            )
+        contents = contents_from_state(conn, account_display_names(profile))
+        package = build_handoff_package(run_id, config.profile_hash, contents)
+        package_ref, package_hash = write_handoff_package(config.storage_dir, run_id, package)
+        package_id = record_analysis_package_ref(
+            conn,
+            run_id,
+            "hermes-handoff",
+            "ready",
+            package_ref,
+            artifact_hash=package_hash,
+            content_count=len(package["contents"]),
+        )
+        if run_status != "noop":
+            finish_run(conn, run_id, "succeeded")
+        return success_envelope(
+            "run-daily",
+            {
+                "schema_version": "1.4",
+                "run_id": run_id,
+                "date": run_date,
+                "profile_id": config.profile_id,
+                "profile_hash": config.profile_hash,
+                "status": "succeeded",
+                "analysis_mode": "hermes-handoff",
+                "feishu_mode": args.feishu_mode,
+                "account_summary": {"configured": 10, "enabled": 10, "processed": 0, "succeeded": 0, "partial_failed": 0, "failed": 0},
+                "content_summary": {"new_content_count": len(package["contents"]), "dedup_noop_count": 0, "dedup_conflict_count": 0},
+                "transcript_summary": _handoff_transcript_summary(package["contents"]),
+                "analysis_package_id": package_id,
+                "analysis_package_ref": package_ref,
+                "errors": [],
+                "artifact_refs": [package_ref],
+            },
+            mode="runtime",
+        )
+    except HandoffPackageError as exc:
+        if run_id:
+            record_error(conn, run_id, "handoff", run_id, ERROR_HANDOFF_PACKAGE_INVALID, str(exc), True)
+            if run_status not in ("", "noop", "locked"):
+                finish_run(conn, run_id, "failed")
+        return command_error_envelope(
+            "run-daily",
+            "runtime",
+            ERROR_HANDOFF_PACKAGE_INVALID,
+            str(exc),
+            EXIT_HANDOFF_PACKAGE_INVALID,
+            data={"schema_version": "1.4", "run_id": run_id, "analysis_mode": args.analysis_mode, "errors": [str(exc)]},
+        )
+    finally:
+        conn.close()
 
 
 def apply_limited_live(args: argparse.Namespace) -> dict[str, Any]:
@@ -309,6 +396,13 @@ def command_error_envelope(
         },
         "exit_code": exit_code,
     }
+
+
+def _handoff_transcript_summary(contents: list[dict[str, Any]]) -> dict[str, Any]:
+    queued = len(contents)
+    succeeded = sum(1 for item in contents if item["transcript_status"] == "success")
+    failed = sum(1 for item in contents if item["transcript_status"] not in ("", "missing", "success"))
+    return {"queued": queued, "succeeded": succeeded, "failed": failed, "success_threshold_met": queued == 0 or succeeded >= min(queued, 80)}
 
 
 def wants_json(argv: Sequence[str]) -> bool:

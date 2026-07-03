@@ -1,1 +1,6 @@
 {"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python3 .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file": ".trellis/spec/project/staged-delivery-overlay.md", "reason": "staged child execution, PLAN confirmation, and completion-signal boundary"}
+{"file": ".trellis/spec/project/cli-contracts.md", "reason": "run-daily JSON envelope, analysis mode, and exit code contract"}
+{"file": ".trellis/spec/project/sqlite-state.md", "reason": "analysis package refs and transcript artifact refs must stay local refs only"}
+{"file": ".trellis/spec/project/ponytail-boundary.md", "reason": "keep child 7 to package builder and CLI wiring only"}
+{"file": ".trellis/tasks/07-01-child-5-v1-4-whisper-batch-runner/stage-report.md", "reason": "child 5 transcript artifact/ref dependency is soft archived"}
