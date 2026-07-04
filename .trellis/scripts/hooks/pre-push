@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+if ! git merge-base --is-ancestor main HEAD; then
+  printf 'G4 pre-push: current branch does not contain latest main.\n' >&2
+  exit 2
+fi
+
+range="main..HEAD"
+if git diff --name-only "$range" | grep -Eq '^\.trellis/(\.runtime|\.developer)($|/)'; then
+  printf 'G4 pre-push: private Trellis runtime path detected in diff.\n' >&2
+  exit 2
+fi
+
+mapfile -t py_files < <(git diff --name-only "$range" | grep -E '\.py$' || true)
+mapfile -t existing_py < <(for path in "${py_files[@]}"; do [[ -f "$path" ]] && printf '%s\n' "$path"; done)
+if [[ ${#existing_py[@]} -gt 0 ]]; then
+  python3 -m py_compile "${existing_py[@]}"
+fi
+if [[ -f package.json ]]; then
+  npm run lint --if-present
+  npm run typecheck --if-present
+fi
+
+printf 'G4 pre-push ok\n' >&2

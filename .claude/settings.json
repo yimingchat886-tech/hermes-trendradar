@@ -7,6 +7,10 @@
           {
             "type": "command",
             "command": "python3 .claude/hooks/claim_guard.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/impact_gate.py"
           }
         ]
       },
@@ -16,6 +20,17 @@
           {
             "type": "command",
             "command": "python3 .claude/hooks/scope_gate.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "mcp__gitnexus__impact|mcp__gitnexus__context",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/impact_marker.py"
           }
         ]
       }
