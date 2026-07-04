@@ -6,7 +6,7 @@
 |---|---|---|---|---|---|---|
 | M2 task.py tiers and gates | v2 templates, tier metadata, validate, soft-archive, G1/G3/G5-WARN | Codex review accepted | codex | codex/workflow-v2-m2-taskpy-gates | planned | |
 | M3 PR helper and impact push gates | trellis_pr.sh, G2, G4, debugging skill update | M2 | codex | codex/workflow-v2-m3-pr-gates | completed | 2d4ed10 |
-| M4 BOARD and session start | BOARD generator, shared summary, Claude/Codex SessionStart | M2 | codex | codex/workflow-v2-m4-board | planned | |
+| M4 BOARD and session start | BOARD generator, shared summary, Claude/Codex SessionStart | M2 | codex | codex/workflow-v2-m4-board | completed | 211600f |
 
 ## RTM
 
@@ -16,7 +16,7 @@
 | WV2-M2-REQ-002 | M2 task.py tiers and gates | planned | |
 | WV2-M2-REQ-003 | M2 task.py tiers and gates | planned | |
 | WV2-M3-REQ-001 | M3 PR helper and impact push gates | completed | 07-04-workflow-v2-m3-pr-gates/stage-report.md |
-| WV2-M4-REQ-001 | M4 BOARD and session start | planned | |
+| WV2-M4-REQ-001 | M4 BOARD and session start | completed | 07-04-workflow-v2-m4-board/stage-report.md |
 
 ## External Review
 

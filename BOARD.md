@@ -10,13 +10,11 @@ owner=jym
 |---|---|---|---|---|---|
 | 07-02-mediacrawler-long-running-stability | - | jym | in_progress | 2026-07-03 01:14 | no |
 | 07-04-workflow-v2-m2-taskpy-gates | child | codex | in_progress | 2026-07-04 16:12 | no |
-| 07-04-workflow-v2-m4-board | child | codex | in_progress | 2026-07-04 16:33 | no |
-| 07-04-workflow-v2-mechanization [1/3 done] | parent | codex | planning | 2026-07-04 16:30 | no |
+| 07-04-workflow-v2-mechanization [2/3 done] | parent | codex | planning | 2026-07-04 16:39 | no |
 
 ## Waiting For Acceptance
 
 - 07-04-workflow-v2-m2-taskpy-gates (child_waiting_completion_signal)
-- 07-04-workflow-v2-m4-board (child_waiting_completion_signal)
 
 ## Stale Nudges (>48h)
 
