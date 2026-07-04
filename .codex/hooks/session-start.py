@@ -208,6 +208,25 @@ def run_script(script_path: Path, context_key: str | None = None) -> str:
         return "No context available"
 
 
+def run_board_summary(project_dir: Path) -> str:
+    board = project_dir / ".trellis" / "scripts" / "board.py"
+    if not board.is_file():
+        return ""
+    try:
+        result = subprocess.run(
+            [sys.executable, str(board), "--summary", "--max-lines", "10"],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=5,
+            cwd=str(project_dir),
+        )
+    except (subprocess.TimeoutExpired, FileNotFoundError, PermissionError):
+        return ""
+    return result.stdout.strip() if result.returncode == 0 else ""
+
+
 def _normalize_task_ref(task_ref: str) -> str:
     normalized = task_ref.strip()
     if not normalized:
@@ -390,6 +409,12 @@ Read and follow all instructions below carefully.
     context_script = trellis_dir / "scripts" / "get_context.py"
     output.write(run_script(context_script, context_key))
     output.write("\n</current-state>\n\n")
+
+    board_summary = run_board_summary(project_dir)
+    if board_summary:
+        output.write("<board>\n")
+        output.write(board_summary)
+        output.write("\n</board>\n\n")
 
     output.write("<workflow>\n")
     output.write(_build_workflow_toc(trellis_dir / "workflow.md"))

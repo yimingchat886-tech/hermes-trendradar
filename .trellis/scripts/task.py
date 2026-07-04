@@ -25,11 +25,13 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import subprocess
 import sys
 
 from common.log import Colors, colored
 from common.paths import (
     DIR_WORKFLOW,
+    DIR_SCRIPTS,
     DIR_TASKS,
     FILE_TASK_JSON,
     get_repo_root,
@@ -63,6 +65,28 @@ from common.task_context import (
     cmd_validate,
     cmd_list_context,
 )
+
+
+def refresh_board_after(command: str, return_code: int) -> None:
+    if return_code != 0 or command not in {"create", "archive", "soft-archive"}:
+        return
+    repo_root = get_repo_root()
+    board = repo_root / DIR_WORKFLOW / DIR_SCRIPTS / "board.py"
+    if not board.is_file():
+        return
+    result = subprocess.run(
+        [sys.executable, str(board)],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    if result.returncode != 0:
+        print(
+            colored(f"[WARN] BOARD refresh failed: {result.stderr.strip()}", Colors.YELLOW),
+            file=sys.stderr,
+        )
 
 
 # =============================================================================
@@ -510,7 +534,9 @@ def main() -> int:
     }
 
     if args.command in commands:
-        return commands[args.command](args)
+        return_code = commands[args.command](args)
+        refresh_board_after(args.command, return_code)
+        return return_code
     else:
         show_usage()
         return 1

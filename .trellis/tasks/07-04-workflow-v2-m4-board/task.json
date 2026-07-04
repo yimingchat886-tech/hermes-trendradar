@@ -3,7 +3,7 @@
   "name": "workflow-v2-m4-board",
   "title": "M4 BOARD and session start",
   "description": "Implement BOARD generator plus shared Claude/Codex SessionStart summary and stale-task nudges.",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": null,
   "scope": null,
   "tier": "child",
@@ -43,11 +43,11 @@
     "workflow_mode": "harness_state_machine",
     "state_machine": {
       "kind": "child",
-      "current_state": "child_plan_draft",
-      "previous_state": null,
-      "last_event": "init",
+      "current_state": "child_commit_ready",
+      "previous_state": "child_waiting_completion_signal",
+      "last_event": "completion_signal_received",
       "blocked_from_state": null,
-      "updated_at": "2026-07-04T22:46:29Z"
+      "updated_at": "2026-07-04T23:39:10Z"
     }
   }
 }
