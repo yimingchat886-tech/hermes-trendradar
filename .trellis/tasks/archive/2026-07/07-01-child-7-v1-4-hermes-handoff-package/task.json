@@ -1,0 +1,48 @@
+{
+  "id": "child-7-v1-4-hermes-handoff-package",
+  "name": "child-7-v1-4-hermes-handoff-package",
+  "title": "Child 7 v1.4: Hermes handoff package",
+  "description": "",
+  "status": "completed",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "jym",
+  "assignee": "jym",
+  "createdAt": "2026-07-01",
+  "completedAt": "2026-07-03",
+  "branch": "codex/v1-4-child-7-hermes-handoff-package",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": "ec87f09d358de180d85092b0a6148704ea8d7196",
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "07-01-parent-v1-4-benchmark-productionization",
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {
+    "workflow_mode": "staged_overlay",
+    "staged_delivery": {
+      "phase": "soft_archived",
+      "plan_confirmed": true,
+      "implementation_task_submitted": true,
+      "completion_signal_received": true,
+      "commit_allowed": true,
+      "soft_archive_completed": true,
+      "trellis_archive_completed": true,
+      "completion_signal_received_at": "2026-07-03T10:31:17-07:00",
+      "implementation_commit": "ec87f09d358de180d85092b0a6148704ea8d7196",
+      "soft_archive_completed_at": "2026-07-03T10:31:17-07:00"
+    },
+    "product": {
+      "parent_scope": "v1.4_benchmark_productionization",
+      "order": 7,
+      "requirement_ids": [
+        "P14-REQ-060"
+      ],
+      "slice": "hermes_handoff_package"
+    }
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "id": "child-2-v1-4-profile-local-config",
+  "name": "child-2-v1-4-profile-local-config",
+  "title": "Child 2 v1.4: profile and local config",
+  "description": "",
+  "status": "completed",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "jym",
+  "assignee": "jym",
+  "createdAt": "2026-07-01",
+  "completedAt": "2026-07-01",
+  "branch": "codex/v1-4-child-2-profile-local-config",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": "649d4de",
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "07-01-parent-v1-4-benchmark-productionization",
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {
+    "workflow_mode": "staged_overlay",
+    "staged_delivery": {
+      "phase": "child_soft_archived",
+      "plan_confirmed": true,
+      "implementation_task_submitted": true,
+      "completion_signal_received": true,
+      "commit_allowed": true,
+      "soft_archive_completed": true,
+      "trellis_archive_completed": true,
+      "completion_signal_received_at": "2026-07-01T23:08:38-07:00",
+      "completion_signal": "任务完成",
+      "soft_archive_completed_at": "2026-07-01T23:12:39-07:00",
+      "soft_archive_signal": "任务完成",
+      "soft_archive_commit": "649d4de"
+    },
+    "product": {
+      "parent_scope": "v1.4_benchmark_productionization",
+      "order": 2,
+      "requirement_ids": [
+        "P14-REQ-020",
+        "P14-REQ-040"
+      ],
+      "slice": "profile_local_config",
+      "account_source": "local_profile_manual_input"
+    }
+  }
+}

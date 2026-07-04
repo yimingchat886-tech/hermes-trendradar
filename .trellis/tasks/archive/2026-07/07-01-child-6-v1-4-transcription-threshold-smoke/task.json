@@ -1,0 +1,99 @@
+{
+  "id": "child-6-v1-4-transcription-threshold-smoke",
+  "name": "child-6-v1-4-transcription-threshold-smoke",
+  "title": "Child 6 v1.4: transcription threshold smoke",
+  "description": "",
+  "status": "completed",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "jym",
+  "assignee": "jym",
+  "createdAt": "2026-07-01",
+  "completedAt": "2026-07-03",
+  "branch": "codex/v1-4-child-6-transcription-threshold-smoke",
+  "base_branch": "main",
+  "worktree_path": "/home/jym/workspace/Hermes-stock-child6",
+  "commit": "2c842c1d232af66a038bd10b54299962712fbecb",
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "07-01-parent-v1-4-benchmark-productionization",
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {
+    "workflow_mode": "staged_overlay",
+    "staged_delivery": {
+      "phase": "soft_archived",
+      "plan_confirmed": true,
+      "plan_confirmed_at": "2026-07-03T01:22:30-07:00",
+      "plan_confirmation": "执行child task 6",
+      "implementation_task_submitted": true,
+      "implementation_completed_at": "2026-07-03T05:38:32-07:00",
+      "completion_signal_received": true,
+      "completion_signal_received_at": "2026-07-03T05:45:54-07:00",
+      "completion_signal": "可以提交并归档",
+      "commit_allowed": true,
+      "implementation_commit": "2c842c1d232af66a038bd10b54299962712fbecb",
+      "soft_archive_completed": true,
+      "soft_archive_completed_at": "2026-07-03T05:48:08-07:00",
+      "trellis_archive_completed": true
+    },
+    "product": {
+      "parent_scope": "v1.4_benchmark_productionization",
+      "order": 6,
+      "requirement_ids": [
+        "P14-REQ-055"
+      ],
+      "slice": "transcription_threshold_smoke",
+      "depends_on": [
+        "07-01-child-5-v1-4-whisper-batch-runner",
+        "07-02-child-6a-v1-4-media-download-manifest"
+      ]
+    },
+    "oracle": {
+      "plan_review_required": true,
+      "plan_review_status": "approved",
+      "previous_plan_review_status": "approved",
+      "previous_plan_review_session_id": "child6-transcript-threshold-plan-review-3",
+      "previous_plan_review_completed_at": "2026-07-02T21:07:04-07:00",
+      "latest_plan_review_session_id": "child6-transcript-threshold-plan-rereview-5",
+      "latest_plan_review_completed_at": "2026-07-03T01:28:15-07:00",
+      "latest_plan_review_result": "approved",
+      "plan_review_path": "research/oracle-plan-review.md"
+    },
+    "execution_inputs": {
+      "input_source": "child4_production_mediacrawler_output",
+      "selection_rule": "approved_99_top_liked_eligible_videos_from_child4_output",
+      "account_shape": "9_from_douyin_ai_xiaobai_lab_plus_10_from_each_other_enabled_account",
+      "candidate_count": 99,
+      "media_manifest_source": "07-02-child-6a-v1-4-media-download-manifest",
+      "media_manifest_path": "/home/jym/workspace/_external/hermes-stock-runs/run-child6a-media-download-manifest-20260703-local/media-manifest.private.jsonl",
+      "selection_manifest_path": "/home/jym/workspace/_external/hermes-stock-runs/run-child6a-media-download-manifest-20260703-local/selection-manifest.private.jsonl",
+      "run_root": "/home/jym/workspace/_external/hermes-stock-runs/run-child6-transcription-threshold-smoke-20260703-local",
+      "sqlite_db_path": "/home/jym/workspace/_external/hermes-stock-runs/run-child6-transcription-threshold-smoke-20260703-local/child6-transcription-threshold.sqlite3",
+      "local_profile": "profiles/local/hermes.v1.4.douyin.local.json",
+      "transcription_profile": "profiles/local/transcription.v1.4.local.json",
+      "whisper_runtime": {
+        "command": "/home/jym/workspace/_external/venvs/openai-whisper/bin/whisper",
+        "model": "medium",
+        "device": "cuda",
+        "cache": "/home/jym/workspace/_external/model_cache/whisper",
+        "timeout_seconds": 1800
+      },
+      "remaining_gate": "none; soft archived",
+      "smoke_run": {
+        "run_id": "run_868b302404265838",
+        "run_root": "/home/jym/workspace/_external/hermes-stock-runs/run-child6-transcription-threshold-smoke-20260703-local",
+        "candidate_count": 99,
+        "queued": 99,
+        "succeeded": 99,
+        "failed": 0,
+        "skipped": 0,
+        "threshold_passed": true,
+        "report_path": "/home/jym/workspace/_external/hermes-stock-runs/run-child6-transcription-threshold-smoke-20260703-local/reports/summary.redacted.json"
+      }
+    }
+  }
+}

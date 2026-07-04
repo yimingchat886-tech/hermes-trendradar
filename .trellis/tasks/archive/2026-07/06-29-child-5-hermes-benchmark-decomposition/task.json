@@ -1,0 +1,49 @@
+{
+  "id": "child-5-hermes-benchmark-decomposition",
+  "name": "child-5-hermes-benchmark-decomposition",
+  "title": "Child 5: Hermes benchmark decomposition outputs",
+  "description": "",
+  "status": "completed",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "jym",
+  "assignee": "jym",
+  "createdAt": "2026-06-29",
+  "completedAt": "2026-07-04",
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": "3fcbef6",
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "06-29-parent-1-benchmark-account-tracking",
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {
+    "workflow_mode": "staged_overlay",
+    "staged_delivery": {
+      "phase": "child_soft_archived",
+      "plan_confirmed": true,
+      "implementation_task_submitted": true,
+      "completion_signal_received": true,
+      "commit_allowed": true,
+      "soft_archive_completed": true,
+      "trellis_archive_completed": true,
+      "soft_archive_completed_at": "2026-07-01T07:55:00-07:00",
+      "soft_archive_signal": "提交git，归档parent task 1",
+      "soft_archive_commit": "3fcbef6"
+    },
+    "product": {
+      "parent_scope": "benchmark_account_tracking",
+      "requirement_ids": [
+        "P1-REQ-020",
+        "P1-REQ-070",
+        "P1-REQ-090",
+        "P1-REQ-100"
+      ]
+    }
+  }
+}

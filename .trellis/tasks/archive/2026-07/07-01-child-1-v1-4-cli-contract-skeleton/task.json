@@ -1,0 +1,51 @@
+{
+  "id": "child-1-v1-4-cli-contract-skeleton",
+  "name": "child-1-v1-4-cli-contract-skeleton",
+  "title": "Child 1 v1.4: CLI contract skeleton",
+  "description": "",
+  "status": "completed",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "jym",
+  "assignee": "jym",
+  "createdAt": "2026-07-01",
+  "completedAt": "2026-07-01",
+  "branch": "codex/v1-4-child-1-cli-contract",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": "a515a9b",
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "07-01-parent-v1-4-benchmark-productionization",
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {
+    "workflow_mode": "staged_overlay",
+    "staged_delivery": {
+      "phase": "child_soft_archived",
+      "plan_confirmed": true,
+      "implementation_task_submitted": true,
+      "completion_signal_received": true,
+      "commit_allowed": true,
+      "soft_archive_completed": true,
+      "trellis_archive_completed": true,
+      "completion_signal_received_at": "2026-07-01T22:02:26-07:00",
+      "completion_signal": "任务完成，并一并提交v1.4文件",
+      "soft_archive_completed_at": "2026-07-01T22:10:34-07:00",
+      "soft_archive_signal": "任务完成，并一并提交v1.4文件",
+      "soft_archive_commit": "a515a9b"
+    },
+    "product": {
+      "parent_scope": "v1.4_benchmark_productionization",
+      "order": 1,
+      "requirement_ids": [
+        "P14-REQ-010",
+        "P14-REQ-080"
+      ],
+      "slice": "cli_contract_skeleton"
+    }
+  }
+}
