@@ -3,7 +3,7 @@
   "name": "workflow-v2-m2-taskpy-gates",
   "title": "M2 task.py tiers and gates",
   "description": "Implement v2 task.py tiers/templates/validate/soft-archive plus G1/G3/G5-WARN gates.",
-  "status": "in_progress",
+  "status": "completed",
   "dev_type": null,
   "scope": null,
   "tier": "child",
@@ -27,11 +27,11 @@
   "creator": "jym",
   "assignee": "jym",
   "createdAt": "2026-07-04",
-  "completedAt": null,
+  "completedAt": "2026-07-04",
   "branch": "codex/workflow-v2-m2-taskpy-gates",
   "base_branch": "main",
   "worktree_path": null,
-  "commit": null,
+  "commit": "c34665a",
   "pr_url": null,
   "subtasks": [],
   "children": [],
@@ -48,11 +48,11 @@
     "workflow_mode": "harness_state_machine",
     "state_machine": {
       "kind": "child",
-      "current_state": "child_waiting_completion_signal",
-      "previous_state": "child_plan_draft",
-      "last_event": "plan_drafted",
+      "current_state": "child_archived",
+      "previous_state": "child_archive_ready",
+      "last_event": "child_archive_completed",
       "blocked_from_state": null,
-      "updated_at": "2026-07-04T22:47:21Z"
+      "updated_at": "2026-07-04T23:44:12Z"
     }
   }
 }

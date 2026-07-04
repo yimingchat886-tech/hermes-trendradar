@@ -30,9 +30,9 @@
 
 ## User Completion Signal
 
-- Raw signal: 采纳，提交git
-- Received at: 2026-07-04
+- Raw signal: 把 M2 用 c34665a 补 soft-archive
+- Received at: 2026-07-04T23:44:01Z
 - Allows commit: yes
-- Allows soft archive: no
+- Allows soft archive: yes
 - Explicit limits: none
 - Push allowed: no
