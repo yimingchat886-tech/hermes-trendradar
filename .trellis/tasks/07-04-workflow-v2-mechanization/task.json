@@ -1,0 +1,57 @@
+{
+  "id": "workflow-v2-mechanization",
+  "name": "workflow-v2-mechanization",
+  "title": "Workflow v2 Mechanization",
+  "description": "Mechanize Workflow v2 M2-M4: task.py tiers, gates, soft archive, PR helper, and board/session start.",
+  "status": "planning",
+  "dev_type": null,
+  "scope": null,
+  "tier": "parent",
+  "owner": "codex",
+  "touches": [
+    ".trellis/tasks/07-04-workflow-v2-mechanization/**",
+    "docs/reports/workflow-v2-m2-m6-plan.md"
+  ],
+  "package": null,
+  "priority": "P1",
+  "creator": "jym",
+  "assignee": "jym",
+  "createdAt": "2026-07-04",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [
+    "docs/reports/workflow-v2-m2-m6-plan.md",
+    "docs/runbooks/workflow-v2-operator-guide.md",
+    ".claude/skills/split/SKILL.md"
+  ],
+  "notes": "",
+  "meta": {
+    "workflow_mode": "harness_state_machine",
+    "stage_scope": {
+      "in": [
+        "M2",
+        "M3",
+        "M4"
+      ],
+      "out": [
+        "M5",
+        "M6"
+      ]
+    },
+    "state_machine": {
+      "kind": "parent",
+      "current_state": "parent_prd_draft",
+      "previous_state": null,
+      "last_event": "init",
+      "blocked_from_state": null,
+      "updated_at": "2026-07-04T21:58:11Z"
+    }
+  }
+}

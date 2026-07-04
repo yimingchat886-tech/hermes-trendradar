@@ -10,8 +10,12 @@ description: "Workflow v2 拆分：PRD 通过 Codex 审查后，创建 2 件套 
 ## Step 1: 建 parent（2 件套）
 
 ```bash
-python3 ./.trellis/scripts/task.py create "<parent title>" --slug <parent-slug>
+python3 ./.trellis/scripts/task.py create "<parent title>" --slug <parent-slug> --tier parent
 ```
+
+Bootstrap exception: if the current `task.py create --help` does not yet list
+`--tier` (before M2-1 lands), use the same command without `--tier`, then
+immediately replace generated content with the 2-file parent shape below.
 
 **`prd.md` = 薄指针，≤20 行，禁止复制 PRD 正文**：
 
@@ -74,10 +78,11 @@ python3 ./.trellis/scripts/task.py create "<parent title>" --slug <parent-slug>
 - 每个 child 挂 REQ-ID（写入 RTM 行）。
 
 ```bash
-python3 ./.trellis/scripts/task.py create "<child title>" --slug <child-slug> --parent <parent-dir>
+python3 ./.trellis/scripts/task.py create "<child title>" --slug <child-slug> --tier child --parent <parent-dir> --owner <owner> --touches <glob>
 ```
 
-child `task.json` 补 `owner`（cc / codex）+ `touches`（预计触碰的路径列表，claim-guard 用）。
+Bootstrap exception: before M2-1 lands, omit unsupported `--tier` / `--owner` /
+`--touches`, then write `owner`（cc / codex）+ `touches`（预计触碰的路径列表，claim-guard 用）into child `task.json` manually.
 child `prd.md` 只写：目标一句话 + 对应 REQ-ID + 验证命令 + In/Out。
 
 分工默认：高风险 child（Boundary Pass 中标记过风险面的）→ CC；普通 child → Codex。
