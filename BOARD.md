@@ -9,7 +9,6 @@ owner=jym
 | Task | Tier | Owner | Status | Updated | Blocked |
 |---|---|---|---|---|---|
 | 07-02-mediacrawler-long-running-stability | - | jym | in_progress | 2026-07-03 01:14 | no |
-| 07-04-workflow-v2-mechanization [3/3 done] | parent | codex | planning | 2026-07-04 16:44 | no |
 
 ## Waiting For Acceptance
 
@@ -21,6 +20,7 @@ owner=jym
 
 ## Recent Archives (7d)
 
+- 07-04-workflow-v2-mechanization (completed, 2026-07-04 16:47)
 - 07-03-prd-pre-design-input-skill (cancelled, 2026-07-04 13:58)
 - 07-03-staged-acceptance-commit-archive-rule (cancelled, 2026-07-04 13:58)
 - 07-03-v2-1-0-state-engine-mvp (completed, 2026-07-04 13:58)
@@ -40,4 +40,3 @@ owner=jym
 - 07-01-child-2-v1-4-profile-local-config (completed, 2026-07-04 13:58)
 - 07-01-child-1-v1-4-cli-contract-skeleton (completed, 2026-07-04 13:58)
 - 06-29-child-3-mediacrawler-import-dedup (completed, 2026-07-04 13:58)
-- 06-29-child-5-hermes-benchmark-decomposition (completed, 2026-07-04 13:58)

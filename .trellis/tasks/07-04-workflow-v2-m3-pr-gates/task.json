@@ -33,7 +33,7 @@
   "pr_url": null,
   "subtasks": [],
   "children": [],
-  "parent": "07-04-workflow-v2-mechanization",
+  "parent": null,
   "relatedFiles": [
     "docs/reports/workflow-v2-m2-m6-plan.md",
     "docs/runbooks/workflow-v2-operator-guide.md",
