@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+if git diff --cached --quiet; then
+  exit 0
+fi
+
+all_evidence=1
+while IFS= read -r path; do
+  case "$path" in
+    .trellis/tasks/*|.trellis/workspace/*) ;;
+    *) all_evidence=0 ;;
+  esac
+done < <(git diff --cached --name-only)
+
+if [[ "$all_evidence" == "1" ]]; then
+  exit 0
+fi
+
+marker=".trellis/.runtime/scope-check.ok"
+if [[ ! -f "$marker" ]]; then
+  printf 'G3 scope gate: missing .trellis/.runtime/scope-check.ok\n' >&2
+  printf 'Run detect_changes, then .trellis/scripts/mark_scope_ok.sh before commit.\n' >&2
+  exit 2
+fi
+
+expected="$(sed -n 's/^fingerprint=//p' "$marker" | head -n1)"
+actual="$(.trellis/scripts/mark_scope_ok.sh --print)"
+if [[ -z "$expected" || "$expected" != "$actual" ]]; then
+  printf 'G3 scope gate: staged diff changed after scope approval.\n' >&2
+  printf 'Run detect_changes again, then .trellis/scripts/mark_scope_ok.sh.\n' >&2
+  exit 2
+fi

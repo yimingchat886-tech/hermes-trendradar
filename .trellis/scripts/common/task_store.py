@@ -21,6 +21,7 @@ import re
 import sys
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from .config import (
     get_packages,
@@ -53,6 +54,10 @@ from .task_utils import (
     resolve_task_dir,
     run_task_hooks,
 )
+
+HARNESS_MODE = "harness_state_machine"
+V2_TIERS = {"parent", "child", "light"}
+OWNERS = {"cc", "codex", "jym"}
 
 
 # =============================================================================
@@ -163,30 +168,265 @@ def _write_seed_jsonl(path: Path) -> None:
     path.write_text(json.dumps(seed, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
-def _default_prd_content(title: str, description: str | None = None) -> str:
-    """Return the default PRD skeleton created with every task."""
-    goal = (description or "").strip() or "TBD."
-    heading = title.strip() or "Untitled task"
-    return f"""# {heading}
+def _normalize_touches(raw: list[str] | None) -> list[str]:
+    """Normalize repeated/comma-separated --touches values."""
+    touches: list[str] = []
+    for item in raw or []:
+        for part in item.split(","):
+            value = part.strip()
+            if value and value not in touches:
+                touches.append(value)
+    return touches
 
-## Goal
 
-{goal}
+def _render_template(template: str, values: dict[str, str]) -> str:
+    return template.format(**values).rstrip() + "\n"
 
-## Requirements
 
-- TBD
+def _template_text(repo_root: Path, tier: str, name: str) -> str:
+    path = repo_root / DIR_WORKFLOW / "templates" / "v2" / tier / name
+    return path.read_text(encoding="utf-8")
 
-## Acceptance Criteria
 
-- [ ] TBD
+def _write_v2_files(task_dir: Path, repo_root: Path, tier: str, title: str, description: str) -> None:
+    values = {
+        "title": title.strip() or "Untitled task",
+        "description": description.strip() or "TBD",
+    }
+    if tier == "parent":
+        files = ("prd.md", "governance.md")
+    else:
+        files = ("prd.md", "stage-report.md")
+    for name in files:
+        path = task_dir / name
+        if not path.exists():
+            path.write_text(
+                _render_template(_template_text(repo_root, tier, name), values),
+                encoding="utf-8",
+            )
 
-## Notes
 
-- Keep `prd.md` focused on requirements, constraints, and acceptance criteria.
-- Lightweight tasks can remain PRD-only.
-- For complex tasks, add `design.md` for technical design and `implement.md` for execution planning before `task.py start`.
-"""
+def _init_state_if_supported(task_dir: Path, tier: str) -> None:
+    if tier not in {"parent", "child"}:
+        return
+    try:
+        from state_machine import StateMachineError, init_task
+
+        init_task(task_dir, tier, by="system", note="task.py create")
+    except (ImportError, StateMachineError) as exc:
+        print(colored(f"Warning: state machine init skipped: {exc}", Colors.YELLOW), file=sys.stderr)
+
+
+def _section_body(text: str, header: str) -> str:
+    marker = f"{header}\n"
+    start = text.find(marker)
+    if start == -1:
+        return ""
+    body_start = start + len(marker)
+    next_header = text.find("\n## ", body_start)
+    if next_header == -1:
+        return text[body_start:].strip()
+    return text[body_start:next_header].strip()
+
+
+def _subsection_body(text: str, header: str) -> str:
+    marker = f"{header}"
+    start = text.find(marker)
+    if start == -1:
+        return ""
+    line_end = text.find("\n", start)
+    if line_end == -1:
+        return ""
+    body_start = line_end + 1
+    next_header = text.find("\n### ", body_start)
+    next_section = text.find("\n## ", body_start)
+    candidates = [i for i in (next_header, next_section) if i != -1]
+    end = min(candidates) if candidates else len(text)
+    return text[body_start:end].strip()
+
+
+def _meaningful(body: str) -> bool:
+    stripped = body.strip()
+    if not stripped:
+        return False
+    placeholders = {"tbd", "todo", "pending implementation.", "- [ ] tbd"}
+    lines = [line.strip().lower() for line in stripped.splitlines() if line.strip()]
+    return any(line not in placeholders for line in lines)
+
+
+def _done_gate_errors(task_dir: Path, data: dict[str, Any], repo_root: Path) -> list[str]:
+    tier = data.get("tier")
+    if tier not in V2_TIERS:
+        return []
+
+    errors: list[str] = []
+    stage_report = task_dir / "stage-report.md"
+    if tier in {"child", "light"}:
+        if not stage_report.is_file():
+            errors.append("missing stage-report.md")
+        else:
+            acceptance = _section_body(stage_report.read_text(encoding="utf-8"), "## Acceptance")
+            if not _meaningful(acceptance):
+                errors.append("stage-report.md ## Acceptance is empty or still template text")
+
+    tasks_dir = get_tasks_dir(repo_root)
+    if tier == "child":
+        parent_name = data.get("parent")
+        parent_dir = find_task_by_name(parent_name, tasks_dir) if parent_name else None
+        if not parent_dir:
+            errors.append("child parent is missing")
+        else:
+            governance = parent_dir / "governance.md"
+            if not governance.is_file():
+                errors.append("parent governance.md is missing")
+            else:
+                review = _subsection_body(governance.read_text(encoding="utf-8"), "### PRD Review")
+                if not _meaningful(review):
+                    errors.append("parent External Review / PRD Review is empty")
+
+    if tier == "parent":
+        children = data.get("children") or []
+        for child in children:
+            child_dir = find_task_by_name(child, tasks_dir)
+            child_json = child_dir / FILE_TASK_JSON if child_dir else None
+            child_data = read_json(child_json) if child_json and child_json.is_file() else None
+            status = (child_data or {}).get("status")
+            if status not in {"completed", "cancelled"}:
+                errors.append(f"child not completed/cancelled: {child}")
+
+        governance = task_dir / "governance.md"
+        if governance.is_file():
+            rtm = _section_body(governance.read_text(encoding="utf-8"), "## RTM").lower()
+            if "| planned |" in rtm:
+                errors.append("RTM still contains planned rows")
+        else:
+            errors.append("governance.md is missing")
+
+    return errors
+
+
+def _append_state_event(task_dir: Path, event: str, note: str, by: str = "agent") -> None:
+    entry = {
+        "event": event,
+        "kind": "audit",
+        "previous_state": None,
+        "current_state": None,
+        "by": by,
+        "note": note,
+        "created_at": datetime.utcnow().replace(microsecond=0).isoformat() + "Z",
+    }
+    path = task_dir / "state-events.jsonl"
+    with path.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(entry, ensure_ascii=False, sort_keys=True) + "\n")
+
+
+def _record_force_archive(task_dir: Path, data: dict[str, Any], task_json_path: Path, reason: str) -> None:
+    notes = (data.get("notes") or "").rstrip()
+    line = f"force-archive: {reason}"
+    data["notes"] = f"{notes}\n{line}".strip()
+    write_json(task_json_path, data)
+    _append_state_event(task_dir, "force_archive", reason)
+
+
+def _check_done_gate_or_force(
+    args: argparse.Namespace,
+    task_dir: Path,
+    data: dict[str, Any],
+    task_json_path: Path,
+    repo_root: Path,
+) -> bool:
+    errors = _done_gate_errors(task_dir, data, repo_root)
+    if not errors:
+        return True
+
+    force = getattr(args, "force_archive", False)
+    reason = (getattr(args, "reason", "") or "").strip()
+    if force:
+        if not reason:
+            print(colored("Error: --force-archive requires --reason", Colors.RED), file=sys.stderr)
+            return False
+        _record_force_archive(task_dir, data, task_json_path, reason)
+        print(colored("Warning: done gate bypassed with --force-archive", Colors.YELLOW), file=sys.stderr)
+        return True
+
+    print(colored("Error: done gate failed", Colors.RED), file=sys.stderr)
+    for error in errors:
+        print(f"  - {error}", file=sys.stderr)
+    return False
+
+
+def _split_table_row(line: str) -> list[str]:
+    return [cell.strip() for cell in line.strip().strip("|").split("|")]
+
+
+def _format_table_row(cells: list[str]) -> str:
+    return "| " + " | ".join(cells) + " |"
+
+
+def _update_parent_governance(parent_dir: Path, child_data: dict[str, Any], commit: str) -> bool:
+    path = parent_dir / "governance.md"
+    text = path.read_text(encoding="utf-8")
+    title = child_data.get("title") or child_data.get("name") or ""
+    child_dir_name = child_data.get("_dir_name") or child_data.get("name") or ""
+    evidence = f"{child_dir_name}/stage-report.md"
+    changed = False
+    matched_child = False
+    matched_rtm = False
+    out: list[str] = []
+
+    in_child_index = False
+    in_rtm = False
+    for line in text.splitlines():
+        if line.startswith("## "):
+            in_child_index = line == "## Child Index"
+            in_rtm = line == "## RTM"
+        if line.startswith("|") and not line.startswith("|---"):
+            cells = _split_table_row(line)
+            if in_child_index and len(cells) >= 7 and (title in cells[0] or child_dir_name in cells[0]):
+                cells[5] = "completed"
+                cells[6] = commit
+                line = _format_table_row(cells)
+                matched_child = True
+                changed = True
+            elif in_rtm and len(cells) >= 4 and title in cells[1]:
+                cells[2] = "completed"
+                cells[3] = evidence
+                line = _format_table_row(cells)
+                matched_rtm = True
+                changed = True
+        out.append(line)
+
+    if not matched_child:
+        raise ValueError(f"parent governance Child Index row not found for {title}")
+    if not matched_rtm:
+        raise ValueError(f"parent governance RTM rows not found for {title}")
+    new_text = "\n".join(out) + "\n"
+    if changed and new_text != text:
+        path.write_text(new_text, encoding="utf-8")
+        return True
+    return False
+
+
+def _advance_child_to_archived(task_dir: Path) -> None:
+    from state_machine import StateMachineError, apply_event, init_task
+
+    task = read_json(task_dir / FILE_TASK_JSON) or {}
+    if not (task.get("meta") or {}).get("state_machine"):
+        init_task(task_dir, "child", by="system", note="soft-archive init")
+
+    transitions = {
+        "child_plan_draft": ["plan_drafted", "completion_signal_received", "commit_created", "child_archive_completed"],
+        "child_waiting_completion_signal": ["completion_signal_received", "commit_created", "child_archive_completed"],
+        "child_commit_ready": ["commit_created", "child_archive_completed"],
+        "child_archive_ready": ["child_archive_completed"],
+        "child_archived": [],
+    }
+    task = read_json(task_dir / FILE_TASK_JSON) or {}
+    current = ((task.get("meta") or {}).get("state_machine") or {}).get("current_state")
+    if current not in transitions:
+        raise StateMachineError(f"cannot soft-archive from state: {current}")
+    for event in transitions[current]:
+        apply_event(task_dir, event, by="system", note="task.py soft-archive")
 
 
 # =============================================================================
@@ -217,6 +457,17 @@ def cmd_create(args: argparse.Namespace) -> int:
     else:
         # Inferred: default_package → None (no task.json yet for create)
         package = resolve_package(repo_root=repo_root)
+
+    tier = "child" if getattr(args, "parent", None) else getattr(args, "tier", "light")
+    if tier not in V2_TIERS:
+        print(colored(f"Error: invalid tier: {tier}", Colors.RED), file=sys.stderr)
+        return 1
+
+    owner = getattr(args, "owner", None) or "codex"
+    if owner not in OWNERS:
+        print(colored(f"Error: invalid owner: {owner}", Colors.RED), file=sys.stderr)
+        return 1
+    touches = _normalize_touches(getattr(args, "touches", None))
 
     # Default assignee to current developer
     assignee = args.assignee
@@ -270,6 +521,9 @@ def cmd_create(args: argparse.Namespace) -> int:
         "status": "planning",
         "dev_type": None,
         "scope": None,
+        "tier": tier,
+        "owner": owner,
+        "touches": touches,
         "package": package,
         "priority": args.priority,
         "creator": creator,
@@ -286,17 +540,12 @@ def cmd_create(args: argparse.Namespace) -> int:
         "parent": None,
         "relatedFiles": [],
         "notes": "",
-        "meta": {},
+        "meta": {"workflow_mode": HARNESS_MODE},
     }
 
     write_json(task_json_path, task_data)
 
-    prd_path = task_dir / "prd.md"
-    if not prd_path.exists():
-        prd_path.write_text(
-            _default_prd_content(args.title, args.description),
-            encoding="utf-8",
-        )
+    _write_v2_files(task_dir, repo_root, tier, args.title, args.description or "")
 
     # Seed implement.jsonl / check.jsonl for sub-agent-capable platforms.
     # Agent curates real entries during planning when the task needs them.
@@ -332,6 +581,8 @@ def cmd_create(args: argparse.Namespace) -> int:
 
                 print(colored(f"Linked as child of: {parent_dir.name}", Colors.GREEN), file=sys.stderr)
 
+    _init_state_if_supported(task_dir, tier)
+
     # Auto-activate the new task so the per-turn breadcrumb fires planning
     # state. Best-effort: gracefully degrade if no session identity (CLI run
     # outside an AI session) — the task is still created, the user can run
@@ -352,8 +603,7 @@ def cmd_create(args: argparse.Namespace) -> int:
     print("", file=sys.stderr)
     print(colored("Next steps:", Colors.BLUE), file=sys.stderr)
     print("  - Fill prd.md with requirements and acceptance criteria", file=sys.stderr)
-    print("  - Lightweight task: PRD-only is valid", file=sys.stderr)
-    print("  - Complex task: add design.md and implement.md before task.py start", file=sys.stderr)
+    print("  - Fill stage-report.md before archive/soft-archive", file=sys.stderr)
     if seeded_jsonl:
         print(
             "  - Curate implement.jsonl / check.jsonl as spec/research manifests when sub-agents need context",
@@ -407,6 +657,9 @@ def cmd_archive(args: argparse.Namespace) -> int:
     if task_json_path.is_file():
         data = read_json(task_json_path)
         if data:
+            if not _check_done_gate_or_force(args, task_dir, data, task_json_path, repo_root):
+                return 1
+            data = read_json(task_json_path) or data
             data["status"] = "completed"
             data["completedAt"] = today
             write_json(task_json_path, data)
@@ -548,6 +801,68 @@ def _auto_commit_archive(
     else:
         print(f"[WARN] Auto-commit failed: {err.strip()}", file=sys.stderr)
         return not source_was_tracked
+
+
+# =============================================================================
+# Command: soft-archive
+# =============================================================================
+
+def cmd_soft_archive(args: argparse.Namespace) -> int:
+    """Soft-archive a v2 child task without moving its directory."""
+    repo_root = get_repo_root()
+    tasks_dir = get_tasks_dir(repo_root)
+    task_dir = resolve_task_dir(args.name, repo_root)
+    task_json_path = task_dir / FILE_TASK_JSON
+
+    if not task_json_path.is_file():
+        print(colored(f"Error: task.json not found: {args.name}", Colors.RED), file=sys.stderr)
+        return 1
+
+    commit = (args.commit or "").strip()
+    if not commit:
+        print(colored("Error: --commit is required", Colors.RED), file=sys.stderr)
+        return 1
+
+    data = read_json(task_json_path)
+    if not data:
+        print(colored("Error: failed to read task.json", Colors.RED), file=sys.stderr)
+        return 1
+
+    if data.get("tier") != "child":
+        print(colored("Error: soft-archive only supports tier=child", Colors.RED), file=sys.stderr)
+        return 1
+    if (data.get("meta") or {}).get("workflow_mode") != HARNESS_MODE:
+        print(colored(f"Error: workflow_mode must be {HARNESS_MODE}", Colors.RED), file=sys.stderr)
+        return 1
+
+    if not _check_done_gate_or_force(args, task_dir, data, task_json_path, repo_root):
+        return 1
+    data = read_json(task_json_path) or data
+
+    parent_name = data.get("parent")
+    parent_dir = find_task_by_name(parent_name, tasks_dir) if parent_name else None
+    if not parent_dir:
+        print(colored("Error: parent task not found", Colors.RED), file=sys.stderr)
+        return 1
+
+    try:
+        governance_data = dict(data)
+        governance_data["_dir_name"] = task_dir.name
+        _update_parent_governance(parent_dir, governance_data, commit)
+        _advance_child_to_archived(task_dir)
+    except Exception as exc:
+        print(colored(f"Error: soft-archive failed: {exc}", Colors.RED), file=sys.stderr)
+        return 1
+
+    data = read_json(task_json_path) or data
+    data["status"] = "completed"
+    data["completedAt"] = datetime.now().strftime("%Y-%m-%d")
+    data["commit"] = commit
+    write_json(task_json_path, data)
+
+    print(colored(f"Soft archived: {task_dir.name}", Colors.GREEN), file=sys.stderr)
+    print(f"{DIR_WORKFLOW}/{DIR_TASKS}/{task_dir.name}")
+    return 0
 
 
 # =============================================================================

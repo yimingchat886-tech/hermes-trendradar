@@ -1,0 +1,58 @@
+{
+  "id": "workflow-v2-m2-taskpy-gates",
+  "name": "workflow-v2-m2-taskpy-gates",
+  "title": "M2 task.py tiers and gates",
+  "description": "Implement v2 task.py tiers/templates/validate/soft-archive plus G1/G3/G5-WARN gates.",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": null,
+  "tier": "child",
+  "owner": "codex",
+  "touches": [
+    ".trellis/scripts/task.py",
+    ".trellis/scripts/state_machine.py",
+    ".trellis/scripts/hooks/**",
+    ".trellis/scripts/install_hooks.sh",
+    ".trellis/scripts/mark_scope_ok.sh",
+    ".trellis/templates/v2/**",
+    ".claude/hooks/**",
+    ".claude/settings.json",
+    ".claude/skills/split/SKILL.md",
+    "tests/trellis/**",
+    ".trellis/tasks/07-04-workflow-v2-m2-taskpy-gates/**",
+    ".trellis/tasks/07-04-workflow-v2-mechanization/governance.md"
+  ],
+  "package": null,
+  "priority": "P1",
+  "creator": "jym",
+  "assignee": "jym",
+  "createdAt": "2026-07-04",
+  "completedAt": null,
+  "branch": "codex/workflow-v2-m2-taskpy-gates",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "07-04-workflow-v2-mechanization",
+  "relatedFiles": [
+    "docs/reports/workflow-v2-m2-m6-plan.md",
+    "docs/runbooks/workflow-v2-operator-guide.md",
+    ".claude/skills/split/SKILL.md",
+    ".trellis/spec/project/ponytail-boundary.md",
+    ".trellis/spec/project/git-commit-push-policy.md"
+  ],
+  "notes": "",
+  "meta": {
+    "workflow_mode": "harness_state_machine",
+    "state_machine": {
+      "kind": "child",
+      "current_state": "child_waiting_completion_signal",
+      "previous_state": "child_plan_draft",
+      "last_event": "plan_drafted",
+      "blocked_from_state": null,
+      "updated_at": "2026-07-04T22:47:21Z"
+    }
+  }
+}

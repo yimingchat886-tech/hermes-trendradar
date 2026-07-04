@@ -24,7 +24,11 @@
   "commit": null,
   "pr_url": null,
   "subtasks": [],
-  "children": [],
+  "children": [
+    "07-04-workflow-v2-m2-taskpy-gates",
+    "07-04-workflow-v2-m3-pr-gates",
+    "07-04-workflow-v2-m4-board"
+  ],
   "parent": null,
   "relatedFiles": [
     "docs/reports/workflow-v2-m2-m6-plan.md",
@@ -47,11 +51,11 @@
     },
     "state_machine": {
       "kind": "parent",
-      "current_state": "parent_prd_draft",
-      "previous_state": null,
-      "last_event": "init",
+      "current_state": "parent_waiting_completion_signal",
+      "previous_state": "parent_prd_draft",
+      "last_event": "prd_drafted",
       "blocked_from_state": null,
-      "updated_at": "2026-07-04T21:58:11Z"
+      "updated_at": "2026-07-04T22:47:21Z"
     }
   }
 }
