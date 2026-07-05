@@ -1,0 +1,60 @@
+{
+  "id": "workflow-v2-m5-remote-ci-staging",
+  "name": "workflow-v2-m5-remote-ci-staging",
+  "title": "Workflow v2 M5 Remote CI Staging",
+  "description": "Independent Workflow v2 M5 parent for remote setup, CI, staging deployment, G6, and acceptance automation. Implementation is blocked until jym decides GitHub repository/visibility and staging host.",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": null,
+  "tier": "parent",
+  "owner": "codex",
+  "touches": [
+    ".trellis/tasks/07-04-workflow-v2-m5-remote-ci-staging/**",
+    "docs/reports/workflow-v2-m2-m6-plan.md",
+    "docs/runbooks/workflow-v2-operator-guide.md"
+  ],
+  "package": null,
+  "priority": "P1",
+  "creator": "jym",
+  "assignee": "jym",
+  "createdAt": "2026-07-04",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "07-04-workflow-v2-m5-1-remote-branch-protection"
+  ],
+  "parent": null,
+  "relatedFiles": [
+    "docs/reports/workflow-v2-m2-m6-plan.md",
+    "docs/runbooks/workflow-v2-operator-guide.md"
+  ],
+  "notes": "",
+  "meta": {
+    "workflow_mode": "harness_state_machine",
+    "stage_scope": {
+      "in": [
+        "M5"
+      ],
+      "out": [
+        "M2",
+        "M3",
+        "M4",
+        "M6"
+      ],
+      "blocked_until": []
+    },
+    "state_machine": {
+      "kind": "parent",
+      "current_state": "parent_prd_draft",
+      "previous_state": null,
+      "last_event": "init",
+      "blocked_from_state": null,
+      "updated_at": "2026-07-04T23:58:19Z"
+    }
+  }
+}
