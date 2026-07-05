@@ -153,3 +153,17 @@ def test_archive_done_gate_blocks_template_acceptance_without_mutation(tmp_path:
     assert code == 1
     assert (task / "task.json").read_text(encoding="utf-8") == before
     assert task.is_dir()
+
+
+def test_archive_parent_advances_state_machine_to_archived(tmp_path: Path, monkeypatch) -> None:
+    seed_repo(tmp_path, monkeypatch)
+    prefix = generate_task_date_prefix()
+    assert cmd_create(create_args("Parent", "parent", tier="parent")) == 0
+    parent = tmp_path / ".trellis" / "tasks" / f"{prefix}-parent"
+
+    assert cmd_archive(args(name=str(parent), no_commit=True, force_archive=False, reason="")) == 0
+
+    archived = next((tmp_path / ".trellis" / "tasks" / "archive").glob(f"*/{prefix}-parent"))
+    data = read_json(archived / "task.json")
+    assert data["status"] == "completed"
+    assert data["meta"]["state_machine"]["current_state"] == "parent_archived"

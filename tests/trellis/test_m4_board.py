@@ -33,6 +33,12 @@ def seed_repo(tmp_path: Path) -> None:
     )
 
 
+def seed_git_repo(tmp_path: Path) -> None:
+    run(["git", "init", "-b", "main"], tmp_path)
+    run(["git", "config", "user.email", "test@example.com"], tmp_path)
+    run(["git", "config", "user.name", "Test User"], tmp_path)
+
+
 def write_task(root: Path, name: str, *, status: str = "in_progress", state: str = "child_waiting_completion_signal") -> Path:
     task_dir = root / ".trellis" / "tasks" / name
     task_dir.mkdir(parents=True)
@@ -91,3 +97,23 @@ def test_task_py_create_and_archive_refresh_board(tmp_path: Path) -> None:
     board = board_path.read_text(encoding="utf-8")
     assert "tmp-board" in board
     assert "Recent Archives (7d)" in board
+
+
+def test_task_py_archive_auto_commit_includes_refreshed_board(tmp_path: Path) -> None:
+    seed_repo(tmp_path)
+    seed_git_repo(tmp_path)
+    task_py = tmp_path / ".trellis" / "scripts" / "task.py"
+    run([sys.executable, str(task_py), "create", "Tmp Task", "--slug", "tmp-board", "--tier", "light"], tmp_path)
+    task_dir = next((tmp_path / ".trellis" / "tasks").glob("*tmp-board"))
+    (task_dir / "stage-report.md").write_text(
+        "# Stage Report: Tmp Task\n\n## Acceptance\n\n- [x] done\n",
+        encoding="utf-8",
+    )
+    shutil.rmtree(tmp_path / ".trellis" / ".runtime", ignore_errors=True)
+    run(["git", "add", "BOARD.md", ".trellis/.developer", ".trellis/scripts", ".trellis/tasks", ".trellis/templates"], tmp_path)
+    run(["git", "commit", "-m", "seed task"], tmp_path)
+
+    run([sys.executable, str(task_py), "archive", str(task_dir)], tmp_path)
+
+    assert run(["git", "status", "--short"], tmp_path).stdout == ""
+    assert "BOARD.md" in run(["git", "show", "--name-only", "--format=", "HEAD"], tmp_path).stdout

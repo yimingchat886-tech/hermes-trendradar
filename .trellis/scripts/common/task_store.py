@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -429,6 +430,44 @@ def _advance_child_to_archived(task_dir: Path) -> None:
         apply_event(task_dir, event, by="system", note="task.py soft-archive")
 
 
+def _advance_parent_to_archived(task_dir: Path) -> None:
+    from state_machine import StateMachineError, apply_event, init_task
+
+    task = read_json(task_dir / FILE_TASK_JSON) or {}
+    if not (task.get("meta") or {}).get("state_machine"):
+        init_task(task_dir, "parent", by="system", note="archive init")
+
+    transitions = {
+        "parent_prd_draft": ["prd_drafted", "parent_completion_signal_received", "parent_commit_created", "parent_archive_completed"],
+        "parent_waiting_completion_signal": ["parent_completion_signal_received", "parent_commit_created", "parent_archive_completed"],
+        "parent_commit_ready": ["parent_commit_created", "parent_archive_completed"],
+        "parent_archive_ready": ["parent_archive_completed"],
+        "parent_archived": [],
+    }
+    task = read_json(task_dir / FILE_TASK_JSON) or {}
+    current = ((task.get("meta") or {}).get("state_machine") or {}).get("current_state")
+    if current not in transitions:
+        raise StateMachineError(f"cannot archive parent from state: {current}")
+    for event in transitions[current]:
+        apply_event(task_dir, event, by="system", note="task.py archive")
+
+
+def _refresh_board(repo_root: Path) -> None:
+    board = repo_root / DIR_WORKFLOW / "scripts" / "board.py"
+    if not board.is_file():
+        return
+    result = subprocess.run(
+        [sys.executable, str(board)],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    if result.returncode != 0:
+        print(colored(f"[WARN] BOARD refresh failed: {result.stderr.strip()}", Colors.YELLOW), file=sys.stderr)
+
+
 # =============================================================================
 # Command: create
 # =============================================================================
@@ -660,6 +699,13 @@ def cmd_archive(args: argparse.Namespace) -> int:
             if not _check_done_gate_or_force(args, task_dir, data, task_json_path, repo_root):
                 return 1
             data = read_json(task_json_path) or data
+            if data.get("tier") == "parent" and (data.get("meta") or {}).get("workflow_mode") == HARNESS_MODE:
+                try:
+                    _advance_parent_to_archived(task_dir)
+                except Exception as exc:
+                    print(colored(f"Error: parent archive state update failed: {exc}", Colors.RED), file=sys.stderr)
+                    return 1
+                data = read_json(task_json_path) or data
             data["status"] = "completed"
             data["completedAt"] = today
             write_json(task_json_path, data)
@@ -696,6 +742,7 @@ def cmd_archive(args: argparse.Namespace) -> int:
 
         # Auto-commit unless --no-commit
         if not getattr(args, "no_commit", False):
+            _refresh_board(repo_root)
             if not _auto_commit_archive(dir_name, repo_root, modified_children):
                 print(
                     colored(
