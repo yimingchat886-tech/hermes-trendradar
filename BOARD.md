@@ -9,12 +9,11 @@ owner=jym
 | Task | Tier | Owner | Status | Updated | Blocked |
 |---|---|---|---|---|---|
 | 07-02-mediacrawler-long-running-stability | - | jym | in_progress | 2026-07-03 01:14 | no |
-| 07-04-workflow-v2-m5-1-remote-branch-protection | child | codex | in_progress | 2026-07-04 18:21 | no |
-| 07-04-workflow-v2-m5-remote-ci-staging [0/1 done] | parent | codex | in_progress | 2026-07-04 18:21 | no |
+| 07-04-workflow-v2-m5-remote-ci-staging [1/1 done] | parent | codex | in_progress | 2026-07-04 18:57 | no |
 
 ## Waiting For Acceptance
 
-- 07-04-workflow-v2-m5-1-remote-branch-protection (child_waiting_completion_signal)
+- none
 
 ## Stale Nudges (>48h)
 

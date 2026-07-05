@@ -3,7 +3,7 @@
   "name": "workflow-v2-m5-1-remote-branch-protection",
   "title": "M5-1 remote and branch protection",
   "description": "Configure GitHub origin for hermes-trendradar, inspect existing remote main, and prepare branch protection without force-push or data loss.",
-  "status": "in_progress",
+  "status": "completed",
   "dev_type": null,
   "scope": null,
   "tier": "child",
@@ -17,11 +17,11 @@
   "creator": "jym",
   "assignee": "jym",
   "createdAt": "2026-07-04",
-  "completedAt": null,
+  "completedAt": "2026-07-04",
   "branch": "codex/workflow-v2-m4-board",
   "base_branch": "main",
   "worktree_path": null,
-  "commit": "2552bba",
+  "commit": "325d7c5",
   "pr_url": null,
   "subtasks": [],
   "children": [],
@@ -32,11 +32,11 @@
     "workflow_mode": "harness_state_machine",
     "state_machine": {
       "kind": "child",
-      "current_state": "child_commit_ready",
-      "previous_state": "child_waiting_completion_signal",
-      "last_event": "completion_signal_received",
+      "current_state": "child_archived",
+      "previous_state": "child_archive_ready",
+      "last_event": "child_archive_completed",
       "blocked_from_state": null,
-      "updated_at": "2026-07-05T01:56:11Z"
+      "updated_at": "2026-07-05T01:57:05Z"
     }
   }
 }
