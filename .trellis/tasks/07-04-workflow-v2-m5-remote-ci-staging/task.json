@@ -26,7 +26,8 @@
   "pr_url": null,
   "subtasks": [],
   "children": [
-    "07-04-workflow-v2-m5-1-remote-branch-protection"
+    "07-04-workflow-v2-m5-1-remote-branch-protection",
+    "07-04-workflow-v2-m5-2-ci"
   ],
   "parent": null,
   "relatedFiles": [
