@@ -1,0 +1,51 @@
+{
+  "id": "workflow-v2-m6-1-claim-guard-block",
+  "name": "workflow-v2-m6-1-claim-guard-block",
+  "title": "M6-1 claim-guard BLOCK",
+  "description": "Upgrade G5 claim guard from WARN to BLOCK and add audited task.py claim/release ownership commands.",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": null,
+  "tier": "child",
+  "owner": "codex",
+  "touches": [
+    ".claude/hooks/claim_guard.py",
+    ".trellis/scripts/task.py",
+    ".trellis/scripts/common/task_store.py",
+    "tests/trellis/**",
+    ".trellis/tasks/07-04-workflow-v2-m6-1-claim-guard-block/**",
+    ".trellis/tasks/07-04-workflow-v2-m6-parallel-development/governance.md"
+  ],
+  "package": null,
+  "priority": "P1",
+  "creator": "jym",
+  "assignee": "jym",
+  "createdAt": "2026-07-04",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "07-04-workflow-v2-m6-parallel-development",
+  "relatedFiles": [
+    "docs/reports/workflow-v2-m2-m6-plan.md",
+    "docs/runbooks/workflow-v2-operator-guide.md",
+    ".trellis/spec/project/ponytail-boundary.md",
+    ".trellis/spec/project/git-commit-push-policy.md"
+  ],
+  "notes": "",
+  "meta": {
+    "workflow_mode": "harness_state_machine",
+    "state_machine": {
+      "kind": "child",
+      "current_state": "child_waiting_completion_signal",
+      "previous_state": "child_plan_draft",
+      "last_event": "plan_drafted",
+      "blocked_from_state": null,
+      "updated_at": "2026-07-05T04:48:18Z"
+    }
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "id": "workflow-v2-m6-2-merge-collision-protocol",
+  "name": "workflow-v2-m6-2-merge-collision-protocol",
+  "title": "M6-2 merge collision protocol",
+  "description": "Mechanize the parallel-branch merge collision protocol and conflict checklist.",
+  "status": "planning",
+  "dev_type": null,
+  "scope": null,
+  "tier": "child",
+  "owner": "codex",
+  "touches": [
+    ".trellis/scripts/merge_protocol.md",
+    ".trellis/scripts/conflict_checklist.py",
+    "tests/trellis/**",
+    ".trellis/tasks/07-04-workflow-v2-m6-2-merge-collision-protocol/**",
+    ".trellis/tasks/07-04-workflow-v2-m6-parallel-development/governance.md"
+  ],
+  "package": null,
+  "priority": "P1",
+  "creator": "jym",
+  "assignee": "jym",
+  "createdAt": "2026-07-04",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "07-04-workflow-v2-m6-parallel-development",
+  "relatedFiles": [
+    "docs/reports/workflow-v2-m2-m6-plan.md",
+    "docs/runbooks/workflow-v2-operator-guide.md",
+    ".trellis/spec/project/ponytail-boundary.md",
+    ".trellis/spec/project/git-commit-push-policy.md"
+  ],
+  "notes": "",
+  "meta": {
+    "workflow_mode": "harness_state_machine",
+    "state_machine": {
+      "kind": "child",
+      "current_state": "child_plan_draft",
+      "previous_state": null,
+      "last_event": "init",
+      "blocked_from_state": null,
+      "updated_at": "2026-07-05T04:37:17Z"
+    }
+  }
+}

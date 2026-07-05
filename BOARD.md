@@ -9,10 +9,14 @@ owner=jym
 | Task | Tier | Owner | Status | Updated | Blocked |
 |---|---|---|---|---|---|
 | 07-02-mediacrawler-long-running-stability | - | jym | in_progress | 2026-07-03 01:14 | no |
+| 07-04-workflow-v2-m6-1-claim-guard-block | child | codex | in_progress | 2026-07-04 21:55 | no |
+| 07-04-workflow-v2-m6-2-merge-collision-protocol | child | codex | planning | 2026-07-04 21:38 | no |
+| 07-04-workflow-v2-m6-3-worktree-parallel-trial | child | codex | planning | 2026-07-04 21:38 | no |
+| 07-04-workflow-v2-m6-parallel-development [0/3 done] | parent | codex | in_progress | 2026-07-04 21:39 | no |
 
 ## Waiting For Acceptance
 
-- none
+- 07-04-workflow-v2-m6-1-claim-guard-block (child_waiting_completion_signal)
 
 ## Stale Nudges (>48h)
 
@@ -20,7 +24,7 @@ owner=jym
 
 ## Recent Archives (7d)
 
-- 07-04-workflow-v2-m5-remote-ci-staging (completed, 2026-07-04 21:02)
+- 07-04-workflow-v2-m5-remote-ci-staging (completed, 2026-07-04 21:03)
 - 07-04-workflow-v2-mechanization (completed, 2026-07-04 16:47)
 - 07-03-prd-pre-design-input-skill (cancelled, 2026-07-04 13:58)
 - 07-03-staged-acceptance-commit-archive-rule (cancelled, 2026-07-04 13:58)

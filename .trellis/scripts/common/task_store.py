@@ -6,6 +6,8 @@ Provides:
     ensure_tasks_dir   - Ensure tasks directory exists
     cmd_create         - Create a new task
     cmd_archive        - Archive completed task
+    cmd_claim          - Claim task ownership
+    cmd_release        - Release task ownership
     cmd_set_branch     - Set git branch for task
     cmd_set_base_branch - Set PR target branch
     cmd_set_scope      - Set scope for PR title
@@ -20,7 +22,7 @@ import json
 import re
 import subprocess
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -314,7 +316,7 @@ def _append_state_event(task_dir: Path, event: str, note: str, by: str = "agent"
         "current_state": None,
         "by": by,
         "note": note,
-        "created_at": datetime.utcnow().replace(microsecond=0).isoformat() + "Z",
+        "created_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
     }
     path = task_dir / "state-events.jsonl"
     with path.open("a", encoding="utf-8") as f:
@@ -327,6 +329,35 @@ def _record_force_archive(task_dir: Path, data: dict[str, Any], task_json_path: 
     data["notes"] = f"{notes}\n{line}".strip()
     write_json(task_json_path, data)
     _append_state_event(task_dir, "force_archive", reason)
+
+
+def _set_task_owner(task_dir: Path, new_owner: str, event: str, *, reason: str = "", override: bool = False) -> int:
+    if new_owner not in OWNERS:
+        print(colored(f"Error: invalid owner: {new_owner}", Colors.RED), file=sys.stderr)
+        return 1
+    if override and not reason.strip():
+        print(colored("Error: --override-claim requires --reason", Colors.RED), file=sys.stderr)
+        return 1
+
+    task_json_path = task_dir / FILE_TASK_JSON
+    if not task_json_path.is_file():
+        print(colored(f"Error: task.json not found at {task_dir}", Colors.RED), file=sys.stderr)
+        return 1
+
+    data = read_json(task_json_path)
+    if not data:
+        return 1
+    old_owner = data.get("owner") or "-"
+    data["owner"] = new_owner
+    if not write_json(task_json_path, data):
+        return 1
+
+    note = f"owner {old_owner} -> {new_owner}"
+    if reason.strip():
+        note = f"{note}; reason: {reason.strip()}"
+    _append_state_event(task_dir, "override_claim" if override else event, note, by="task.py")
+    print(colored(f"✓ Owner: {old_owner} -> {new_owner}", Colors.GREEN), file=sys.stderr)
+    return 0
 
 
 def _check_done_gate_or_force(
@@ -910,6 +941,35 @@ def cmd_soft_archive(args: argparse.Namespace) -> int:
     print(colored(f"Soft archived: {task_dir.name}", Colors.GREEN), file=sys.stderr)
     print(f"{DIR_WORKFLOW}/{DIR_TASKS}/{task_dir.name}")
     return 0
+
+
+# =============================================================================
+# Command: claim / release
+# =============================================================================
+
+def cmd_claim(args: argparse.Namespace) -> int:
+    """Claim ownership of a task."""
+    repo_root = get_repo_root()
+    task_dir = resolve_task_dir(args.name, repo_root)
+    return _set_task_owner(
+        task_dir,
+        args.owner,
+        "claim",
+        reason=getattr(args, "reason", "") or "",
+        override=getattr(args, "override_claim", False),
+    )
+
+
+def cmd_release(args: argparse.Namespace) -> int:
+    """Release ownership of a task back to the coordinator by default."""
+    repo_root = get_repo_root()
+    task_dir = resolve_task_dir(args.name, repo_root)
+    return _set_task_owner(
+        task_dir,
+        getattr(args, "owner", None) or "jym",
+        "release",
+        reason=getattr(args, "reason", "") or "",
+    )
 
 
 # =============================================================================

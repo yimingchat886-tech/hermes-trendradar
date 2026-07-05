@@ -1,0 +1,63 @@
+{
+  "id": "workflow-v2-m6-parallel-development",
+  "name": "workflow-v2-m6-parallel-development",
+  "title": "Workflow v2 M6 Parallel Development",
+  "description": "Plan Workflow v2 M6: enable parallel development only after M2-M4 and M5 parents are closed out and jym explicitly opens parallel work.",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": null,
+  "tier": "parent",
+  "owner": "codex",
+  "touches": [
+    ".trellis/tasks/07-04-workflow-v2-m6-parallel-development/**",
+    "docs/reports/workflow-v2-m2-m6-plan.md",
+    "docs/runbooks/workflow-v2-operator-guide.md"
+  ],
+  "package": null,
+  "priority": "P1",
+  "creator": "jym",
+  "assignee": "jym",
+  "createdAt": "2026-07-04",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "07-04-workflow-v2-m6-1-claim-guard-block",
+    "07-04-workflow-v2-m6-2-merge-collision-protocol",
+    "07-04-workflow-v2-m6-3-worktree-parallel-trial"
+  ],
+  "parent": null,
+  "relatedFiles": [
+    "docs/reports/workflow-v2-m2-m6-plan.md",
+    "docs/runbooks/workflow-v2-operator-guide.md"
+  ],
+  "notes": "J7 gate signal received from jym: 开启并行. This allows M6 child planning and parent activation; commit/archive/push remain separate.",
+  "meta": {
+    "workflow_mode": "harness_state_machine",
+    "stage_scope": {
+      "in": [
+        "M6"
+      ],
+      "out": [
+        "M2",
+        "M3",
+        "M4",
+        "M5"
+      ],
+      "blocked_until": [],
+      "gate_signal": "开启并行"
+    },
+    "state_machine": {
+      "kind": "parent",
+      "current_state": "parent_waiting_completion_signal",
+      "previous_state": "parent_prd_draft",
+      "last_event": "prd_drafted",
+      "blocked_from_state": null,
+      "updated_at": "2026-07-05T04:38:57Z"
+    }
+  }
+}

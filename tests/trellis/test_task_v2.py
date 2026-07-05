@@ -12,7 +12,7 @@ sys.path.insert(0, str(SCRIPTS))
 
 from common.task_context import cmd_validate
 from common.paths import generate_task_date_prefix
-from common.task_store import cmd_archive, cmd_create, cmd_soft_archive
+from common.task_store import cmd_archive, cmd_claim, cmd_create, cmd_release, cmd_soft_archive
 
 
 def args(**values):
@@ -167,3 +167,31 @@ def test_archive_parent_advances_state_machine_to_archived(tmp_path: Path, monke
     data = read_json(archived / "task.json")
     assert data["status"] == "completed"
     assert data["meta"]["state_machine"]["current_state"] == "parent_archived"
+
+
+def test_claim_and_release_update_owner_and_audit_events(tmp_path: Path, monkeypatch) -> None:
+    seed_repo(tmp_path, monkeypatch)
+    prefix = generate_task_date_prefix()
+    assert cmd_create(create_args("Child", "child", tier="child", owner="cc")) == 0
+    child = tmp_path / ".trellis" / "tasks" / f"{prefix}-child"
+
+    assert cmd_claim(args(name=str(child), owner="codex", override_claim=False, reason="")) == 0
+    data = read_json(child / "task.json")
+    assert data["owner"] == "codex"
+    events = (child / "state-events.jsonl").read_text(encoding="utf-8")
+    assert '"event": "claim"' in events
+    assert "owner cc -> codex" in events
+
+    assert cmd_claim(args(name=str(child), owner="cc", override_claim=True, reason="handoff")) == 0
+    data = read_json(child / "task.json")
+    assert data["owner"] == "cc"
+    events = (child / "state-events.jsonl").read_text(encoding="utf-8")
+    assert '"event": "override_claim"' in events
+    assert "reason: handoff" in events
+
+    assert cmd_release(args(name=str(child), owner="jym", reason="done")) == 0
+    data = read_json(child / "task.json")
+    assert data["owner"] == "jym"
+    events = (child / "state-events.jsonl").read_text(encoding="utf-8")
+    assert '"event": "release"' in events
+    assert "owner cc -> jym" in events

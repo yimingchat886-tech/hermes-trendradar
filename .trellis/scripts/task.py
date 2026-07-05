@@ -16,6 +16,8 @@ Usage:
     python3 task.py set-scope <dir> <scope>     # Set scope for PR title
     python3 task.py archive <task-dir>          # Archive completed task
     python3 task.py soft-archive <task-dir> --commit <hash>  # Soft archive v2 child
+    python3 task.py claim <task-dir> --owner codex  # Claim task ownership
+    python3 task.py release <task-dir>          # Release task ownership to jym
     python3 task.py list                        # List active tasks
     python3 task.py list-archive [month]        # List archived tasks
     python3 task.py add-subtask <parent-dir> <child-dir>     # Link child to parent
@@ -54,6 +56,8 @@ from common.task_store import (
     cmd_create,
     cmd_archive,
     cmd_soft_archive,
+    cmd_claim,
+    cmd_release,
     cmd_set_branch,
     cmd_set_base_branch,
     cmd_set_scope,
@@ -68,7 +72,7 @@ from common.task_context import (
 
 
 def refresh_board_after(command: str, return_code: int) -> None:
-    if return_code != 0 or command not in {"create", "archive", "soft-archive"}:
+    if return_code != 0 or command not in {"create", "archive", "soft-archive", "claim", "release"}:
         return
     repo_root = get_repo_root()
     board = repo_root / DIR_WORKFLOW / DIR_SCRIPTS / "board.py"
@@ -345,6 +349,8 @@ Usage:
   python3 task.py set-scope <dir> <scope>            Set scope for PR title
   python3 task.py archive <task-dir>                 Archive completed task
   python3 task.py soft-archive <task-dir> --commit <hash>  Soft archive v2 child
+  python3 task.py claim <task-dir> --owner codex     Claim task ownership
+  python3 task.py release <task-dir>                 Release task ownership to jym
   python3 task.py add-subtask <parent> <child>       Link child task to parent
   python3 task.py remove-subtask <parent> <child>    Unlink child from parent
   python3 task.py list [--mine] [--status <status>]  List tasks
@@ -489,6 +495,19 @@ def main() -> int:
     p_soft.add_argument("--force-archive", action="store_true", help="Bypass v2 done gate with audit reason")
     p_soft.add_argument("--reason", default="", help="Required with --force-archive")
 
+    # claim
+    p_claim = subparsers.add_parser("claim", help="Claim task ownership")
+    p_claim.add_argument("name", help="Task directory or name")
+    p_claim.add_argument("--owner", choices=["cc", "codex", "jym"], required=True, help="New task owner")
+    p_claim.add_argument("--override-claim", action="store_true", help="Record an override claim event")
+    p_claim.add_argument("--reason", default="", help="Required with --override-claim")
+
+    # release
+    p_release = subparsers.add_parser("release", help="Release task ownership")
+    p_release.add_argument("name", help="Task directory or name")
+    p_release.add_argument("--owner", choices=["cc", "codex", "jym"], default="jym", help="Owner after release")
+    p_release.add_argument("--reason", default="", help="Release reason")
+
     # list
     p_list = subparsers.add_parser("list", help="List tasks")
     p_list.add_argument("--mine", "-m", action="store_true", help="My tasks only")
@@ -527,6 +546,8 @@ def main() -> int:
         "set-scope": cmd_set_scope,
         "archive": cmd_archive,
         "soft-archive": cmd_soft_archive,
+        "claim": cmd_claim,
+        "release": cmd_release,
         "add-subtask": cmd_add_subtask,
         "remove-subtask": cmd_remove_subtask,
         "list": cmd_list,
