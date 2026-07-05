@@ -9,9 +9,7 @@ owner=jym
 | Task | Tier | Owner | Status | Updated | Blocked |
 |---|---|---|---|---|---|
 | 07-02-mediacrawler-long-running-stability | - | jym | in_progress | 2026-07-03 01:14 | no |
-| 07-04-workflow-v2-m6-2-merge-collision-protocol | child | codex | in_progress | 2026-07-04 23:16 | no |
-| 07-04-workflow-v2-m6-3-worktree-parallel-trial | child | cc | in_progress | 2026-07-04 23:17 | no |
-| 07-04-workflow-v2-m6-parallel-development [1/3 done] | parent | codex | in_progress | 2026-07-04 23:18 | no |
+| 07-04-workflow-v2-m6-parallel-development [3/3 done] | parent | codex | in_progress | 2026-07-04 23:19 | no |
 
 ## Waiting For Acceptance
 

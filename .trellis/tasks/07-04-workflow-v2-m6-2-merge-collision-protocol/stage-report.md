@@ -33,10 +33,18 @@
 - Resolution: governance preserved both child intents; `BOARD.md` was regenerated from merged task metadata.
 - Trade-off recorded in parent governance: branch-local generated `BOARD.md` snapshots were dropped in favor of the regenerated merged board.
 
+## User Completion Signal
+
+- Raw signal: `真实两分支冲突演练、合并后无污染确认、验收/提交/soft archive`
+- Allows commit: yes
+- Allows soft archive: yes
+- Explicit limits: none
+- Push allowed: no
+
 ## CI Run / Staging Verification
 
 - CI run:
 - Workflow head_sha:
-- Expected merge SHA:
+- Expected merge SHA: 8398979
 - Staging URL:
 - Playwright smoke:

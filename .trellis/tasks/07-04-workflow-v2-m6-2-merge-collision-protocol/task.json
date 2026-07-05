@@ -3,7 +3,7 @@
   "name": "workflow-v2-m6-2-merge-collision-protocol",
   "title": "M6-2 merge collision protocol",
   "description": "Mechanize the parallel-branch merge collision protocol and conflict checklist.",
-  "status": "in_progress",
+  "status": "completed",
   "dev_type": null,
   "scope": null,
   "tier": "child",
@@ -23,11 +23,11 @@
   "creator": "jym",
   "assignee": "jym",
   "createdAt": "2026-07-04",
-  "completedAt": null,
+  "completedAt": "2026-07-04",
   "branch": "codex/workflow-v2-m6-2-merge-collision-protocol",
   "base_branch": "main",
   "worktree_path": null,
-  "commit": null,
+  "commit": "643526a",
   "pr_url": null,
   "subtasks": [],
   "children": [],
@@ -43,11 +43,11 @@
     "workflow_mode": "harness_state_machine",
     "state_machine": {
       "kind": "child",
-      "current_state": "child_plan_draft",
-      "previous_state": null,
-      "last_event": "init",
+      "current_state": "child_archived",
+      "previous_state": "child_archive_ready",
+      "last_event": "child_archive_completed",
       "blocked_from_state": null,
-      "updated_at": "2026-07-05T04:37:17Z"
+      "updated_at": "2026-07-05T06:19:54Z"
     }
   }
 }

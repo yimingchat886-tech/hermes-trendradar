@@ -62,10 +62,18 @@ G5 claim guard: .trellis/scripts/conflict_checklist.py belongs to 07-04-workflow
 - `python3 ./.trellis/scripts/conflict_checklist.py --repo .`: pass during the real merge conflict; both conflicted files mapped to M6-2 + M6-3.
 - `git diff --check`: pass
 
+## User Completion Signal
+
+- Raw signal: `真实两分支冲突演练、合并后无污染确认、验收/提交/soft archive`
+- Allows commit: yes
+- Allows soft archive: yes
+- Explicit limits: none
+- Push allowed: no
+
 ## CI Run / Staging Verification
 
 - CI run: not applicable for this docs/evidence slice.
 - Workflow head_sha: not applicable.
-- Expected merge SHA: local parent integration merge, no remote PR in this slice.
+- Expected merge SHA: 8398979
 - Staging URL: not applicable.
 - Playwright smoke: not applicable.
