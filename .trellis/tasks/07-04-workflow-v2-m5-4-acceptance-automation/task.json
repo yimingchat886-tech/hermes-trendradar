@@ -1,7 +1,7 @@
 {
-  "id": "workflow-v2-m5-3-staging-deploy-g6",
-  "name": "workflow-v2-m5-3-staging-deploy-g6",
-  "title": "M5-3 staging deploy and G6",
+  "id": "workflow-v2-m5-4-acceptance-automation",
+  "name": "workflow-v2-m5-4-acceptance-automation",
+  "title": "M5-4 acceptance automation",
   "description": "",
   "status": "completed",
   "dev_type": null,
@@ -9,10 +9,10 @@
   "tier": "child",
   "owner": "codex",
   "touches": [
-    "Dockerfile",
-    ".dockerignore",
-    ".github/workflows/docker-deploy-staging.yml",
-    ".trellis/tasks/07-04-workflow-v2-m5-3-staging-deploy-g6/**",
+    ".trellis/scripts/staging_smoke.py",
+    ".trellis/scripts/verify_workflow_head.py",
+    ".trellis/templates/v2/child/stage-report.md",
+    ".trellis/tasks/07-04-workflow-v2-m5-4-acceptance-automation/**",
     ".trellis/tasks/07-04-workflow-v2-m5-remote-ci-staging/governance.md",
     "BOARD.md"
   ],
@@ -25,7 +25,7 @@
   "branch": "codex/workflow-v2-m4-board",
   "base_branch": "codex/workflow-v2-m4-board",
   "worktree_path": null,
-  "commit": "5bbe2b5",
+  "commit": "9dd7a2f",
   "pr_url": null,
   "subtasks": [],
   "children": [],
@@ -40,7 +40,7 @@
       "previous_state": "child_archive_ready",
       "last_event": "child_archive_completed",
       "blocked_from_state": null,
-      "updated_at": "2026-07-05T02:48:37Z"
+      "updated_at": "2026-07-05T03:34:36Z"
     }
   }
 }

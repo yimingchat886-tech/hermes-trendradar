@@ -81,6 +81,37 @@ Date: 2026-07-04
 | 一个长任务进行中，你要**紧急插队**修 hotfix | 主工作区不动，开 worktree 从 main 切 hotfix 分支，修完 merge 回，删 worktree |
 | review 别人分支同时不想丢自己现场 | 临时 worktree checkout 对方分支，看完即删 |
 
+M6 并行最小命令序列：
+
+```bash
+git worktree add ../Hermes-stock-m6-2 -b codex/workflow-v2-m6-2-merge-collision-protocol HEAD
+git worktree add ../Hermes-stock-m6-3 -b cc/workflow-v2-m6-3-worktree-parallel-trial HEAD
+
+cd ../Hermes-stock-m6-2
+python3 ./.trellis/scripts/task.py claim .trellis/tasks/07-04-workflow-v2-m6-2-merge-collision-protocol --owner codex
+
+cd ../Hermes-stock-m6-3
+python3 ./.trellis/scripts/task.py claim .trellis/tasks/07-04-workflow-v2-m6-3-worktree-parallel-trial --owner cc
+
+printf '{"tool_input":{"file_path":".trellis/scripts/conflict_checklist.py"}}' | TRELLIS_OWNER=cc python3 ./.claude/hooks/claim_guard.py
+# 期望：exit 2，证明 cc 不能碰 codex-owned M6-2 路径。
+
+git worktree list
+git status --short --branch
+python3 ./.trellis/scripts/board.py --summary --max-lines 10
+git diff --check
+
+# 两边验收、合并、soft archive 后再清理：
+python3 ./.trellis/scripts/task.py release .trellis/tasks/07-04-workflow-v2-m6-3-worktree-parallel-trial --owner jym --reason "M6 closeout"
+cd ../Hermes-stock-m6-2
+python3 ./.trellis/scripts/task.py release .trellis/tasks/07-04-workflow-v2-m6-2-merge-collision-protocol --owner jym --reason "M6 closeout"
+cd ../Hermes\ stock
+git worktree remove ../Hermes-stock-m6-2
+git worktree remove ../Hermes-stock-m6-3
+git worktree prune
+git branch -d codex/workflow-v2-m6-2-merge-collision-protocol cc/workflow-v2-m6-3-worktree-parallel-trial
+```
+
 判据一句话：**同一时刻有两件事需要两个不同的 checked-out 状态才开；否则分支切换够用。**
 
 ## 5. 何时 push / release

@@ -99,6 +99,20 @@ def test_task_py_create_and_archive_refresh_board(tmp_path: Path) -> None:
     assert "Recent Archives (7d)" in board
 
 
+def test_task_py_claim_and_release_refresh_board(tmp_path: Path) -> None:
+    seed_repo(tmp_path)
+    task_py = tmp_path / ".trellis" / "scripts" / "task.py"
+    run([sys.executable, str(task_py), "create", "Tmp Task", "--slug", "tmp-board", "--tier", "light"], tmp_path)
+    task_dir = next((tmp_path / ".trellis" / "tasks").glob("*tmp-board"))
+
+    board_path = tmp_path / "BOARD.md"
+    run([sys.executable, str(task_py), "claim", str(task_dir), "--owner", "cc"], tmp_path)
+    assert "| cc |" in board_path.read_text(encoding="utf-8")
+
+    run([sys.executable, str(task_py), "release", str(task_dir)], tmp_path)
+    assert "| jym |" in board_path.read_text(encoding="utf-8")
+
+
 def test_task_py_archive_auto_commit_includes_refreshed_board(tmp_path: Path) -> None:
     seed_repo(tmp_path)
     seed_git_repo(tmp_path)

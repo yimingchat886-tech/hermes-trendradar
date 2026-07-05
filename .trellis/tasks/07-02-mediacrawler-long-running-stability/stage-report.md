@@ -103,13 +103,16 @@ Summary:
 - Real Douyin smoke still depends on local login state and Douyin page availability. One transient page navigation timeout occurred after CDP success and is now classified outside CDP.
 - The CLI still does not implement production `run-daily`; this task adds the CDP/smoke foundation and keeps the existing production stub unchanged except for accepting v1.4 args.
 
-## Commit / Push
+## Commit / Push / Soft Archive
 
 - Completion signal received: yes.
 - User completion signal: `可以提交，告诉我有没有未完成的地方（对比Trellis task）`.
 - Received at: `2026-07-03T01:11:43-07:00`.
 - Commit allowed: yes.
-- Soft archive allowed: no.
-- Soft archive completed: no.
+- Soft archive allowed: yes.
+- Soft archive completed: yes.
+- Implementation commit: `62b7270bf9ebdc548d997a9753b3a8fbda7027c0`.
+- Merge commit: `63a05e70f46be536c336b3804663928fa63dcd60`.
+- Soft archive completed at: `2026-07-04T23:36:18-07:00`.
 - Built-in Trellis archive called: no.
 - Pushed: no.

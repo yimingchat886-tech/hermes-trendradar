@@ -3,16 +3,25 @@ project: Hermes Agent
 doc_type: master_prd
 status: active
 created: 2026-07-01
-updated: 2026-07-01
+updated: 2026-07-04
 owner: Jym
-current_release: releases/PRD_v1.4_split_index.md
+last_closed_release: releases/PRD_v1.4_split_index.md
+next_release: v2.0（PRD 待创建，登记于 §7）
 ---
 
 # Hermes Agent PRD MASTER
 
-本文件是 Hermes stock 的长期产品蓝图。它维护稳定的产品方向、边界、架构、路线图和版本索引，不承载某个版本的字段、阈值、表结构、验收细节或 child task 执行记录。
+本文件是 Hermes stock 的长期产品蓝图，维护稳定的产品方向、边界、架构事实、路线图和版本指针。它不承载版本级字段、阈值、表结构、验收细节或 child task 执行记录。
 
-版本 PRD 放在 `docs/PRD/releases/`，并与 Trellis parent task 对齐。Child task 继续由 `.trellis/tasks/` 管理，不进入 `docs/PRD/`。
+## 0. 如何读本文件（写给人和 AI agent）
+
+本文件对系统组件与能力使用三态标注：
+
+- **[事实]**：已存在、已验证，可直接依赖。
+- **[规划]**：尚未实现，不得当作现状引用。
+- **[已废弃]**：见 §9，不得复活。
+
+本文件**不复制任务与交付状态**。版本执行状态的唯一事实源是 `.trellis/`；版本需求细节的唯一事实源是 `docs/PRD/releases/`。发现本文件与事实源冲突时，以事实源为准并修正本文件。
 
 ---
 
@@ -25,13 +34,13 @@ Hermes Agent 是面向 AI 赛道内容+技术协作的内容选题系统。
 1. 对标账号跟踪与拆解。
 2. 热点信息跟踪与沉淀。
 
-系统使用 Hermes 作为唯一 LLM 决策层，结合 MediaCrawler、本地 FunASR、TrendRadar/RSSHub、Lark/Feishu CLI 和本地数据存储，把分散的内容信号转为可追踪、可拆解、可评审、可沉淀的选题资产。
+系统的核心价值循环是：**对标账号新内容 → 结构化采集与转录 → Hermes 拆解 → 选题建议 → 人工采纳与沉淀**。所有工程能力（采集、状态、审计、写表）都服务于这个循环，不独立成为目标。
 
 ---
 
 ## 2. 目标用户
 
-### 2.1 内容+技术（内部群）
+### 2.1 内容+技术（内部群）[事实：当前唯一活跃用户空间]
 
 内部群是系统配置、审核、观察和运行维护的主空间。
 
@@ -42,7 +51,7 @@ Hermes Agent 是面向 AI 赛道内容+技术协作的内容选题系统。
 - 决定哪些内容进入长期素材沉淀和未来 RAG。
 - 审核 Hermes 提炼出的规则、样例和选题建议。
 
-### 2.2 社群成员（外部群）
+### 2.2 社群成员（外部群）[规划]
 
 外部群是内容卡片的消费和反馈空间，不直接访问内部多维表格。
 
@@ -74,10 +83,10 @@ Hermes Agent 长期解决以下问题：
 - 结构化采集对标内容、平台指标、评论和来源信息。
 - 使用本地 FunASR 转录视频文案。
 - 使用 Hermes 拆解内容结构、标题钩子、用户痛点和可复用角度。
-- 将摘要、链接、状态、人工操作字段和 Hermes 结论写入飞书多维表格。
+- 将拆解结果以内部日报/digest 送达内部群；结构化字段按需写入飞书多维表格。
 - 生成内部日报、周报、异常提醒和外部卡片。
 - 沉淀可进入未来 RAG 的清洗语料、规则和样例。
-- 在 v2 以后接入热点信息源、趋势雷达和跨源事件聚类。
+- 在 v2.1 以后接入热点信息源、趋势雷达和跨源事件聚类。
 
 ### 4.2 系统不做或后置
 
@@ -87,63 +96,73 @@ Hermes Agent 长期解决以下问题：
 - 不把大体量全文、视频文件、全量评论原文或 ASR 分段文本直接塞入飞书。
 - 不开放外部群访问内部多维表格。
 - 不允许普通用户通过聊天修改 Agent 配置。
-- v1 不建设热点雷达、RSSHub/TrendRadar 链路、发布复盘、完整风险审核或正式 RAG。
-- v1 不让 Hermes 基于用户行为进行不可审计的自动学习。
+- 热点雷达、RSSHub/TrendRadar 链路后置到 v2.1；发布复盘、完整风险审核、正式 RAG 后置（见 §6）。
+- 不限制 hermes-agent 自身的 skill 学习与演化；但**写入飞书、沉淀为规则库、进入 RAG 语料的内容必须经人工审核，落库动作必须可审计**（审计边界收缩到落库动作，原表述见 §9）。
 
 ---
 
 ## 5. 总体架构
 
-项目采用“单主脑、多工具”架构。
+### 5.1 现状架构 [事实，截至 2026-07-04]
+
+```text
+对标账号（Douyin，本地 profile 配置，JSON 格式）
+  ↓
+MediaCrawler（外部 checkout） + runner-owned Chrome CDP
+  ↓
+hermes-benchmark CLI（本 repo：采集编排、归一化、三级去重、
+                      FunASR 转录、SQLite 状态、handoff package）
+  ↓
+hermes-handoff package（真实分析的输入）
+```
+
+边界事实：
+
+- CLI 到 handoff package 为止的链路已交付（v1.4），repo 零运行时依赖（stdlib only）。
+- `apply-limited-live` 是 stub，飞书写入停在 dry-run。
+- 真实 Hermes 分析从未运行过；decomposition 输出为 mock。handoff package 目前没有消费者——这是 v2.0 要闭合的缺口。
+
+### 5.2 目标架构 [规划]
 
 ```text
 外部信息源 / 对标账号 / 本地样例
   ↓
-MediaCrawler / RSSHub / TrendRadar / FunASR / lark-cli / 官方 API 薄脚本
+MediaCrawler [事实] / RSSHub / TrendRadar [规划 v2.1] / FunASR [事实]
   ↓
-trend-cli / trend-mcp / 本地 DB / 对象存储 / 统一 Schema
+hermes-benchmark CLI + 本地 SQLite [事实] / 对象存储 [规划，未排期]
   ↓
-Hermes Agent
+hermes-agent（决策层，见 §5.3）
   ↓
-内部飞书多维表格
+内部群 digest 消息 [规划 v2.0] / 内部飞书多维表格 [规划 v2.0-M3 条件]
   ↓
-外部群卡片 / 用户反馈 / 临时规则库与样例库
+外部群卡片 / 用户反馈 / 规则库与样例库 [规划]
 ```
 
-### 5.1 决策层
+### 5.3 决策层事实登记：hermes-agent
 
-Hermes 是唯一运行期 LLM 决策层，负责理解、拆解、归类、选题建议、日报周报、卡片文案和规则候选。
+Hermes 决策层由 **Nous Research hermes-agent**（外部开源第三方产品）承担。本 repo 不实现、不控制它，只定义接口契约与集成验收。
 
-### 5.2 工具层
+| 项 | 状态 |
+|---|---|
+| 部署形态 | 本机 gateway 常驻进程；实测连续运行 40h+ [事实] |
+| 飞书能力 | 消息层：bot 私聊/群聊/卡片/cron 结果推送 [事实]；**Bitable 写入非其原生能力**（上游 issue #10356 处于 open）[事实] |
+| 调度 | 使用其原生 cron 触发本 repo CLI [规划，受 v2.0 M0 验收门约束，不过则回退 systemd] |
+| 集成方式 | 以 Hermes skill 调用 CLI；不建 MCP server [已决，见 §9] |
+| 自主学习 | 产品自带学习循环与 skill Curator；审计边界按 §4.2 收缩到落库动作 [事实] |
 
-工具层提供确定性能力和标准化输出：
+### 5.4 运行期责任边界
 
-- MediaCrawler：对标账号采集结果读取与导入。
-- FunASR：本地视频转录。
-- TrendRadar/RSSHub：v2 热点信息源和趋势聚合。
-- `trend-cli` / `trend-mcp`：工具调用和标准化接口。
-- `lark-cli` + 官方 API 薄脚本：飞书多维表格读写。
-
-### 5.3 数据层
-
-- 本地数据库保存结构化元数据、状态、关联关系和追溯 ID。
-- 对象存储保存全文、图片、封面、转录文本、评论原文和历史版本。
-- 未来 RAG 库保存清洗后的可检索语料。
-- 飞书只展示摘要、链接、状态、关键指标、人工字段和 Hermes 结论。
-
-### 5.4 开发期与运行期责任边界
-
-Codex 是开发期工程执行者，负责实现、修复、测试、重构、文档、部署和 PR。
+Codex 是开发期工程执行者，负责实现、修复、测试、重构、文档、部署和 PR，不作为部署后的飞书字段责任方。
 
 部署后，飞书运行期字段责任方只允许三类：
 
 | 责任方 | 定义 |
 |---|---|
 | 脚本生成 | CLI、同步脚本、定时任务或确定性程序生成的字段。 |
-| Hermes维护 | Hermes 运行期生成、补充或维护的分析字段。 |
+| Hermes维护 | hermes-agent 运行期生成、补充或维护的分析字段。 |
 | 人工 | 内部群或社群成员显式操作产生的字段。 |
 
-Codex 不作为部署后的飞书字段责任方。
+威胁模型说明：运行期大脑是一个自主的第三方 agent。因此**本 repo CLI 侧的 allowlist 校验与 fail-closed 行为是飞书写入的唯一确定性护栏，任何版本不得削弱**。授权信任根协议是 open decision（§8）。
 
 ---
 
@@ -151,38 +170,38 @@ Codex 不作为部署后的飞书字段责任方。
 
 | 阶段 | 主题 | 目标 |
 |---|---|---|
-| v1.x | 对标账号追踪 | 跑通对标账号更新、采集、转录、拆解、卡片和选题池补充闭环。 |
-| v2.x | 热点信息系统 | 接入热点源、RSSHub/TrendRadar、热点状态标签、突发热点和跨源事件聚类。 |
+| v1.x（已关闭） | 对标账号追踪工具层 | 已交付：采集、转录、去重、SQLite 状态、handoff package。飞书 live 写入与真实分析未在 v1.x 交付（§9）。 |
+| v2.0 | 真实分析闭环（价值先行） | M0：hermes-agent cron → CLI → 飞书推送链路一次跑通（不过则调度回退 systemd）。M1：hermes-benchmark skill——消费 handoff、按 §4.2 边界真实拆解、每日 digest 推内部群。M2：人工反馈最小回路（群内采用/拒绝 → CLI → SQLite），作为规则沉淀/RAG 的数据起点。M3（条件触发）：Bitable 写表——消息流实际运转 ≥2 周且确认需要结构化筛选/回溯后启动；届时定案授权信任根与表 2/3 去留（§8）。 |
+| v2.1 | 热点信息系统 | 首切片：推特源单源闭环（高信号账号订阅 → 采集 → Hermes 热潮/教程判定 → digest），验证「源接入范式」。国内热榜、RSSHub 多源、TrendRadar、跨源事件聚类推迟到多源阶段。设计 PRD 见 §7。 |
 | 后续版本 | 正式 RAG | 将长期沉淀内容清洗入库，支持可追溯检索和选题证据链。 |
-| v4/v5 决议 | 选题 Skill 与观察表收敛 | 决定临时观察表是否取消，并将稳定规则沉淀为 Skill。 |
+| v4/v5 决议 | 选题 Skill 与观察表收敛 | 决定临时观察表（表 10-12）是否取消，并将稳定规则沉淀为 Skill。 |
 | 后续版本 | 发布复盘与风险审核 | 在内容规模足够后，再设计发布复盘、账号评比和完整风险审核边界。 |
 
 ---
 
-## 7. 版本规划
+## 7. 版本索引（单向指针）
 
-| 版本 | 状态 | 对应 parent task | 范围 |
-|---|---|---|---|
-| v1.3 | superseded | Parent 1: benchmark account tracking | 对标账号追踪 proof 主线，热点系统进入 v2。 |
-| v1.4 | current_draft | 待创建 | 对标账号追踪生产化闭环：Hermes Runtime profiles + Codex CLI 工具实现。 |
-| v2.0 | planned | 待创建 | 热点信息源、趋势雷达、突发热点和热点 × 对标融合。 |
-| v4/v5 | decision_pending | 待创建 | 判断表 10-12 是否取消，并沉淀为选题筛选 Skill。 |
+| 版本 | 版本 PRD | 备注 |
+|---|---|---|
+| v1.3 | [releases/PRD_v1.3.md](releases/PRD_v1.3.md) | superseded |
+| v1.4 | [releases/PRD_v1.4_split_index.md](releases/PRD_v1.4_split_index.md) | 已关闭（partial）：工具层至 handoff 交付；child 8/9（limited-live 表 4、生产硬化）于 closeout 取消，需求由 v2.0 M3 条件承接。其中 `PRD_v1.4_Hermes_Runtime_and_Profiles.md` 的"Hermes 侧实现需求"形态已废弃（§9），仅作历史参考。 |
+| v2.0 | 待创建 | scope 一句话：真实分析闭环（M0-M3），Douyin-only 延续，集成物为 Hermes skill + 最小 CLI 反馈子命令。 |
+| v2.1 | [trending-system.md](trending-system.md)（模块设计 PRD，draft） | scope 一句话：热点系统推特首发切片——账号订阅→采集→Hermes 判定→digest，表格只定原则；问答留档见 [_ledger/trending-twitter-source.md](_ledger/trending-twitter-source.md)。 |
+
+索引维护规则：
+
+1. 本索引只登记版本指针和一句话 scope，**不复制任务、里程碑或交付状态**——状态唯一事实源是 `.trellis/` 与 releases 文档自身。
+2. 版本 PRD 创建、关闭或范围变化时，**同一提交内**更新对应指针行；不同步更新则该变更不算完成。
+3. child task 的 PRD、计划、验收和上下文只放在 `.trellis/tasks/`，不进入 `docs/PRD/`。
 
 ---
 
-## 8. 当前版本索引
+## 8. Open Decisions
 
-| 版本 | 状态 | 版本 PRD | 对应 parent task | 版本目标 | child task 管理 |
-|---|---|---|---|---|---|
-| v1.4 | current_draft | [releases/PRD_v1.4_split_index.md](releases/PRD_v1.4_split_index.md) | 待创建 | 生产化对标账号追踪闭环；运行期由 Hermes profiles 约束，工具层由 Codex CLI 实现；v1.4 live 只写表 4 / 状态边界。 | 后续 parent / child task 继续由 `.trellis/tasks/` 管理，不进入 `docs/PRD/`。 |
-| v1.3 | superseded | [releases/PRD_v1.3.md](releases/PRD_v1.3.md) | [06-29-parent-1-benchmark-account-tracking](../../.trellis/tasks/archive/2026-07/06-29-parent-1-benchmark-account-tracking/) | 先跑通对标账号追踪 proof，热点系统后置到 v2。 | 已归档；child task 继续保留在 `.trellis/tasks/`。 |
-
-版本索引维护规则：
-
-1. 每个版本 PRD 对应一个 parent task。
-2. parent task 可以拆 child task；child task 的 PRD、计划、验收和上下文 JSONL 只放在 `.trellis/tasks/`。
-3. 总 PRD 只维护版本索引和长期边界，不复制 child task 执行细节。
-4. 新版本创建时，先在本索引登记，再创建或关联对应 parent task。
+| 决策 | 定案时点 | 约束 |
+|---|---|---|
+| 飞书写入授权信任根：只防误操作（简化协议）还是防伪造（签名/密钥 + nonce 存储） | v2.0 M3 启动前必须定案 | 无论结论如何，CLI 侧 allowlist + fail-closed 不可砍（§5.4 威胁模型） |
+| 表 2 / 表 3 写表去留 | v2.0 M3 时依据 ≥2 周消息流使用数据裁定 | 日报/告警默认走 bot 消息推送，不写表 |
 
 ---
 
@@ -190,11 +209,16 @@ Codex 不作为部署后的飞书字段责任方。
 
 | 决策 | 状态 | 原因 |
 |---|---|---|
-| v1 不建设热点系统 | 后置到 v2 | 先验证对标账号追踪闭环，避免 v1 同时承担双主线。 |
-| v1 不接入 RSSHub / TrendRadar | 后置到 v2 | 热点源分级、突发热点和跨源聚类需要单独版本承载。 |
+| v1 不建设热点系统 | 后置到 v2.1 | 先验证对标账号追踪闭环，避免同版本承担双主线。 |
+| v1 不接入 RSSHub / TrendRadar | 后置到 v2.1 | 热点源分级、突发热点和跨源聚类需要单独版本承载。 |
 | 不自研通用 Feishu Adapter | 已废弃 | 优先使用官方 `lark-cli`；CLI 不覆盖时只写官方 API 薄脚本。 |
 | Codex 不作为飞书运行期字段责任方 | 已确认 | Codex 只负责开发期工程实现，运行期字段由脚本生成、Hermes维护或人工负责。 |
 | v1 不自动发布、成片、投放 | 已排除 | 当前阶段验证数据沉淀和选题链路，不进入生产发布自动化。 |
 | v1 不做完整风险审核体系 | 后置 | AI 赛道先保留扩展字段；医疗、金融、法律等赛道再补完整审核。 |
 | 表 10-12 不作为永久系统设计 | v4/v5 决议 | 暂作用户动作、拒绝原因、显式规则的观察层，后续人工决定是否沉淀为 Skill。 |
 | 开源源码不包含登录态或绕限制说明 | 已确认 | 源码、示例和文档不包含平台 Cookie、账号登录态、代理配置或批量绕限制教程。 |
+| "不让 Hermes 基于用户行为进行不可审计的自动学习"（原 §4.2 条款） | 已改写（2026-07-04） | 选型 hermes-agent 后原条款不可执行（自主学习循环是其核心机制）；边界收缩为"落库动作必须人工审核、可审计"（§4.2）。 |
+| "Hermes Runtime 侧实现 PRD"文档形态 | 已废弃（2026-07-04） | Hermes 为第三方产品，无法对其提实现需求；v2.0 起改为"集成配置 + 验收清单"形态。 |
+| MCP server 作为 CLI 集成方式 | 已排除（2026-07-04） | 保持 repo zero-dependency 不变量；采用 Hermes skill 调用 CLI，skill 方案被验证走不通时再议。 |
+| 写表管道先行的 v2.0 方案 | 已废弃（2026-07-04） | 真实分析质量未验证前不建写表管道；改为价值先行（v2.0 M0-M3），写表降为 M3 条件项。 |
+| v1.4.1 版本槽位 | 不设（2026-07-04） | v1.4 遗留需求（limited-live、硬化）并入 v2.0，不另开小版本。 |

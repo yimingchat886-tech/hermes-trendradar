@@ -25,7 +25,7 @@
   "pr_url": null,
   "subtasks": [],
   "children": [],
-  "parent": "07-04-workflow-v2-m5-remote-ci-staging",
+  "parent": null,
   "relatedFiles": [],
   "notes": "Branch protection blocker resolved after repo was made public. main is protected: PR required, admins enforced, force-push/delete disabled, required checks deferred until M5-2 CI.",
   "meta": {
