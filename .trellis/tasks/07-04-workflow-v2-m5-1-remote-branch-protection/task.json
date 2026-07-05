@@ -32,11 +32,11 @@
     "workflow_mode": "harness_state_machine",
     "state_machine": {
       "kind": "child",
-      "current_state": "child_waiting_completion_signal",
-      "previous_state": "child_plan_draft",
-      "last_event": "plan_drafted",
+      "current_state": "child_commit_ready",
+      "previous_state": "child_waiting_completion_signal",
+      "last_event": "completion_signal_received",
       "blocked_from_state": null,
-      "updated_at": "2026-07-05T01:21:30Z"
+      "updated_at": "2026-07-05T01:56:11Z"
     }
   }
 }
