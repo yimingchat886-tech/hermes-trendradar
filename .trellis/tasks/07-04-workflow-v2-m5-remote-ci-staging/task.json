@@ -27,7 +27,8 @@
   "subtasks": [],
   "children": [
     "07-04-workflow-v2-m5-1-remote-branch-protection",
-    "07-04-workflow-v2-m5-2-ci"
+    "07-04-workflow-v2-m5-2-ci",
+    "07-04-workflow-v2-m5-3-staging-deploy-g6"
   ],
   "parent": null,
   "relatedFiles": [
