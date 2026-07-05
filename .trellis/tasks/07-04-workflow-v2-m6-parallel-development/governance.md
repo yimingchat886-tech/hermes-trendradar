@@ -5,7 +5,7 @@
 | Child | Delivery | Dependencies | Owner | Branch | Status | Commit |
 |---|---|---|---|---|---|---|
 | M6-1 claim-guard BLOCK | Flip claim guard to BLOCK; add `task.py claim` / `release`; audit `--override-claim` | M2 G5-WARN, M5 closeout, jym `开启并行` signal received | codex | TBD | completed | cfc5da9 |
-| M6-2 merge collision protocol | Add merge protocol doc and conflict checklist script for card/owner-aware conflict handling | M6-1 ownership enforcement | codex | TBD | planned | TBD |
+| M6-2 merge collision protocol | Add merge protocol doc and conflict checklist script for card/owner-aware conflict handling | M6-1 ownership enforcement | codex | TBD | implemented | TBD |
 | M6-3 worktree parallel trial | Update operator guide worktree commands; run CC+Codex non-overlapping child trial | M6-1, M6-2 | codex + cc | TBD | planned | TBD |
 
 ## RTM
@@ -13,7 +13,7 @@
 | REQ-ID | Child | Status | Evidence |
 |---|---|---|---|
 | WV2-M6-REQ-001 | M6-1 claim-guard BLOCK | completed | 07-04-workflow-v2-m6-1-claim-guard-block/stage-report.md |
-| WV2-M6-REQ-002 | M6-2 merge collision protocol | planned | TBD |
+| WV2-M6-REQ-002 | M6-2 merge collision protocol | implemented | 07-04-workflow-v2-m6-2-merge-collision-protocol/stage-report.md |
 | WV2-M6-REQ-003 | M6-3 worktree parallel trial | planned | TBD |
 | WV2-M6-REQ-004 | Parent closeout | planned | v2 F1-F7 final coverage review in parent closeout |
 
