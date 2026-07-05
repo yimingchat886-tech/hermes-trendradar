@@ -7,7 +7,7 @@
 | M5-1 remote and branch protection | Configure `origin`, push `main`, and protect `main` after remote decisions | branch protection enabled after repo became public | codex | codex/workflow-v2-m4-board | completed | 325d7c5 |
 | M5-2 CI | Add lean GitHub Actions lint/typecheck/test workflow and required checks | M5-1 | codex | codex/workflow-v2-m4-board | completed | 7dd14ba |
 | M5-3 staging deploy and G6 | Add local-Docker staging deployment path gated on green CI | M5-1, M5-2 | codex | codex/workflow-v2-m4-board | completed | 5bbe2b5 |
-| M5-4 acceptance automation | Add Playwright smoke checks and CI/staging evidence reporting | M5-2, M5-3 | codex | TBD | planned | TBD |
+| M5-4 acceptance automation | Add Playwright smoke checks and CI/staging evidence reporting | M5-2, M5-3 | codex | codex/workflow-v2-m4-board | in_progress | TBD |
 
 ## RTM
 
@@ -16,7 +16,7 @@
 | WV2-M5-REQ-001 | M5-1 remote and branch protection | completed | 07-04-workflow-v2-m5-1-remote-branch-protection/stage-report.md |
 | WV2-M5-REQ-002 | M5-2 CI | completed | 07-04-workflow-v2-m5-2-ci/stage-report.md |
 | WV2-M5-REQ-003 | M5-3 staging deploy and G6 | completed | 07-04-workflow-v2-m5-3-staging-deploy-g6/stage-report.md |
-| WV2-M5-REQ-004 | M5-4 acceptance automation | planned | TBD |
+| WV2-M5-REQ-004 | M5-4 acceptance automation | in_progress | 07-04-workflow-v2-m5-4-acceptance-automation/stage-report.md |
 
 ## External Review
 
