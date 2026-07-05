@@ -3,7 +3,7 @@
   "name": "workflow-v2-m6-1-claim-guard-block",
   "title": "M6-1 claim-guard BLOCK",
   "description": "Upgrade G5 claim guard from WARN to BLOCK and add audited task.py claim/release ownership commands.",
-  "status": "in_progress",
+  "status": "completed",
   "dev_type": null,
   "scope": null,
   "tier": "child",
@@ -21,11 +21,11 @@
   "creator": "jym",
   "assignee": "jym",
   "createdAt": "2026-07-04",
-  "completedAt": null,
+  "completedAt": "2026-07-04",
   "branch": null,
   "base_branch": "main",
   "worktree_path": null,
-  "commit": null,
+  "commit": "cfc5da9",
   "pr_url": null,
   "subtasks": [],
   "children": [],
@@ -41,11 +41,11 @@
     "workflow_mode": "harness_state_machine",
     "state_machine": {
       "kind": "child",
-      "current_state": "child_waiting_completion_signal",
-      "previous_state": "child_plan_draft",
-      "last_event": "plan_drafted",
+      "current_state": "child_archived",
+      "previous_state": "child_archive_ready",
+      "last_event": "child_archive_completed",
       "blocked_from_state": null,
-      "updated_at": "2026-07-05T04:48:18Z"
+      "updated_at": "2026-07-05T05:05:44Z"
     }
   }
 }

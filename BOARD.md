@@ -9,14 +9,13 @@ owner=jym
 | Task | Tier | Owner | Status | Updated | Blocked |
 |---|---|---|---|---|---|
 | 07-02-mediacrawler-long-running-stability | - | jym | in_progress | 2026-07-03 01:14 | no |
-| 07-04-workflow-v2-m6-1-claim-guard-block | child | codex | in_progress | 2026-07-04 21:55 | no |
 | 07-04-workflow-v2-m6-2-merge-collision-protocol | child | codex | planning | 2026-07-04 21:38 | no |
 | 07-04-workflow-v2-m6-3-worktree-parallel-trial | child | codex | planning | 2026-07-04 21:38 | no |
-| 07-04-workflow-v2-m6-parallel-development [0/3 done] | parent | codex | in_progress | 2026-07-04 21:39 | no |
+| 07-04-workflow-v2-m6-parallel-development [1/3 done] | parent | codex | in_progress | 2026-07-04 22:05 | no |
 
 ## Waiting For Acceptance
 
-- 07-04-workflow-v2-m6-1-claim-guard-block (child_waiting_completion_signal)
+- none
 
 ## Stale Nudges (>48h)
 
