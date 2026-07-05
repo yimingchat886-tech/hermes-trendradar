@@ -3,7 +3,7 @@
   "name": "workflow-v2-m5-remote-ci-staging",
   "title": "Workflow v2 M5 Remote CI Staging",
   "description": "Independent Workflow v2 M5 parent for remote setup, CI, staging deployment, G6, and acceptance automation. Implementation is blocked until jym decides GitHub repository/visibility and staging host.",
-  "status": "in_progress",
+  "status": "completed",
   "dev_type": null,
   "scope": null,
   "tier": "parent",
@@ -18,7 +18,7 @@
   "creator": "jym",
   "assignee": "jym",
   "createdAt": "2026-07-04",
-  "completedAt": null,
+  "completedAt": "2026-07-04",
   "branch": null,
   "base_branch": "main",
   "worktree_path": null,
@@ -53,11 +53,11 @@
     },
     "state_machine": {
       "kind": "parent",
-      "current_state": "parent_prd_draft",
-      "previous_state": null,
-      "last_event": "init",
+      "current_state": "parent_archived",
+      "previous_state": "parent_archive_ready",
+      "last_event": "parent_archive_completed",
       "blocked_from_state": null,
-      "updated_at": "2026-07-04T23:58:19Z"
+      "updated_at": "2026-07-05T04:02:47Z"
     }
   }
 }
