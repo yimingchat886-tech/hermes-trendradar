@@ -28,9 +28,10 @@
 
 ## Conflict Exercise
 
-- Real two-branch conflict/trade-off exercise remains a parent/main integration step.
-- Reason: this worker was explicitly told not to commit, push, merge, archive, switch broader branch state, or touch the M6-3 task/worktree. Creating a real conflict safely requires the main integration session to merge the two child branches/worktrees.
-- Substitute evidence in this child: focused tests simulate the checklist path-matching and missing-report failure paths without damaging repository state.
+- PASS: parent integration merged `codex/workflow-v2-m6-2-merge-collision-protocol` first, then merging `cc/workflow-v2-m6-3-worktree-parallel-trial` produced real conflicts in parent `governance.md` and `BOARD.md`.
+- PASS: `python3 ./.trellis/scripts/conflict_checklist.py --repo .` listed both conflicted files and mapped each to M6-2 + M6-3 with readable stage reports before resolution.
+- Resolution: governance preserved both child intents; `BOARD.md` was regenerated from merged task metadata.
+- Trade-off recorded in parent governance: branch-local generated `BOARD.md` snapshots were dropped in favor of the regenerated merged board.
 
 ## CI Run / Staging Verification
 
