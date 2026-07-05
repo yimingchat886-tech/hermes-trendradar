@@ -3,7 +3,7 @@
   "name": "workflow-v2-m5-2-ci",
   "title": "M5-2 CI",
   "description": "",
-  "status": "in_progress",
+  "status": "completed",
   "dev_type": null,
   "scope": null,
   "tier": "child",
@@ -19,11 +19,11 @@
   "creator": "jym",
   "assignee": "jym",
   "createdAt": "2026-07-04",
-  "completedAt": null,
+  "completedAt": "2026-07-04",
   "branch": "codex/workflow-v2-m4-board",
   "base_branch": "codex/workflow-v2-m4-board",
   "worktree_path": null,
-  "commit": null,
+  "commit": "7dd14ba",
   "pr_url": null,
   "subtasks": [],
   "children": [],
@@ -34,11 +34,11 @@
     "workflow_mode": "harness_state_machine",
     "state_machine": {
       "kind": "child",
-      "current_state": "child_commit_ready",
-      "previous_state": "child_waiting_completion_signal",
-      "last_event": "completion_signal_received",
+      "current_state": "child_archived",
+      "previous_state": "child_archive_ready",
+      "last_event": "child_archive_completed",
       "blocked_from_state": null,
-      "updated_at": "2026-07-05T02:26:53Z"
+      "updated_at": "2026-07-05T02:28:40Z"
     }
   }
 }
