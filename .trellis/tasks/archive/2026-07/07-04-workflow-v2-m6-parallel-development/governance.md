@@ -15,7 +15,7 @@
 | WV2-M6-REQ-001 | M6-1 claim-guard BLOCK | completed | 07-04-workflow-v2-m6-1-claim-guard-block/stage-report.md |
 | WV2-M6-REQ-002 | M6-2 merge collision protocol | completed | 07-04-workflow-v2-m6-2-merge-collision-protocol/stage-report.md |
 | WV2-M6-REQ-003 | M6-3 worktree parallel trial | completed | 07-04-workflow-v2-m6-3-worktree-parallel-trial/stage-report.md |
-| WV2-M6-REQ-004 | Parent closeout | planned | v2 F1-F7 final coverage review in parent closeout |
+| WV2-M6-REQ-004 | Parent closeout | completed | `governance.md` Closeout Review / F1-F7 Coverage |
 
 ## External Review
 
@@ -25,7 +25,24 @@ Accepted for child planning. Parent creation used the accepted source plan; jym 
 
 ### Closeout Review
 
-TBD
+Completed locally before parent archive. Evidence reviewed:
+
+- M6-1 `stage-report.md`: claim guard BLOCK, claim/release, override audit.
+- M6-2 `stage-report.md`: merge protocol, conflict checklist, real conflict exercise.
+- M6-3 `stage-report.md`: worktree runbook, CC+Codex isolated trial, negative claim-guard smoke.
+- Parent integration commits: `643526a`, `adbf0a7`, `8398979`, `f8eba19`.
+
+### F1-F7 Coverage
+
+| Original problem | Covered by |
+|---|---|
+| F1 completion/soft-archive state drift | `task.py soft-archive` writes child state and parent governance; M6-1/M6-2/M6-3 are `completed` / `child_archived`. |
+| F2 impact and PR gate drift | M3/M5 gates remain upstream dependencies; M6 changes passed staged `detect-changes` with low risk before commit. |
+| F3 parent/child pointer and task-card drift | M6 parent children are all completed; archive gate validated child status before parent archive. |
+| F4 remote/CI/staging separation | M5 parent is closed; M6 did not bundle push/merge/archive semantics, and push stayed explicit. |
+| F5 cross-owner edit safety | M6-1 claim guard is BLOCK; M6-3 negative smoke proved cc cannot edit codex-owned M6-2 path. |
+| F6 board/waiting-state drift | `BOARD.md` refreshed after child soft archive; active board now shows M6 parent `[3/3 done]` with no waiting cards. |
+| F7 parallel collision handling | M6-2 checklist identified both owners/cards/reports during real conflict; M6-3 worktree trial proved isolated branches/worktrees. |
 
 ## Boundary Pass
 

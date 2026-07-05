@@ -9,7 +9,6 @@ owner=jym
 | Task | Tier | Owner | Status | Updated | Blocked |
 |---|---|---|---|---|---|
 | 07-02-mediacrawler-long-running-stability | - | jym | in_progress | 2026-07-03 01:14 | no |
-| 07-04-workflow-v2-m6-parallel-development [3/3 done] | parent | codex | in_progress | 2026-07-04 23:19 | no |
 
 ## Waiting For Acceptance
 
@@ -21,6 +20,7 @@ owner=jym
 
 ## Recent Archives (7d)
 
+- 07-04-workflow-v2-m6-parallel-development (completed, 2026-07-04 23:41)
 - 07-04-workflow-v2-m5-remote-ci-staging (completed, 2026-07-04 21:03)
 - 07-04-workflow-v2-mechanization (completed, 2026-07-04 16:47)
 - 07-03-prd-pre-design-input-skill (cancelled, 2026-07-04 13:58)
@@ -40,4 +40,3 @@ owner=jym
 - 06-30-local-ai-state-versioning (completed, 2026-07-04 13:58)
 - 06-30-child-8-mediacrawler-collection-runner (completed, 2026-07-04 13:58)
 - 07-01-child-2-v1-4-profile-local-config (completed, 2026-07-04 13:58)
-- 07-01-child-1-v1-4-cli-contract-skeleton (completed, 2026-07-04 13:58)

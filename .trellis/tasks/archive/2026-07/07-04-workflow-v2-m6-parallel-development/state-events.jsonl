@@ -2,3 +2,6 @@
 {"by": "agent", "created_at": "2026-07-05T04:13:10Z", "current_state": "parent_blocked", "event": "blocker_opened", "kind": "parent", "note": "Waiting for jym explicit 开启并行 signal before M6 child execution", "previous_state": "parent_prd_draft"}
 {"by": "user", "created_at": "2026-07-05T04:36:50Z", "current_state": "parent_prd_draft", "event": "blocker_resolved", "kind": "parent", "note": "jym: 开启并行", "previous_state": "parent_blocked"}
 {"by": "agent", "created_at": "2026-07-05T04:38:57Z", "current_state": "parent_waiting_completion_signal", "event": "prd_drafted", "kind": "parent", "note": "M6 child plan created after jym 开启并行 signal", "previous_state": "parent_prd_draft"}
+{"by": "system", "created_at": "2026-07-05T06:41:53Z", "current_state": "parent_commit_ready", "event": "parent_completion_signal_received", "kind": "parent", "note": "task.py archive", "previous_state": "parent_waiting_completion_signal"}
+{"by": "system", "created_at": "2026-07-05T06:41:53Z", "current_state": "parent_archive_ready", "event": "parent_commit_created", "kind": "parent", "note": "task.py archive", "previous_state": "parent_commit_ready"}
+{"by": "system", "created_at": "2026-07-05T06:41:53Z", "current_state": "parent_archived", "event": "parent_archive_completed", "kind": "parent", "note": "task.py archive", "previous_state": "parent_archive_ready"}

@@ -3,7 +3,7 @@
   "name": "workflow-v2-m6-parallel-development",
   "title": "Workflow v2 M6 Parallel Development",
   "description": "Plan Workflow v2 M6: enable parallel development only after M2-M4 and M5 parents are closed out and jym explicitly opens parallel work.",
-  "status": "in_progress",
+  "status": "completed",
   "dev_type": null,
   "scope": null,
   "tier": "parent",
@@ -18,7 +18,7 @@
   "creator": "jym",
   "assignee": "jym",
   "createdAt": "2026-07-04",
-  "completedAt": null,
+  "completedAt": "2026-07-04",
   "branch": null,
   "base_branch": "main",
   "worktree_path": null,
@@ -53,11 +53,11 @@
     },
     "state_machine": {
       "kind": "parent",
-      "current_state": "parent_waiting_completion_signal",
-      "previous_state": "parent_prd_draft",
-      "last_event": "prd_drafted",
+      "current_state": "parent_archived",
+      "previous_state": "parent_archive_ready",
+      "last_event": "parent_archive_completed",
       "blocked_from_state": null,
-      "updated_at": "2026-07-05T04:38:57Z"
+      "updated_at": "2026-07-05T06:41:53Z"
     }
   }
 }
