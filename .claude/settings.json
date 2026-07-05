@@ -1,0 +1,50 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/session_start.py"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/claim_guard.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/impact_gate.py"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/scope_gate.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "mcp__gitnexus__impact|mcp__gitnexus__context",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/impact_marker.py"
+          }
+        ]
+      }
+    ]
+  }
+}

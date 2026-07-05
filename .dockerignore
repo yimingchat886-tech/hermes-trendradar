@@ -1,0 +1,11 @@
+.git
+.github
+.gitnexus
+.local-state.git
+.pytest_cache
+.trellis
+__pycache__/
+*.pyc
+docs/
+profiles/
+tests/

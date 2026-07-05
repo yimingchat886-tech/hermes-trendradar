@@ -1,0 +1,75 @@
+name: docker-deploy-staging
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docker-staging
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: deploy-ci
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: python -m pip install -e . pytest==9.1.1 ruff==0.15.20
+
+      - name: Lint
+        run: python -m ruff check --select E9,F63,F7,F82 hermes_benchmark tests .trellis/scripts
+
+      - name: Typecheck
+        run: python -m compileall -q hermes_benchmark tests .trellis/scripts
+
+      - name: Test
+        env:
+          TMPDIR: /tmp
+        run: python -m pytest -q
+
+  deploy:
+    name: docker-deploy-staging
+    needs: ci
+    if: ${{ success() && github.ref == 'refs/heads/main' }}
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build staging image
+        run: docker build -t hermes-trendradar:staging .
+
+      - name: Replace staging container
+        run: |
+          docker rm -f hermes-trendradar-staging || true
+          docker run -d \
+            --name hermes-trendradar-staging \
+            --restart unless-stopped \
+            -p 18080:8080 \
+            hermes-trendradar:staging
+
+      - name: Verify staging health
+        run: |
+          python3 - <<'PY'
+          import urllib.request
+
+          with urllib.request.urlopen("http://127.0.0.1:18080/healthz", timeout=10) as response:
+              body = response.read().decode("utf-8")
+          assert response.status == 200
+          assert "hermes-trendradar" in body
+          PY

@@ -4,7 +4,7 @@
 Task Management Script.
 
 Usage:
-    python3 task.py create "<title>" [--slug <name>] [--assignee <dev>] [--priority P0|P1|P2|P3] [--parent <dir>] [--package <pkg>]
+    python3 task.py create "<title>" [--slug <name>] [--tier light|child|parent] [--owner cc|codex|jym] [--touches <glob>] [--parent <dir>] [--package <pkg>]
     python3 task.py add-context <dir> <file> <path> [reason] # Add jsonl entry
     python3 task.py validate <dir>              # Validate jsonl files
     python3 task.py list-context <dir>          # List jsonl entries
@@ -15,6 +15,7 @@ Usage:
     python3 task.py set-base-branch <dir> <branch>  # Set PR target branch
     python3 task.py set-scope <dir> <scope>     # Set scope for PR title
     python3 task.py archive <task-dir>          # Archive completed task
+    python3 task.py soft-archive <task-dir> --commit <hash>  # Soft archive v2 child
     python3 task.py list                        # List active tasks
     python3 task.py list-archive [month]        # List archived tasks
     python3 task.py add-subtask <parent-dir> <child-dir>     # Link child to parent
@@ -24,11 +25,13 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import subprocess
 import sys
 
 from common.log import Colors, colored
 from common.paths import (
     DIR_WORKFLOW,
+    DIR_SCRIPTS,
     DIR_TASKS,
     FILE_TASK_JSON,
     get_repo_root,
@@ -50,6 +53,7 @@ from common.tasks import iter_active_tasks, children_progress
 from common.task_store import (
     cmd_create,
     cmd_archive,
+    cmd_soft_archive,
     cmd_set_branch,
     cmd_set_base_branch,
     cmd_set_scope,
@@ -61,6 +65,28 @@ from common.task_context import (
     cmd_validate,
     cmd_list_context,
 )
+
+
+def refresh_board_after(command: str, return_code: int) -> None:
+    if return_code != 0 or command not in {"create", "archive", "soft-archive"}:
+        return
+    repo_root = get_repo_root()
+    board = repo_root / DIR_WORKFLOW / DIR_SCRIPTS / "board.py"
+    if not board.is_file():
+        return
+    result = subprocess.run(
+        [sys.executable, str(board)],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    if result.returncode != 0:
+        print(
+            colored(f"[WARN] BOARD refresh failed: {result.stderr.strip()}", Colors.YELLOW),
+            file=sys.stderr,
+        )
 
 
 # =============================================================================
@@ -304,7 +330,8 @@ def show_usage() -> None:
     print("""Task Management Script
 
 Usage:
-  python3 task.py create <title>                     Create new task directory
+  python3 task.py create <title>                     Create new v2 light task directory
+  python3 task.py create <title> --tier parent       Create new v2 parent task directory
   python3 task.py create <title> --package <pkg>     Create task for a specific package
   python3 task.py create <title> --parent <dir>      Create task as child of parent
   python3 task.py add-context <dir> <jsonl> <path> [reason]  Add entry to jsonl
@@ -317,6 +344,7 @@ Usage:
   python3 task.py set-base-branch <dir> <branch>     Set PR target branch
   python3 task.py set-scope <dir> <scope>            Set scope for PR title
   python3 task.py archive <task-dir>                 Archive completed task
+  python3 task.py soft-archive <task-dir> --commit <hash>  Soft archive v2 child
   python3 task.py add-subtask <parent> <child>       Link child task to parent
   python3 task.py remove-subtask <parent> <child>    Unlink child from parent
   python3 task.py list [--mine] [--status <status>]  List tasks
@@ -398,6 +426,12 @@ def main() -> int:
     p_create.add_argument("--description", "-d", help="Task description")
     p_create.add_argument("--parent", help="Parent task directory (establishes subtask link)")
     p_create.add_argument("--package", help="Package name for monorepo projects")
+    p_create.add_argument("--tier", choices=["light", "child", "parent"], default="light",
+                          help="v2 task tier (default: light; --parent forces child)")
+    p_create.add_argument("--owner", choices=["cc", "codex", "jym"], default="codex",
+                          help="v2 task owner")
+    p_create.add_argument("--touches", action="append", default=[],
+                          help="Expected touched path glob; repeat or comma-separate")
 
     # add-context
     p_add = subparsers.add_parser("add-context", help="Add context entry")
@@ -445,6 +479,15 @@ def main() -> int:
     p_archive = subparsers.add_parser("archive", help="Archive task")
     p_archive.add_argument("name", help="Task directory or name")
     p_archive.add_argument("--no-commit", action="store_true", help="Skip auto git commit after archive")
+    p_archive.add_argument("--force-archive", action="store_true", help="Bypass v2 done gate with audit reason")
+    p_archive.add_argument("--reason", default="", help="Required with --force-archive")
+
+    # soft-archive
+    p_soft = subparsers.add_parser("soft-archive", help="Soft archive v2 child task")
+    p_soft.add_argument("name", help="Task directory or name")
+    p_soft.add_argument("--commit", required=True, help="Commit hash to record")
+    p_soft.add_argument("--force-archive", action="store_true", help="Bypass v2 done gate with audit reason")
+    p_soft.add_argument("--reason", default="", help="Required with --force-archive")
 
     # list
     p_list = subparsers.add_parser("list", help="List tasks")
@@ -483,6 +526,7 @@ def main() -> int:
         "set-base-branch": cmd_set_base_branch,
         "set-scope": cmd_set_scope,
         "archive": cmd_archive,
+        "soft-archive": cmd_soft_archive,
         "add-subtask": cmd_add_subtask,
         "remove-subtask": cmd_remove_subtask,
         "list": cmd_list,
@@ -490,7 +534,9 @@ def main() -> int:
     }
 
     if args.command in commands:
-        return commands[args.command](args)
+        return_code = commands[args.command](args)
+        refresh_board_after(args.command, return_code)
+        return return_code
     else:
         show_usage()
         return 1

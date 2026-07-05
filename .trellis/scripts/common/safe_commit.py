@@ -156,6 +156,7 @@ def safe_archive_paths_to_add(
         for a path that no longer exists in the working tree)
       - any child task directories whose `task.json` was edited to drop
         the archived parent (parent-children relationship update)
+      - BOARD.md after `task.py archive` refreshes it
 
     This narrow scope avoids "scope creep" — dirty changes in OTHER
     active task dirs (parallel-window edits) are NOT bundled into the
@@ -182,6 +183,8 @@ def safe_archive_paths_to_add(
             paths.append(
                 f"{DIR_WORKFLOW}/{DIR_TASKS}/{DIR_ARCHIVE}"
             )
+        if (repo_root / "BOARD.md").is_file():
+            paths.append("BOARD.md")
         for child_name in modified_children or []:
             paths.append(f"{DIR_WORKFLOW}/{DIR_TASKS}/{child_name}")
         return paths

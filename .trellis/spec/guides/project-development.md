@@ -146,6 +146,12 @@ npm run e2e:v6
 git diff --check
 ```
 
+For local Python lint in this repo, use:
+
+```bash
+uvx --from ruff==0.15.20 ruff check --select E9,F63,F7,F82 hermes_benchmark tests .trellis/scripts
+```
+
 Choose focused tests for the changed contract. Use `npm run typecheck` for TypeScript changes. Use `git diff --check` before commit or final handoff.
 
 If a check cannot run, record:

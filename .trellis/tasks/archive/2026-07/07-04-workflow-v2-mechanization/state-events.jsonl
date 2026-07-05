@@ -1,0 +1,2 @@
+{"by": "agent", "created_at": "2026-07-04T21:58:11Z", "current_state": "parent_prd_draft", "event": "init", "kind": "parent", "note": "bootstrap v2 parent after Codex PLAN review", "previous_state": null}
+{"by": "agent", "created_at": "2026-07-04T22:47:21Z", "current_state": "parent_waiting_completion_signal", "event": "prd_drafted", "kind": "parent", "note": "split complete; M2-M4 children created", "previous_state": "parent_prd_draft"}

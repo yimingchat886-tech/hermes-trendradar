@@ -99,3 +99,11 @@ When no path exists, `trace` reports the furthest reachable node — exactly whe
 
 4. Root cause: fetchRates calls external API without proper timeout
 ```
+
+## Red Command Route
+
+Before editing a bug fix, make the failure red:
+
+- Confirm an existing failing command or log proves the symptom, or create the smallest command that fails.
+- Run GitNexus `query`, `context`, or `impact` before source edits when the G2 impact gate applies.
+- After two failed fix/verify rounds, stop patching, list 3-5 falsifiable hypotheses, and switch to `trellis-break-loop`.

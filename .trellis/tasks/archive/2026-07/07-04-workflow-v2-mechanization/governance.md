@@ -4,19 +4,19 @@
 
 | Child | Delivery | Dependencies | Owner | Branch | Status | Commit |
 |---|---|---|---|---|---|---|
-| M2 task.py tiers and gates | v2 templates, tier metadata, validate, soft-archive, G1/G3/G5-WARN | Codex review accepted | codex | codex/workflow-v2-m2-taskpy-gates | planned | |
-| M3 PR helper and impact/push gates | trellis_pr.sh, G2, G4, debugging skill update | M2 | codex | codex/workflow-v2-m3-pr-gates | planned | |
-| M4 BOARD and session start | BOARD generator, shared summary, Claude/Codex SessionStart | M2 | codex | codex/workflow-v2-m4-board | planned | |
+| M2 task.py tiers and gates | v2 templates, tier metadata, validate, soft-archive, G1/G3/G5-WARN | Codex review accepted | codex | codex/workflow-v2-m2-taskpy-gates | completed | c34665a |
+| M3 PR helper and impact push gates | trellis_pr.sh, G2, G4, debugging skill update | M2 | codex | codex/workflow-v2-m3-pr-gates | completed | 2d4ed10 |
+| M4 BOARD and session start | BOARD generator, shared summary, Claude/Codex SessionStart | M2 | codex | codex/workflow-v2-m4-board | completed | 211600f |
 
 ## RTM
 
 | REQ-ID | Child | Status | Evidence |
 |---|---|---|---|
-| WV2-M2-REQ-001 | M2 task.py tiers and gates | planned | |
-| WV2-M2-REQ-002 | M2 task.py tiers and gates | planned | |
-| WV2-M2-REQ-003 | M2 task.py tiers and gates | planned | |
-| WV2-M3-REQ-001 | M3 PR helper and impact/push gates | planned | |
-| WV2-M4-REQ-001 | M4 BOARD and session start | planned | |
+| WV2-M2-REQ-001 | M2 task.py tiers and gates | completed | 07-04-workflow-v2-m2-taskpy-gates/stage-report.md |
+| WV2-M2-REQ-002 | M2 task.py tiers and gates | completed | 07-04-workflow-v2-m2-taskpy-gates/stage-report.md |
+| WV2-M2-REQ-003 | M2 task.py tiers and gates | completed | 07-04-workflow-v2-m2-taskpy-gates/stage-report.md |
+| WV2-M3-REQ-001 | M3 PR helper and impact push gates | completed | 07-04-workflow-v2-m3-pr-gates/stage-report.md |
+| WV2-M4-REQ-001 | M4 BOARD and session start | completed | 07-04-workflow-v2-m4-board/stage-report.md |
 
 ## External Review
 
@@ -26,7 +26,7 @@ Result: pass after accepted corrections. Review challenged scope leaks and hidde
 
 ### Closeout Review
 
-TBD at parent closeout.
+Result: pass. M2, M3, and M4 child tasks are completed, RTM rows are completed, and BOARD reports this parent as 3/3 done. M5 and M6 remain out of this parent scope.
 
 ## Boundary Pass
 

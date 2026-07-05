@@ -1,0 +1,42 @@
+{
+  "id": "workflow-v2-m5-1-remote-branch-protection",
+  "name": "workflow-v2-m5-1-remote-branch-protection",
+  "title": "M5-1 remote and branch protection",
+  "description": "Configure GitHub origin for hermes-trendradar, inspect existing remote main, and prepare branch protection without force-push or data loss.",
+  "status": "completed",
+  "dev_type": null,
+  "scope": null,
+  "tier": "child",
+  "owner": "codex",
+  "touches": [
+    ".trellis/tasks/07-04-workflow-v2-m5-1-remote-branch-protection/**",
+    ".git/config"
+  ],
+  "package": null,
+  "priority": "P1",
+  "creator": "jym",
+  "assignee": "jym",
+  "createdAt": "2026-07-04",
+  "completedAt": "2026-07-04",
+  "branch": "codex/workflow-v2-m4-board",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": "325d7c5",
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "07-04-workflow-v2-m5-remote-ci-staging",
+  "relatedFiles": [],
+  "notes": "Branch protection blocker resolved after repo was made public. main is protected: PR required, admins enforced, force-push/delete disabled, required checks deferred until M5-2 CI.",
+  "meta": {
+    "workflow_mode": "harness_state_machine",
+    "state_machine": {
+      "kind": "child",
+      "current_state": "child_archived",
+      "previous_state": "child_archive_ready",
+      "last_event": "child_archive_completed",
+      "blocked_from_state": null,
+      "updated_at": "2026-07-05T01:57:05Z"
+    }
+  }
+}

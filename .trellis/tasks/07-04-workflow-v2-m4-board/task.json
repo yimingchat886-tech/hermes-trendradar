@@ -1,0 +1,53 @@
+{
+  "id": "workflow-v2-m4-board",
+  "name": "workflow-v2-m4-board",
+  "title": "M4 BOARD and session start",
+  "description": "Implement BOARD generator plus shared Claude/Codex SessionStart summary and stale-task nudges.",
+  "status": "completed",
+  "dev_type": null,
+  "scope": null,
+  "tier": "child",
+  "owner": "codex",
+  "touches": [
+    ".trellis/scripts/board.py",
+    ".trellis/scripts/task.py",
+    "BOARD.md",
+    ".claude/hooks/session_start.py",
+    ".codex/hooks/session-start.py",
+    "tests/trellis/**",
+    ".trellis/tasks/07-04-workflow-v2-m4-board/**",
+    ".trellis/tasks/07-04-workflow-v2-mechanization/governance.md"
+  ],
+  "package": null,
+  "priority": "P1",
+  "creator": "jym",
+  "assignee": "jym",
+  "createdAt": "2026-07-04",
+  "completedAt": "2026-07-04",
+  "branch": "codex/workflow-v2-m4-board",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": "211600f",
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [
+    "docs/reports/workflow-v2-m2-m6-plan.md",
+    "docs/runbooks/workflow-v2-operator-guide.md",
+    ".trellis/spec/project/ponytail-boundary.md",
+    ".trellis/spec/project/git-commit-push-policy.md"
+  ],
+  "notes": "",
+  "meta": {
+    "workflow_mode": "harness_state_machine",
+    "state_machine": {
+      "kind": "child",
+      "current_state": "child_archived",
+      "previous_state": "child_archive_ready",
+      "last_event": "child_archive_completed",
+      "blocked_from_state": null,
+      "updated_at": "2026-07-04T23:39:51Z"
+    }
+  }
+}
