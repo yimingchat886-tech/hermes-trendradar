@@ -8,7 +8,8 @@ owner=jym
 
 | Task | Tier | Owner | Status | Updated | Blocked |
 |---|---|---|---|---|---|
-| 07-05-trellis-workflow-migration-skill | light | codex | in_progress | 2026-07-05 00:23 | no |
+| 07-05-parent-v2-0-real-analysis-loop | parent | codex | in_progress | 2026-07-05 20:14 | no |
+| 07-05-trellis-workflow-migration-skill | light | codex | in_progress | 2026-07-05 00:46 | no |
 
 ## Waiting For Acceptance
 
