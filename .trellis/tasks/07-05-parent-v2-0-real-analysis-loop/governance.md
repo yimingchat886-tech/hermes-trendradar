@@ -4,7 +4,7 @@
 
 | Child | Delivery | Dependencies | Owner | Branch | Status | Commit |
 |---|---|---|---|---|---|---|
-| 07-05-child-0-v2-0-release-prd | `docs/PRD/releases/PRD_v2.0.md` + master index update | Parent confirmation | codex | current | planning | TBD |
+| 07-05-child-0-v2-0-release-prd | `docs/PRD/releases/PRD_v2.0.md` + master index update | Parent confirmation | codex | current | completed | 8fcdce0 |
 | 07-05-child-1-v2-0-hermes-skill-invocation | no-secret skill/config template + invocation proof | Child 0 | codex | current | completed | 840a068 |
 | 07-05-child-2-v2-0-real-analysis-handoff-consumer | Hermes-owned result refs from handoff package | Child 1 | codex | current | completed | 6b1b67d |
 | 07-05-child-3-v2-0-internal-digest-message | internal-group digest payload/send evidence | Child 2 | codex | current | completed | 3209700 |
@@ -15,7 +15,7 @@
 
 | REQ-ID | Child | Status | Evidence |
 |---|---|---|---|
-| P20-REQ-000 | Child 0 | planned | `prd.md` requires release PRD before code children. |
+| P20-REQ-000 | Child 0: v2.0 release PRD and PRD map | completed | 07-05-child-0-v2-0-release-prd/stage-report.md |
 | P20-REQ-010 | Child 1: Hermes skill invocation gate | completed | 07-05-child-1-v2-0-hermes-skill-invocation/stage-report.md |
 | P20-REQ-020 | Child 1: Hermes skill invocation gate | completed | 07-05-child-1-v2-0-hermes-skill-invocation/stage-report.md |
 | P20-REQ-030 | Child 2: real analysis handoff consumer | completed | 07-05-child-2-v2-0-real-analysis-handoff-consumer/stage-report.md |
