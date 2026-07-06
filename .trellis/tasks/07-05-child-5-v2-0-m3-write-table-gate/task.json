@@ -3,7 +3,7 @@
   "name": "child-5-v2-0-m3-write-table-gate",
   "title": "Child 5: M3 write-table gate",
   "description": "Record the M3 Bitable decision gate and create implementation work only if conditions are met.",
-  "status": "in_progress",
+  "status": "completed",
   "dev_type": null,
   "scope": "Record M3 Bitable gate evidence and create write implementation only if conditions pass.",
   "tier": "child",
@@ -17,11 +17,11 @@
   "creator": "jym",
   "assignee": "jym",
   "createdAt": "2026-07-05",
-  "completedAt": null,
+  "completedAt": "2026-07-05",
   "branch": null,
   "base_branch": "codex/workflow-v2-m4-board",
   "worktree_path": null,
-  "commit": null,
+  "commit": "900f807",
   "pr_url": null,
   "subtasks": [],
   "children": [],
@@ -32,11 +32,11 @@
     "workflow_mode": "harness_state_machine",
     "state_machine": {
       "kind": "child",
-      "current_state": "child_commit_ready",
-      "previous_state": "child_waiting_completion_signal",
-      "last_event": "completion_signal_received",
+      "current_state": "child_archived",
+      "previous_state": "child_archive_ready",
+      "last_event": "child_archive_completed",
       "blocked_from_state": null,
-      "updated_at": "2026-07-06T05:42:53Z"
+      "updated_at": "2026-07-06T05:43:31Z"
     }
   }
 }

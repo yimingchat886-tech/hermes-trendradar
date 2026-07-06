@@ -9,8 +9,7 @@ owner=jym
 | Task | Tier | Owner | Status | Updated | Blocked |
 |---|---|---|---|---|---|
 | 07-05-child-0-v2-0-release-prd | child | codex | planning | 2026-07-05 20:24 | no |
-| 07-05-child-5-v2-0-m3-write-table-gate | child | codex | planning | 2026-07-05 20:24 | no |
-| 07-05-parent-v2-0-real-analysis-loop [4/6 done] | parent | codex | in_progress | 2026-07-05 22:27 | no |
+| 07-05-parent-v2-0-real-analysis-loop [5/6 done] | parent | codex | in_progress | 2026-07-05 22:43 | no |
 | 07-05-trellis-workflow-migration-skill | light | codex | in_progress | 2026-07-05 00:46 | no |
 
 ## Waiting For Acceptance

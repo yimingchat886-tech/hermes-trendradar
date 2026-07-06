@@ -9,7 +9,7 @@
 | 07-05-child-2-v2-0-real-analysis-handoff-consumer | Hermes-owned result refs from handoff package | Child 1 | codex | current | completed | 6b1b67d |
 | 07-05-child-3-v2-0-internal-digest-message | internal-group digest payload/send evidence | Child 2 | codex | current | completed | 3209700 |
 | 07-05-child-4-v2-0-human-feedback-intake | adopt/reject feedback persisted to SQLite | Child 3 | codex | current | completed | 5fdab42 |
-| 07-05-child-5-v2-0-m3-write-table-gate | decision/evidence only unless M3 conditions are met | Child 4 + 2-week message flow | codex | current | gated | TBD |
+| 07-05-child-5-v2-0-m3-write-table-gate | decision/evidence only unless M3 conditions are met | Child 4 + 2-week message flow | codex | current | completed | 900f807 |
 
 ## RTM
 
@@ -21,7 +21,7 @@
 | P20-REQ-030 | Child 2: real analysis handoff consumer | completed | 07-05-child-2-v2-0-real-analysis-handoff-consumer/stage-report.md |
 | P20-REQ-040 | Child 3: internal digest message path | completed | 07-05-child-3-v2-0-internal-digest-message/stage-report.md |
 | P20-REQ-050 | Child 4: human feedback intake | completed | 07-05-child-4-v2-0-human-feedback-intake/stage-report.md |
-| P20-REQ-060 | Child 5: M3 write-table gate | gated | M3 requires 2-week message-flow evidence plus explicit decisions. |
+| P20-REQ-060 | Child 5: M3 write-table gate | completed | 07-05-child-5-v2-0-m3-write-table-gate/stage-report.md |
 
 ## External Review
 
