@@ -1,5 +1,17 @@
 # Stabilize GitNexus Generated Guidance
 
+## What will change?
+
+Routine GitNexus refresh guidance will use `analyze --index-only --name hermes-trendradar` instead of plain `analyze`.
+
+## Why now?
+
+Plain `gitnexus analyze` can dirty tracked AGENTS, CLAUDE, and GitNexus skill files with volatile index metadata.
+
+## How will it be verified?
+
+Run whitespace checks, confirm GitNexus exposes `--index-only`, confirm guidance no longer recommends plain `analyze` for routine refreshes, and validate this Trellis task.
+
 ## Goal
 
 Stop routine GitNexus index refreshes from dirtying tracked guidance files (`AGENTS.md`, `CLAUDE.md`, and `.claude/skills/gitnexus/*`) with volatile index metadata.

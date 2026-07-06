@@ -15,6 +15,7 @@
 - `git diff --no-index --check /dev/null <task-file>` for this task's PRD/report/jsonl files: pass
 - `git diff --cached --check`: pass
 - `node .gitnexus/run.cjs detect-changes --scope staged --repo hermes-trendradar`: pass, low risk, affected processes 0
+- `python3 ./.trellis/scripts/task.py validate .trellis/tasks/07-05-stabilize-gitnexus-generated-guidance`: pass after restoring the light-task PRD headings
 - Ponytail review: pass; skipped wrapper/hook/config because GitNexus already provides `--index-only`.
 
 ## Changed Files
