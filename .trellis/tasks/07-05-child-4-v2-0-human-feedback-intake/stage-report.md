@@ -40,8 +40,9 @@
 ## Status
 
 - Implemented and locally verified at `2026-07-06T05:22:17Z`.
-- Harness state: `child_commit_ready`.
-- Commit: approved by user.
+- Harness state: `child_archived`.
+- Implementation commit: `5fdab42`
+- Soft archive: completed.
 - Push: no.
 
 ## User Completion Signal
