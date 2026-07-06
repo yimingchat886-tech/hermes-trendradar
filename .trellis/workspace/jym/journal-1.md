@@ -63,7 +63,9 @@ Created PRD_MASTER, moved v1.3 release PRD into docs/PRD/releases, and archived 
 
 ### Main Changes
 
-(Add details)
+- Updated AGENTS/CLAUDE/GitNexus skill guidance to use `analyze --index-only --name hermes-trendradar` for routine refreshes.
+- Added the same durable convention to `.trellis/spec/guides/project-development.md`.
+- Archived `.trellis/tasks/07-05-stabilize-gitnexus-generated-guidance`.
 
 ### Git Commits
 
@@ -73,7 +75,9 @@ Created PRD_MASTER, moved v1.3 release PRD into docs/PRD/releases, and archived 
 
 ### Testing
 
-- [OK] (Add test results)
+- [OK] `git diff --check`
+- [OK] `python3 ./.trellis/scripts/task.py validate .trellis/tasks/07-05-stabilize-gitnexus-generated-guidance`
+- [OK] `node .gitnexus/run.cjs detect-changes --scope staged --repo hermes-trendradar`
 
 ### Status
 
@@ -103,6 +107,40 @@ Switched the current production-test transcription runtime to FunASR, refreshed 
 | Hash | Message |
 |------|---------|
 | `a3ef21e` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 4: Stabilize GitNexus generated guidance
+
+**Date**: 2026-07-05
+**Task**: Stabilize GitNexus generated guidance
+**Branch**: `codex/workflow-v2-m4-board`
+
+### Summary
+
+Made routine GitNexus refresh use index-only guidance, removed volatile committed stats, validated the task, and archived it.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `e5bdeb3` | (see git log) |
+| `ed14b86` | (see git log) |
 
 ### Testing
 
