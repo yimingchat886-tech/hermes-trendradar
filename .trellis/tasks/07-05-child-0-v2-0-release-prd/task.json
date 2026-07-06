@@ -1,0 +1,42 @@
+{
+  "id": "child-0-v2-0-release-prd",
+  "name": "child-0-v2-0-release-prd",
+  "title": "Child 0: v2.0 release PRD and PRD map",
+  "description": "Create the v2.0 release PRD, update PRD_MASTER, and preserve the PRD/task boundary.",
+  "status": "planning",
+  "dev_type": null,
+  "scope": "Create docs/PRD/releases/PRD_v2.0.md and update PRD_MASTER without code changes.",
+  "tier": "child",
+  "owner": "codex",
+  "touches": [
+    "docs/PRD/PRD_MASTER.md",
+    "docs/PRD/releases/PRD_v2.0.md"
+  ],
+  "package": null,
+  "priority": "P1",
+  "creator": "jym",
+  "assignee": "jym",
+  "createdAt": "2026-07-05",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "codex/workflow-v2-m4-board",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "07-05-parent-v2-0-real-analysis-loop",
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {
+    "workflow_mode": "harness_state_machine",
+    "state_machine": {
+      "kind": "child",
+      "current_state": "child_plan_draft",
+      "previous_state": null,
+      "last_event": "init",
+      "blocked_from_state": null,
+      "updated_at": "2026-07-06T03:20:46Z"
+    }
+  }
+}

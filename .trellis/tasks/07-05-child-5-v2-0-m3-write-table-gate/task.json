@@ -1,0 +1,42 @@
+{
+  "id": "child-5-v2-0-m3-write-table-gate",
+  "name": "child-5-v2-0-m3-write-table-gate",
+  "title": "Child 5: M3 write-table gate",
+  "description": "Record the M3 Bitable decision gate and create implementation work only if conditions are met.",
+  "status": "planning",
+  "dev_type": null,
+  "scope": "Record M3 Bitable gate evidence and create write implementation only if conditions pass.",
+  "tier": "child",
+  "owner": "codex",
+  "touches": [
+    ".trellis/tasks/07-05-parent-v2-0-real-analysis-loop/**",
+    "docs/PRD/releases/PRD_v2.0.md"
+  ],
+  "package": null,
+  "priority": "P2",
+  "creator": "jym",
+  "assignee": "jym",
+  "createdAt": "2026-07-05",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "codex/workflow-v2-m4-board",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "07-05-parent-v2-0-real-analysis-loop",
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {
+    "workflow_mode": "harness_state_machine",
+    "state_machine": {
+      "kind": "child",
+      "current_state": "child_plan_draft",
+      "previous_state": null,
+      "last_event": "init",
+      "blocked_from_state": null,
+      "updated_at": "2026-07-06T03:21:31Z"
+    }
+  }
+}

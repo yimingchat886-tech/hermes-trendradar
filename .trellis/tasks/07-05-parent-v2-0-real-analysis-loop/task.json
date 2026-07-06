@@ -25,7 +25,14 @@
   "commit": null,
   "pr_url": null,
   "subtasks": [],
-  "children": [],
+  "children": [
+    "07-05-child-0-v2-0-release-prd",
+    "07-05-child-1-v2-0-hermes-skill-invocation",
+    "07-05-child-2-v2-0-real-analysis-handoff-consumer",
+    "07-05-child-3-v2-0-internal-digest-message",
+    "07-05-child-4-v2-0-human-feedback-intake",
+    "07-05-child-5-v2-0-m3-write-table-gate"
+  ],
   "parent": null,
   "relatedFiles": [],
   "notes": "",

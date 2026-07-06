@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/guides/project-development.md", "reason": "repo task and verification rules"}
+{"file": ".trellis/spec/project/sqlite-state.md", "reason": "feedback persistence, idempotency, and audit state"}
+{"file": ".trellis/spec/project/cli-contracts.md", "reason": "feedback intake CLI/JSON contract if added"}
+{"file": "docs/PRD/PRD_MASTER.md", "reason": "M2 feedback loop boundary"}
+{"file": ".trellis/tasks/07-05-parent-v2-0-real-analysis-loop/prd.md", "reason": "parent P20-REQ-050 scope"}

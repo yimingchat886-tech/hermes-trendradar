@@ -70,12 +70,12 @@ Conclusion: `PRD_MASTER.md` is good enough to seed v2.0, but not good enough to 
 
 ## Acceptance Criteria
 
-- [ ] Parent challenge is recorded before implementation begins.
+- [x] Parent challenge is recorded before implementation begins.
 - [ ] `docs/PRD/releases/PRD_v2.0.md` exists and `PRD_MASTER.md` points to it.
-- [ ] Child tasks are created only after the parent PRD is confirmed.
+- [x] Child tasks are created only after the parent PRD is confirmed.
 - [ ] M0 evidence exists before M1 begins.
 - [ ] M3 Bitable work is not started without 2-week message-flow evidence and explicit authorization/table decisions.
-- [ ] No source code is changed by this parent setup pass.
+- [x] No source code is changed by this parent setup pass.
 
 ## Technical Approach
 

@@ -1,0 +1,3 @@
+{"file": ".trellis/tasks/07-05-child-2-v2-0-real-analysis-handoff-consumer/prd.md", "reason": "child acceptance boundary"}
+{"file": ".trellis/spec/project/sqlite-state.md", "reason": "verify persisted refs and deterministic errors"}
+{"file": ".trellis/spec/project/cli-contracts.md", "reason": "verify JSON/error contract"}
