@@ -25,6 +25,10 @@
 - Explicit limits: none
 - Push allowed: no
 
+## Implementation Commit
+
+- Commit: `840a068`
+
 ## CI Run / Staging Verification
 
 - CI run:

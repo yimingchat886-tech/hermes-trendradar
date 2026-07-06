@@ -4,20 +4,20 @@
 
 | Child | Delivery | Dependencies | Owner | Branch | Status | Commit |
 |---|---|---|---|---|---|---|
-| Child 0: v2.0 release PRD and PRD map | `docs/PRD/releases/PRD_v2.0.md` + master index update | Parent confirmation | TBD | TBD | planned | TBD |
-| Child 1: Hermes skill invocation gate | no-secret skill/config template + invocation proof | Child 0 | TBD | TBD | planned | TBD |
-| Child 2: real analysis handoff consumer | Hermes-owned result refs from handoff package | Child 1 | TBD | TBD | planned | TBD |
-| Child 3: internal digest message path | internal-group digest payload/send evidence | Child 2 | TBD | TBD | planned | TBD |
-| Child 4: human feedback intake | adopt/reject feedback persisted to SQLite | Child 3 | TBD | TBD | planned | TBD |
-| Child 5: M3 write-table gate | decision/evidence only unless M3 conditions are met | Child 4 + 2-week message flow | TBD | TBD | gated | TBD |
+| 07-05-child-0-v2-0-release-prd | `docs/PRD/releases/PRD_v2.0.md` + master index update | Parent confirmation | codex | current | planning | TBD |
+| 07-05-child-1-v2-0-hermes-skill-invocation | no-secret skill/config template + invocation proof | Child 0 | codex | current | completed | 840a068 |
+| 07-05-child-2-v2-0-real-analysis-handoff-consumer | Hermes-owned result refs from handoff package | Child 1 | codex | current | planning | TBD |
+| 07-05-child-3-v2-0-internal-digest-message | internal-group digest payload/send evidence | Child 2 | codex | current | planning | TBD |
+| 07-05-child-4-v2-0-human-feedback-intake | adopt/reject feedback persisted to SQLite | Child 3 | codex | current | planning | TBD |
+| 07-05-child-5-v2-0-m3-write-table-gate | decision/evidence only unless M3 conditions are met | Child 4 + 2-week message flow | codex | current | gated | TBD |
 
 ## RTM
 
 | REQ-ID | Child | Status | Evidence |
 |---|---|---|---|
 | P20-REQ-000 | Child 0 | planned | `prd.md` requires release PRD before code children. |
-| P20-REQ-010 | Child 1 | planned | `prd.md` keeps Hermes skill path and no-MCP/no-dependency constraint. |
-| P20-REQ-020 | Child 1 | planned | M0 gate requires one invocation and message/fallback evidence. |
+| P20-REQ-010 | Child 1: Hermes skill invocation gate | completed | 07-05-child-1-v2-0-hermes-skill-invocation/stage-report.md |
+| P20-REQ-020 | Child 1: Hermes skill invocation gate | completed | 07-05-child-1-v2-0-hermes-skill-invocation/stage-report.md |
 | P20-REQ-030 | Child 2 | planned | M1 gate requires real Hermes result refs, not mock decomposition. |
 | P20-REQ-040 | Child 3 | planned | Daily digest message path must include trace IDs. |
 | P20-REQ-050 | Child 4 | planned | Feedback intake must be idempotent and auditable in SQLite. |
@@ -40,7 +40,7 @@ TBD
 
 ## Boundary Pass
 
-Parent setup only created Trellis planning artifacts. It did not modify runtime code, docs source PRDs, profiles, tests, or configs.
+Parent setup and child creation only created Trellis planning artifacts. It did not modify runtime code, docs source PRDs, profiles, tests, or configs.
 
 Scoped out for now:
 
