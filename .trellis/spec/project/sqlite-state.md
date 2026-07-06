@@ -19,16 +19,20 @@
 - `record_transcript_state(...) -> str`
 - `record_analysis_package_ref(...) -> str`
 - `record_analysis_result_ref(...) -> str`
+- `record_human_feedback_ref(...) -> str`
 - `record_operation_ref(...) -> str`
 - `record_write_audit(...) -> str`
 
 ### 3. Contracts
 
-- Schema version is `PRAGMA user_version = 2`; future unknown versions fail closed.
+- Schema version is `PRAGMA user_version = 3`; future unknown versions fail closed.
 - `runs` has `UNIQUE(run_date, profile_hash)` and reuses the same `run_id` for same-scope resume/no-op.
 - `content_ledger` stores three independent dedup keys: `p0_key`, `fallback_1_key`, and `fallback_2_key`, each with a partial unique index.
 - Transcript, package, analysis-result, operation, audit, and error helpers store refs or hashes only. Do not store raw videos, raw full transcript text, or raw analysis output.
 - Analysis result refs are idempotent by `(package_id, content_id)` and must link back to the handoff package, content id, transcript artifact ref, result ref, result hash, and result status.
+- Human feedback stores immutable adopt/reject refs only: run/content/result ids, result ref/hash/status snapshot, opaque actor/source-message refs, optional bounded reason code, and a unique `feedback_key_hash`.
+- Repeated identical feedback returns the existing `feedback_id`; same key with changed decision, reason, or result snapshot fails as a conflict and must not overwrite the audit row.
+- Feedback persistence must not add or mutate rule/RAG promotion, Bitable, operation, or write-audit fields.
 - Public helpers that mutate state must be transactional. Run acquisition and content upsert use `BEGIN IMMEDIATE`.
 
 ### 4. Validation & Error Matrix
@@ -55,6 +59,7 @@
 - Same-scope run start, lock conflict, terminal no-op, and failed/stale resume.
 - Content insert, duplicate no-op, split-key dedup conflict, and deterministic error idempotency.
 - Transcript/package/analysis-result/operation/write-audit helpers store refs only and are idempotent by key/hash.
+- Feedback helper persists traceable refs, rejects mismatched run/content/result refs, treats exact duplicates as no-ops, and treats same-key changed payloads as conflicts.
 
 ### 7. Wrong vs Correct
 

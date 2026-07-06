@@ -307,3 +307,57 @@ The digest payload stores refs, ids, hashes, redacted error summaries, and deliv
 - Assert degraded/error state appears in payload.
 - Assert no Feishu operation rows are written.
 - Assert CLI writes a `file:` payload artifact and reports the message-channel blocker.
+
+## Scenario: v2.0 Human Feedback Intake
+
+### 1. Scope / Trigger
+
+- Trigger: `record-feedback` persists an internal-group adopt/reject decision for a real analysis result.
+- Scope: local profile resolution, SQLite feedback validation, immutable audit-row persistence, idempotent duplicate handling, JSON envelope.
+- Out of scope: RAG/vector ingestion, automatic rule enabling, full moderation workflow, Bitable writes, Feishu API reads/writes, and raw message-body storage.
+
+### 2. Signatures
+
+- `hermes-benchmark record-feedback --profile <path> --run-id <run_id> --content-id <content_id> --analysis-result-id <analysis_result_id> --decision adopt|reject --actor-ref <opaque_ref> --source-message-ref <opaque_ref> [--reason-code <slug>] --json`
+- `--config <path>` remains a compatibility alias for `--profile`.
+
+### 3. Contracts
+
+Success JSON:
+
+```json
+{"ok":true,"command":"record-feedback","mode":"runtime","data":{"schema_version":"2.0-m2","feedback_id":"feedback_...","run_id":"run_...","content_id":"...","analysis_result_id":"analysis_result_...","result_ref":"file:...","result_hash":"sha256:...","result_status":"succeeded","decision":"adopt","actor_ref":"feishu:user/redacted-1","source_message_ref":"feishu:message/msg-1","reason_code":"good_topic"},"error":null}
+```
+
+Invalid or conflict JSON:
+
+```json
+{"ok":false,"command":"record-feedback","mode":"runtime","data":null,"error":{"code":"feedback_invalid","message":"..."},"exit_code":6}
+```
+
+Feedback rows store refs, ids, hashes, decision, and bounded slugs only. They must not store raw group-message text, actor display names, free-text reasons, raw analysis body text, or promotion/write-table fields.
+
+### 4. Validation & Error Matrix
+
+| Condition | Exit | JSON error |
+|---|---:|---|
+| Feedback refs match an existing run/content/analysis result | 0 | none |
+| Repeating identical feedback | 0 | none; same `feedback_id`, no row mutation |
+| Same feedback key with changed decision, reason, or result snapshot | 6 | `feedback_conflict` |
+| Missing run/content/result, or trace mismatch | 6 | `feedback_invalid` |
+| Actor/source refs or reason code are not bounded opaque refs/slugs | 6 | `feedback_invalid` |
+| Invalid command args | 2 | `contract_mismatch` |
+
+### 5. Good/Base/Bad Cases
+
+- Good: an adopt/reject decision for one persisted analysis result creates one `human_feedback` row that snapshots `result_ref`, `result_hash`, and `result_status`.
+- Base: repeating the same command returns the same `feedback_id` and keeps one row.
+- Bad: recording feedback must not create Feishu operation/write-audit rows and must not add rule/RAG/Bitable promotion fields.
+
+### 6. Tests Required
+
+- Assert valid CLI feedback persists one traceable feedback row and emits a parseable JSON envelope.
+- Assert duplicate CLI feedback is deterministic and idempotent.
+- Assert changed same-key feedback returns `feedback_conflict`.
+- Assert mismatched trace refs return `feedback_invalid`.
+- Assert no raw message text, promotion fields, Feishu operations, or write-audit rows are written.

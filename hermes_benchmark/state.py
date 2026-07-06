@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 ACTIVE_RUN_STATUS = "running"
 TERMINAL_RUN_STATUSES = {"succeeded", "partial_failed", "failed", "cancelled"}
 IMMUTABLE_CONTENT_FIELDS = (
@@ -20,9 +20,16 @@ IMMUTABLE_CONTENT_FIELDS = (
     "publish_at",
     "normalized_title_or_caption_hash",
 )
+FEEDBACK_DECISIONS = {"adopt", "reject"}
+OPAQUE_REF_CHARS = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._:-/#")
+REASON_CODE_CHARS = set("abcdefghijklmnopqrstuvwxyz0123456789_-")
 
 
 class StateError(ValueError):
+    pass
+
+
+class FeedbackConflictError(StateError):
     pass
 
 
@@ -328,6 +335,96 @@ def record_analysis_result_ref(
     return result_id
 
 
+def record_human_feedback_ref(
+    conn: sqlite3.Connection,
+    *,
+    run_id: str,
+    content_id: str,
+    analysis_result_id: str,
+    decision: str,
+    actor_ref: str,
+    source_message_ref: str,
+    reason_code: str | None = None,
+    now: str | None = None,
+) -> str:
+    _validate_feedback_input(
+        run_id=run_id,
+        content_id=content_id,
+        analysis_result_id=analysis_result_id,
+        decision=decision,
+        actor_ref=actor_ref,
+        source_message_ref=source_message_ref,
+        reason_code=reason_code,
+    )
+    timestamp = now or _now()
+    feedback_key_hash = _stable_hash(run_id, content_id, analysis_result_id, actor_ref, source_message_ref)
+    feedback_id = _stable_id("feedback", feedback_key_hash)
+    with _transaction(conn):
+        run = conn.execute("SELECT run_id FROM runs WHERE run_id = ?", (run_id,)).fetchone()
+        if run is None:
+            raise StateError("feedback run_id not found")
+        content = conn.execute("SELECT content_id FROM content_ledger WHERE content_id = ?", (content_id,)).fetchone()
+        if content is None:
+            raise StateError("feedback content_id not found")
+        result = conn.execute(
+            "SELECT * FROM analysis_results WHERE analysis_result_id = ?",
+            (analysis_result_id,),
+        ).fetchone()
+        if result is None:
+            raise StateError("feedback analysis_result_id not found")
+        if result["run_id"] != run_id or result["content_id"] != content_id:
+            raise StateError("feedback trace refs must match analysis result")
+
+        values = {
+            "feedback_id": feedback_id,
+            "feedback_key_hash": feedback_key_hash,
+            "run_id": run_id,
+            "content_id": content_id,
+            "analysis_result_id": analysis_result_id,
+            "result_ref": result["result_ref"],
+            "result_hash": result["result_hash"],
+            "result_status": result["status"],
+            "decision": decision,
+            "actor_ref": actor_ref,
+            "source_message_ref": source_message_ref,
+            "reason_code": reason_code,
+        }
+        existing = conn.execute(
+            "SELECT * FROM human_feedback WHERE feedback_key_hash = ?",
+            (feedback_key_hash,),
+        ).fetchone()
+        if existing is not None:
+            _assert_same_feedback(existing, values)
+            return existing["feedback_id"]
+
+        conn.execute(
+            """
+            INSERT INTO human_feedback (
+              feedback_id, feedback_key_hash, run_id, content_id, analysis_result_id,
+              result_ref, result_hash, result_status, decision, actor_ref,
+              source_message_ref, reason_code, created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                feedback_id,
+                feedback_key_hash,
+                run_id,
+                content_id,
+                analysis_result_id,
+                result["result_ref"],
+                result["result_hash"],
+                result["status"],
+                decision,
+                actor_ref,
+                source_message_ref,
+                reason_code,
+                timestamp,
+            ),
+        )
+    return feedback_id
+
+
 def record_operation_ref(
     conn: sqlite3.Connection,
     run_id: str,
@@ -498,8 +595,12 @@ def _is_stale(heartbeat: str | None, now: str, stale_after_seconds: int | None) 
 
 
 def _stable_id(prefix: str, *parts: str) -> str:
+    return f"{prefix}_{_stable_hash(*parts).removeprefix('sha256:')[:16]}"
+
+
+def _stable_hash(*parts: str) -> str:
     payload = "|".join(parts).encode()
-    return f"{prefix}_{hashlib.sha256(payload).hexdigest()[:16]}"
+    return "sha256:" + hashlib.sha256(payload).hexdigest()
 
 
 def _join_key(*parts: Any) -> str | None:
@@ -510,6 +611,50 @@ def _join_key(*parts: Any) -> str | None:
 
 def _now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+
+
+def _validate_feedback_input(
+    *,
+    run_id: str,
+    content_id: str,
+    analysis_result_id: str,
+    decision: str,
+    actor_ref: str,
+    source_message_ref: str,
+    reason_code: str | None,
+) -> None:
+    for label, value in {
+        "run_id": run_id,
+        "content_id": content_id,
+        "analysis_result_id": analysis_result_id,
+        "decision": decision,
+        "actor_ref": actor_ref,
+        "source_message_ref": source_message_ref,
+    }.items():
+        if not value:
+            raise StateError(f"feedback {label} is required")
+    if decision not in FEEDBACK_DECISIONS:
+        raise StateError("feedback decision must be adopt or reject")
+    _validate_opaque_ref(actor_ref, "actor_ref")
+    _validate_opaque_ref(source_message_ref, "source_message_ref")
+    if reason_code is not None:
+        _validate_reason_code(reason_code)
+
+
+def _validate_opaque_ref(value: str, label: str) -> None:
+    if len(value) > 160 or ":" not in value or any(ch.isspace() or ch not in OPAQUE_REF_CHARS for ch in value):
+        raise StateError(f"feedback {label} must be an opaque ref")
+
+
+def _validate_reason_code(value: str) -> None:
+    if not value or len(value) > 64 or any(ch not in REASON_CODE_CHARS for ch in value):
+        raise StateError("feedback reason_code must be a bounded slug")
+
+
+def _assert_same_feedback(existing: sqlite3.Row, values: dict[str, Any]) -> None:
+    for field, value in values.items():
+        if (existing[field] or "") != (value or ""):
+            raise FeedbackConflictError("feedback_conflict: existing feedback differs")
 
 
 SCHEMA_SQL = """
@@ -589,6 +734,25 @@ CREATE TABLE IF NOT EXISTS analysis_results (
   updated_at TEXT NOT NULL,
   UNIQUE(package_id, content_id)
 );
+
+CREATE TABLE IF NOT EXISTS human_feedback (
+  feedback_id TEXT PRIMARY KEY,
+  feedback_key_hash TEXT NOT NULL UNIQUE,
+  run_id TEXT NOT NULL,
+  content_id TEXT NOT NULL,
+  analysis_result_id TEXT NOT NULL,
+  result_ref TEXT NOT NULL,
+  result_hash TEXT NOT NULL,
+  result_status TEXT NOT NULL,
+  decision TEXT NOT NULL CHECK(decision IN ('adopt', 'reject')),
+  actor_ref TEXT NOT NULL,
+  source_message_ref TEXT NOT NULL,
+  reason_code TEXT,
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS human_feedback_run_idx ON human_feedback(run_id, content_id);
+CREATE INDEX IF NOT EXISTS human_feedback_result_idx ON human_feedback(analysis_result_id);
 
 CREATE TABLE IF NOT EXISTS feishu_operations (
   operation_id TEXT PRIMARY KEY,

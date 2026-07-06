@@ -48,8 +48,19 @@ from .runtime_cdp import (
     ensure_runner_cdp,
     resolve_runtime_config,
 )
-from .state import begin_run, connect, finish_run, init_schema, record_analysis_package_ref, record_error, upsert_content_ledger
-from .state import record_analysis_result_ref
+from .state import (
+    FeedbackConflictError,
+    StateError,
+    begin_run,
+    connect,
+    finish_run,
+    init_schema,
+    record_analysis_package_ref,
+    record_analysis_result_ref,
+    record_error,
+    record_human_feedback_ref,
+    upsert_content_ledger,
+)
 
 VERSION = "0.1.0"
 EXIT_OK = 0
@@ -60,10 +71,14 @@ EXIT_COLLECTION_FAILED = 4
 EXIT_HANDOFF_PACKAGE_INVALID = 6
 EXIT_ANALYSIS_RESULT_INVALID = 6
 EXIT_DIGEST_PAYLOAD_INVALID = 6
+EXIT_FEEDBACK_INVALID = 6
+EXIT_FEEDBACK_CONFLICT = 6
 EXIT_RUN_LOCK_CONFLICT = 9
 ERROR_CONTRACT_MISMATCH = "contract_mismatch"
 ERROR_CONFIG_INVALID = "config_invalid"
 ERROR_HANDOFF_PACKAGE_INVALID = "handoff_package_invalid"
+ERROR_FEEDBACK_INVALID = "feedback_invalid"
+ERROR_FEEDBACK_CONFLICT = "feedback_conflict"
 
 
 class ContractArgumentParser(argparse.ArgumentParser):
@@ -144,6 +159,18 @@ def build_parser() -> argparse.ArgumentParser:
     digest.add_argument("--run-id", required=True, help="Run id to summarize.")
     digest.add_argument("--json", action="store_true", help="Print a JSON envelope.")
     digest.set_defaults(handler=build_internal_digest)
+    feedback = subparsers.add_parser("record-feedback")
+    feedback.add_argument("--profile", default="", help="Path to a local runtime profile.")
+    feedback.add_argument("--config", default="", help="Compatibility alias for --profile.")
+    feedback.add_argument("--run-id", required=True, help="Run id tied to the feedback.")
+    feedback.add_argument("--content-id", required=True, help="Content id tied to the feedback.")
+    feedback.add_argument("--analysis-result-id", required=True, help="Analysis result id tied to the feedback.")
+    feedback.add_argument("--decision", required=True, choices=("adopt", "reject"), help="Human feedback decision.")
+    feedback.add_argument("--actor-ref", required=True, help="Opaque actor ref; do not pass names or message text.")
+    feedback.add_argument("--source-message-ref", required=True, help="Opaque source message ref; do not pass message text.")
+    feedback.add_argument("--reason-code", default="", help="Optional bounded reason slug.")
+    feedback.add_argument("--json", action="store_true", help="Print a JSON envelope.")
+    feedback.set_defaults(handler=record_feedback)
     return parser
 
 
@@ -432,6 +459,62 @@ def build_internal_digest(args: argparse.Namespace) -> dict[str, Any]:
         "delivery": payload["delivery"],
     }
     return success_envelope("build-internal-digest", data, mode="runtime")
+
+
+def record_feedback(args: argparse.Namespace) -> dict[str, Any]:
+    profile_path = profile_arg(args, required=True)
+    profile = load_profile(profile_path)
+    config = resolve_runtime_config(profile)
+    config.database_path.parent.mkdir(parents=True, exist_ok=True)
+    conn = connect(config.database_path)
+    try:
+        init_schema(conn)
+        try:
+            feedback_id = record_human_feedback_ref(
+                conn,
+                run_id=args.run_id,
+                content_id=args.content_id,
+                analysis_result_id=args.analysis_result_id,
+                decision=args.decision,
+                actor_ref=args.actor_ref,
+                source_message_ref=args.source_message_ref,
+                reason_code=args.reason_code or None,
+            )
+        except FeedbackConflictError as exc:
+            return command_error_envelope(
+                "record-feedback",
+                "runtime",
+                ERROR_FEEDBACK_CONFLICT,
+                str(exc),
+                EXIT_FEEDBACK_CONFLICT,
+            )
+        except StateError as exc:
+            return command_error_envelope(
+                "record-feedback",
+                "runtime",
+                ERROR_FEEDBACK_INVALID,
+                str(exc),
+                EXIT_FEEDBACK_INVALID,
+            )
+        row = conn.execute("SELECT * FROM human_feedback WHERE feedback_id = ?", (feedback_id,)).fetchone()
+    finally:
+        conn.close()
+
+    data = {
+        "schema_version": "2.0-m2",
+        "feedback_id": feedback_id,
+        "run_id": args.run_id,
+        "content_id": args.content_id,
+        "analysis_result_id": args.analysis_result_id,
+        "result_ref": row["result_ref"],
+        "result_hash": row["result_hash"],
+        "result_status": row["result_status"],
+        "decision": args.decision,
+        "actor_ref": args.actor_ref,
+        "source_message_ref": args.source_message_ref,
+        "reason_code": row["reason_code"] or "",
+    }
+    return success_envelope("record-feedback", data, mode="runtime")
 
 
 def profile_arg(args: argparse.Namespace, *, required: bool = False) -> str:

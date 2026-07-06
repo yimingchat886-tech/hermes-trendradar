@@ -396,6 +396,171 @@ def test_build_internal_digest_writes_payload_without_table_write() -> None:
     assert raw_body not in json.dumps(digest_payload)
 
 
+def test_record_feedback_persists_idempotent_refs_without_promotion_or_writes() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        profile_path = write_temp_profile(Path(tmp), free_port())
+        config = seed_handoff_state(profile_path, "2026-07-03")
+        code, stdout, _stderr = run_cli(
+            "run-daily",
+            "--profile",
+            str(profile_path),
+            "--date",
+            "2026-07-03",
+            "--analysis-mode",
+            "hermes-handoff",
+            "--json",
+        )
+        assert code == EXIT_OK
+        package_ref = json.loads(stdout)["data"]["analysis_package_ref"]
+        package = json.loads((config.storage_dir / package_ref.removeprefix("file:")).read_text(encoding="utf-8"))
+        result_path = Path(tmp) / "analysis-result.json"
+        result_path.write_text(
+            json.dumps(
+                {
+                    "schema_version": "1.4",
+                    "package_id": package["package_id"],
+                    "run_id": package["run_id"],
+                    "content_id": "content-1",
+                    "transcript_artifact_ref": "file:transcripts/1.json",
+                    "result_ref": "file:analysis/results/content-1.json",
+                    "status": "succeeded",
+                }
+            ),
+            encoding="utf-8",
+        )
+        code, stdout, _stderr = run_cli(
+            "record-analysis-result",
+            "--profile",
+            str(profile_path),
+            "--package",
+            package_ref,
+            "--result",
+            str(result_path),
+            "--json",
+        )
+        assert code == EXIT_OK
+        analysis_result_id = json.loads(stdout)["data"]["analysis_result_id"]
+        raw_message_text = "please adopt this because the exact message text is private"
+
+        first_code, first_stdout, first_stderr = run_cli(
+            "record-feedback",
+            "--profile",
+            str(profile_path),
+            "--run-id",
+            package["run_id"],
+            "--content-id",
+            "content-1",
+            "--analysis-result-id",
+            analysis_result_id,
+            "--decision",
+            "adopt",
+            "--actor-ref",
+            "feishu:user/redacted-1",
+            "--source-message-ref",
+            "feishu:message/msg-1",
+            "--reason-code",
+            "good_topic",
+            "--json",
+        )
+        second_code, second_stdout, second_stderr = run_cli(
+            "record-feedback",
+            "--profile",
+            str(profile_path),
+            "--run-id",
+            package["run_id"],
+            "--content-id",
+            "content-1",
+            "--analysis-result-id",
+            analysis_result_id,
+            "--decision",
+            "adopt",
+            "--actor-ref",
+            "feishu:user/redacted-1",
+            "--source-message-ref",
+            "feishu:message/msg-1",
+            "--reason-code",
+            "good_topic",
+            "--json",
+        )
+        conflict_code, conflict_stdout, conflict_stderr = run_cli(
+            "record-feedback",
+            "--profile",
+            str(profile_path),
+            "--run-id",
+            package["run_id"],
+            "--content-id",
+            "content-1",
+            "--analysis-result-id",
+            analysis_result_id,
+            "--decision",
+            "reject",
+            "--actor-ref",
+            "feishu:user/redacted-1",
+            "--source-message-ref",
+            "feishu:message/msg-1",
+            "--reason-code",
+            "good_topic",
+            "--json",
+        )
+        invalid_code, invalid_stdout, invalid_stderr = run_cli(
+            "record-feedback",
+            "--profile",
+            str(profile_path),
+            "--run-id",
+            package["run_id"],
+            "--content-id",
+            "content-other",
+            "--analysis-result-id",
+            analysis_result_id,
+            "--decision",
+            "adopt",
+            "--actor-ref",
+            "feishu:user/redacted-1",
+            "--source-message-ref",
+            "feishu:message/msg-2",
+            "--json",
+        )
+        conn = connect(config.database_path)
+        try:
+            row = conn.execute("SELECT * FROM human_feedback").fetchone()
+            feedback_count = conn.execute("SELECT COUNT(*) FROM human_feedback").fetchone()[0]
+            operation_count = conn.execute("SELECT COUNT(*) FROM feishu_operations").fetchone()[0]
+            audit_count = conn.execute("SELECT COUNT(*) FROM write_audit").fetchone()[0]
+            column_names = [item["name"] for item in conn.execute("PRAGMA table_info(human_feedback)")]
+        finally:
+            conn.close()
+
+    first_payload = json.loads(first_stdout)
+    second_payload = json.loads(second_stdout)
+    conflict_payload = json.loads(conflict_stdout)
+    invalid_payload = json.loads(invalid_stdout)
+
+    assert first_code == EXIT_OK
+    assert first_stderr == ""
+    assert second_code == EXIT_OK
+    assert second_stderr == ""
+    assert first_payload["command"] == "record-feedback"
+    assert first_payload["data"]["feedback_id"] == second_payload["data"]["feedback_id"]
+    assert first_payload["data"]["analysis_result_id"] == analysis_result_id
+    assert first_payload["data"]["result_ref"] == "file:analysis/results/content-1.json"
+    assert row["decision"] == "adopt"
+    assert row["actor_ref"] == "feishu:user/redacted-1"
+    assert row["source_message_ref"] == "feishu:message/msg-1"
+    assert feedback_count == 1
+    assert operation_count == 0
+    assert audit_count == 0
+    assert conflict_code == cli_module.EXIT_FEEDBACK_CONFLICT
+    assert conflict_stderr == ""
+    assert conflict_payload["error"]["code"] == "feedback_conflict"
+    assert invalid_code == cli_module.EXIT_FEEDBACK_INVALID
+    assert invalid_stderr == ""
+    assert invalid_payload["error"]["code"] == "feedback_invalid"
+    assert raw_message_text not in first_stdout
+    assert "promotion" not in first_stdout
+    forbidden_column_terms = ("promotion", "rag", "rule", "bitable", "operation")
+    assert all(not any(term in name for term in forbidden_column_terms) for name in column_names)
+
+
 def test_run_daily_invalid_handoff_package_returns_exit_6() -> None:
     old_builder = cli_module.build_handoff_package
     cli_module.build_handoff_package = lambda *_args, **_kwargs: {"bad": True}
@@ -489,6 +654,7 @@ if __name__ == "__main__":
     test_record_analysis_result_persists_refs_without_mock_or_raw_text()
     test_record_analysis_result_invalid_result_returns_exit_6()
     test_build_internal_digest_writes_payload_without_table_write()
+    test_record_feedback_persists_idempotent_refs_without_promotion_or_writes()
     test_run_daily_invalid_handoff_package_returns_exit_6()
     test_mediacrawler_page_timeout_is_not_unknown_error()
     test_invalid_args_json_contract()
