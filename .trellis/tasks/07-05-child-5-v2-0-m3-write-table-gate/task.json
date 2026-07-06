@@ -3,7 +3,7 @@
   "name": "child-5-v2-0-m3-write-table-gate",
   "title": "Child 5: M3 write-table gate",
   "description": "Record the M3 Bitable decision gate and create implementation work only if conditions are met.",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": null,
   "scope": "Record M3 Bitable gate evidence and create write implementation only if conditions pass.",
   "tier": "child",
@@ -32,11 +32,11 @@
     "workflow_mode": "harness_state_machine",
     "state_machine": {
       "kind": "child",
-      "current_state": "child_plan_draft",
-      "previous_state": null,
-      "last_event": "init",
+      "current_state": "child_commit_ready",
+      "previous_state": "child_waiting_completion_signal",
+      "last_event": "completion_signal_received",
       "blocked_from_state": null,
-      "updated_at": "2026-07-06T03:21:31Z"
+      "updated_at": "2026-07-06T05:42:53Z"
     }
   }
 }

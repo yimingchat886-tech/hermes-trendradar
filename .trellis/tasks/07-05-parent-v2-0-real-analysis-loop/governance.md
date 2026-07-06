@@ -21,7 +21,7 @@
 | P20-REQ-030 | Child 2: real analysis handoff consumer | completed | 07-05-child-2-v2-0-real-analysis-handoff-consumer/stage-report.md |
 | P20-REQ-040 | Child 3: internal digest message path | completed | 07-05-child-3-v2-0-internal-digest-message/stage-report.md |
 | P20-REQ-050 | Child 4: human feedback intake | completed | 07-05-child-4-v2-0-human-feedback-intake/stage-report.md |
-| P20-REQ-060 | Child 5 | gated | M3 requires 2-week message-flow evidence plus explicit decisions. |
+| P20-REQ-060 | Child 5: M3 write-table gate | gated | M3 requires 2-week message-flow evidence plus explicit decisions. |
 
 ## External Review
 

@@ -1,1 +1,3 @@
 {"by": "system", "created_at": "2026-07-06T03:21:31Z", "current_state": "child_plan_draft", "event": "init", "kind": "child", "note": "task.py create", "previous_state": null}
+{"by": "agent", "created_at": "2026-07-06T05:32:24Z", "current_state": "child_waiting_completion_signal", "event": "plan_drafted", "kind": "child", "note": "M3 gate evaluated; no-implementation decision recorded", "previous_state": "child_plan_draft"}
+{"by": "user", "created_at": "2026-07-06T05:42:53Z", "current_state": "child_commit_ready", "event": "completion_signal_received", "kind": "child", "note": "先提交git", "previous_state": "child_waiting_completion_signal"}
