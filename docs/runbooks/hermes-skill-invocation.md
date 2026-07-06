@@ -38,6 +38,15 @@ Template:
       "--analysis-mode",
       "hermes-handoff",
       "--json"
+    ],
+    "digest": [
+      "${HERMES_BENCHMARK_CONSOLE_SCRIPT}",
+      "build-internal-digest",
+      "--profile",
+      "${HERMES_BENCHMARK_PROFILE}",
+      "--run-id",
+      "${RUN_ID}",
+      "--json"
     ]
   }
 }
@@ -48,7 +57,8 @@ Allowed skill inputs:
 - repo root ref, console script ref, profile ref, run date;
 - environment variable names such as `HERMES_PROXY_URL`;
 - JSON fields from CLI output: `ok`, `mode`, `run_id`, `analysis_package_ref`,
-  `runtime_effective_status`, `run_eligible`, `error.code`, and `exit_code`.
+  `digest_payload_ref`, `delivery.status`, `runtime_effective_status`,
+  `run_eligible`, `error.code`, and `exit_code`.
 
 Forbidden skill inputs or logs:
 
@@ -101,6 +111,21 @@ runtime itself.
 Fallback decision: if Hermes cron cannot satisfy that M0 gate, use a
 `systemd --user` timer to call the same console script and hand the redacted JSON
 summary to the Hermes message path.
+
+## M1 Digest Command
+
+After Hermes records real analysis refs, build the internal digest payload:
+
+```bash
+"$HERMES_BENCHMARK_CONSOLE_SCRIPT" build-internal-digest \
+  --profile "$HERMES_BENCHMARK_PROFILE" \
+  --run-id "$RUN_ID" \
+  --json
+```
+
+Current repo-side contract emits `digest_payload_ref` and a delivery blocker
+(`message_channel_not_configured`). Hermes owns the actual internal-group
+message send and secret resolution.
 
 ## Local Evidence
 

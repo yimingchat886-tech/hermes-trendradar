@@ -32,6 +32,12 @@ from .handoff import (
     contents_from_state,
     write_handoff_package,
 )
+from .internal_digest import (
+    ERROR_DIGEST_PAYLOAD_INVALID,
+    DigestPayloadError,
+    build_internal_digest_payload,
+    write_internal_digest_payload,
+)
 from .mediacrawler_import import import_mediacrawler_rows
 from .profile import ProfileError, load_profile, validate_profile
 from .runtime_cdp import (
@@ -53,6 +59,7 @@ EXIT_RUNTIME_UNAVAILABLE = 3
 EXIT_COLLECTION_FAILED = 4
 EXIT_HANDOFF_PACKAGE_INVALID = 6
 EXIT_ANALYSIS_RESULT_INVALID = 6
+EXIT_DIGEST_PAYLOAD_INVALID = 6
 EXIT_RUN_LOCK_CONFLICT = 9
 ERROR_CONTRACT_MISMATCH = "contract_mismatch"
 ERROR_CONFIG_INVALID = "config_invalid"
@@ -131,6 +138,12 @@ def build_parser() -> argparse.ArgumentParser:
     analysis.add_argument("--result", required=True, help="Hermes analysis result JSON file.")
     analysis.add_argument("--json", action="store_true", help="Print a JSON envelope.")
     analysis.set_defaults(handler=record_analysis_result)
+    digest = subparsers.add_parser("build-internal-digest")
+    digest.add_argument("--profile", default="", help="Path to a local runtime profile.")
+    digest.add_argument("--config", default="", help="Compatibility alias for --profile.")
+    digest.add_argument("--run-id", required=True, help="Run id to summarize.")
+    digest.add_argument("--json", action="store_true", help="Print a JSON envelope.")
+    digest.set_defaults(handler=build_internal_digest)
     return parser
 
 
@@ -384,6 +397,41 @@ def record_analysis_result(args: argparse.Namespace) -> dict[str, Any]:
         **normalized,
     }
     return success_envelope("record-analysis-result", data, mode="runtime")
+
+
+def build_internal_digest(args: argparse.Namespace) -> dict[str, Any]:
+    profile_path = profile_arg(args, required=True)
+    profile = load_profile(profile_path)
+    config = resolve_runtime_config(profile)
+    config.database_path.parent.mkdir(parents=True, exist_ok=True)
+    conn = connect(config.database_path)
+    try:
+        init_schema(conn)
+        try:
+            payload = build_internal_digest_payload(conn, args.run_id)
+        except DigestPayloadError as exc:
+            return command_error_envelope(
+                "build-internal-digest",
+                "runtime",
+                ERROR_DIGEST_PAYLOAD_INVALID,
+                str(exc),
+                EXIT_DIGEST_PAYLOAD_INVALID,
+            )
+    finally:
+        conn.close()
+
+    payload_ref, payload_hash = write_internal_digest_payload(config.storage_dir, args.run_id, payload)
+    data = {
+        "schema_version": payload["schema_version"],
+        "run_id": args.run_id,
+        "digest_payload_ref": payload_ref,
+        "digest_payload_hash": payload_hash,
+        "status": payload["status"],
+        "summary": payload["summary"],
+        "trace": payload["trace"],
+        "delivery": payload["delivery"],
+    }
+    return success_envelope("build-internal-digest", data, mode="runtime")
 
 
 def profile_arg(args: argparse.Namespace, *, required: bool = False) -> str:

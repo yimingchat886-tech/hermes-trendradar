@@ -255,3 +255,55 @@ The command persists only refs, hashes, ids, and status. It must not import or c
 - Assert invalid result files return exit 6 with `error.code = analysis_result_invalid`.
 - Assert the real result-recording path does not import or call mock decomposition.
 - Assert persisted rows and JSON envelopes contain no raw analysis body text.
+
+## Scenario: v2.0 Internal Digest Payload
+
+### 1. Scope / Trigger
+
+- Trigger: `build-internal-digest` turns persisted real-analysis refs into an internal-group digest payload.
+- Scope: local SQLite reads, traceable digest JSON artifact, JSON envelope, degraded/error reporting, and explicit delivery blocker when no message transport is configured.
+- Out of scope: Feishu/Bitable table writes, external group cards, feedback persistence, and implementing Hermes/Feishu credentials or message transport inside this repo.
+
+### 2. Signatures
+
+- `hermes-benchmark build-internal-digest --profile <path> --run-id <run_id> --json`
+- `--config <path>` remains a compatibility alias for `--profile`.
+
+### 3. Contracts
+
+Success JSON:
+
+```json
+{"ok":true,"command":"build-internal-digest","mode":"runtime","data":{"schema_version":"2.0-m1","run_id":"run_...","digest_payload_ref":"file:.../internal_digest.json","digest_payload_hash":"sha256:...","status":"ready|degraded","summary":{},"trace":{},"delivery":{"channel":"feishu_internal_group","status":"blocked","blocker_code":"message_channel_not_configured"}},"error":null}
+```
+
+Invalid digest input JSON:
+
+```json
+{"ok":false,"command":"build-internal-digest","mode":"runtime","data":null,"error":{"code":"digest_payload_invalid","message":"..."},"exit_code":6}
+```
+
+The digest payload stores refs, ids, hashes, redacted error summaries, and delivery status only. It must not import or call mock decomposition, and it must not write Feishu/Bitable operation rows.
+
+### 4. Validation & Error Matrix
+
+| Condition | Exit | JSON error |
+|---|---:|---|
+| Run has persisted analysis result refs | 0 | none |
+| Run is missing | 6 | `digest_payload_invalid` |
+| Run has no analysis result refs | 6 | `digest_payload_invalid` |
+| Analysis result or error state is failed/degraded | 0 | none; payload `status=degraded` |
+| No repo-local Hermes/Feishu message transport is configured | 0 | none; payload delivery blocker |
+
+### 5. Good/Base/Bad Cases
+
+- Good: payload item trace links run, package, content, transcript artifact, analysis result id, result ref, and result hash.
+- Base: a degraded analysis row or persisted error appears in payload `degraded`.
+- Bad: building the digest must not create Feishu/Bitable operation rows or include raw analysis text.
+
+### 6. Tests Required
+
+- Assert digest payload contains analyzed items and trace refs.
+- Assert degraded/error state appears in payload.
+- Assert no Feishu operation rows are written.
+- Assert CLI writes a `file:` payload artifact and reports the message-channel blocker.

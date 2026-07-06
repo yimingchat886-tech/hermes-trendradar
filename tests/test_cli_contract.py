@@ -15,7 +15,7 @@ from hermes_benchmark.cli import EXIT_CONFIG_INVALID, EXIT_CONTRACT_MISMATCH, EX
 from hermes_benchmark.handoff import validate_handoff_package
 from hermes_benchmark.profile import load_profile
 from hermes_benchmark.runtime_cdp import resolve_runtime_config
-from hermes_benchmark.state import begin_run, connect, finish_run, init_schema, record_transcript_state, upsert_content_ledger
+from hermes_benchmark.state import begin_run, connect, finish_run, init_schema, record_error, record_transcript_state, upsert_content_ledger
 from test_runtime_cdp import free_port, write_temp_profile
 
 SAMPLE_PROFILE = ROOT / "profiles" / "examples" / "hermes.v1.4.douyin.sample.json"
@@ -310,6 +310,92 @@ def test_record_analysis_result_invalid_result_returns_exit_6() -> None:
     assert payload["exit_code"] == 6
 
 
+def test_build_internal_digest_writes_payload_without_table_write() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        profile_path = write_temp_profile(Path(tmp), free_port())
+        config = seed_handoff_state(profile_path, "2026-07-03")
+        code, stdout, _stderr = run_cli(
+            "run-daily",
+            "--profile",
+            str(profile_path),
+            "--date",
+            "2026-07-03",
+            "--analysis-mode",
+            "hermes-handoff",
+            "--json",
+        )
+        assert code == EXIT_OK
+        package_ref = json.loads(stdout)["data"]["analysis_package_ref"]
+        package = json.loads((config.storage_dir / package_ref.removeprefix("file:")).read_text(encoding="utf-8"))
+        raw_body = "raw digest source must stay out"
+        result_path = Path(tmp) / "analysis-result.json"
+        result_path.write_text(
+            json.dumps(
+                {
+                    "schema_version": "1.4",
+                    "package_id": package["package_id"],
+                    "run_id": package["run_id"],
+                    "content_id": "content-1",
+                    "transcript_artifact_ref": "file:transcripts/1.json",
+                    "result_ref": "file:analysis/results/content-1.json",
+                    "status": "succeeded",
+                    "raw_body": raw_body,
+                }
+            ),
+            encoding="utf-8",
+        )
+        assert (
+            run_cli(
+                "record-analysis-result",
+                "--profile",
+                str(profile_path),
+                "--package",
+                package_ref,
+                "--result",
+                str(result_path),
+                "--json",
+            )[0]
+            == EXIT_OK
+        )
+        conn = connect(config.database_path)
+        try:
+            record_error(conn, package["run_id"], "analysis", "content-1", "analysis_warning", "redacted warning", True)
+            before_operations = conn.execute("SELECT COUNT(*) FROM feishu_operations").fetchone()[0]
+        finally:
+            conn.close()
+
+        code, stdout, stderr = run_cli(
+            "build-internal-digest",
+            "--profile",
+            str(profile_path),
+            "--run-id",
+            package["run_id"],
+            "--json",
+        )
+        conn = connect(config.database_path)
+        try:
+            after_operations = conn.execute("SELECT COUNT(*) FROM feishu_operations").fetchone()[0]
+        finally:
+            conn.close()
+        payload = json.loads(stdout)
+        digest_ref = payload["data"]["digest_payload_ref"]
+        digest_payload = json.loads((config.storage_dir / digest_ref.removeprefix("file:")).read_text(encoding="utf-8"))
+
+    assert code == EXIT_OK
+    assert stderr == ""
+    assert payload["command"] == "build-internal-digest"
+    assert payload["data"]["status"] == "degraded"
+    assert payload["data"]["delivery"]["status"] == "blocked"
+    assert payload["data"]["digest_payload_hash"].startswith("sha256:")
+    assert digest_payload["items"][0]["trace"]["package_id"] == package["package_id"]
+    assert digest_payload["items"][0]["trace"]["result_ref"] == "file:analysis/results/content-1.json"
+    assert digest_payload["degraded"][0]["error_code"] == "analysis_warning"
+    assert before_operations == 0
+    assert after_operations == 0
+    assert raw_body not in stdout
+    assert raw_body not in json.dumps(digest_payload)
+
+
 def test_run_daily_invalid_handoff_package_returns_exit_6() -> None:
     old_builder = cli_module.build_handoff_package
     cli_module.build_handoff_package = lambda *_args, **_kwargs: {"bad": True}
@@ -402,6 +488,7 @@ if __name__ == "__main__":
     test_run_daily_hermes_handoff_writes_schema_valid_package_ref()
     test_record_analysis_result_persists_refs_without_mock_or_raw_text()
     test_record_analysis_result_invalid_result_returns_exit_6()
+    test_build_internal_digest_writes_payload_without_table_write()
     test_run_daily_invalid_handoff_package_returns_exit_6()
     test_mediacrawler_page_timeout_is_not_unknown_error()
     test_invalid_args_json_contract()
