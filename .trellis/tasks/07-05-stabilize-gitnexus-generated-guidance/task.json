@@ -1,0 +1,41 @@
+{
+  "id": "stabilize-gitnexus-generated-guidance",
+  "name": "stabilize-gitnexus-generated-guidance",
+  "title": "stabilize gitnexus generated guidance",
+  "description": "",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": null,
+  "tier": "light",
+  "owner": "codex",
+  "touches": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    ".claude/skills/gitnexus/*/SKILL.md",
+    ".trellis/spec/guides/project-development.md"
+  ],
+  "package": null,
+  "priority": "P2",
+  "creator": "jym",
+  "assignee": "jym",
+  "createdAt": "2026-07-05",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "codex/workflow-v2-m4-board",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    ".claude/skills/gitnexus/gitnexus-cli/SKILL.md",
+    ".trellis/spec/guides/project-development.md"
+  ],
+  "notes": "",
+  "meta": {
+    "workflow_mode": "harness_state_machine"
+  }
+}

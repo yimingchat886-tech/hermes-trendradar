@@ -152,6 +152,14 @@ For local Python lint in this repo, use:
 uvx --from ruff==0.15.20 ruff check --select E9,F63,F7,F82 hermes_benchmark tests .trellis/scripts
 ```
 
+For routine GitNexus refreshes in this repo, avoid tracked guidance churn:
+
+```bash
+node .gitnexus/run.cjs analyze --index-only --name hermes-trendradar
+```
+
+Plain/full `gitnexus analyze` is only for an explicit AGENTS/CLAUDE/skill guidance refresh.
+
 Choose focused tests for the changed contract. Use `npm run typecheck` for TypeScript changes. Use `git diff --check` before commit or final handoff.
 
 If a check cannot run, record:
