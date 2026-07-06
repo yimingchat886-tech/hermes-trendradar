@@ -1,0 +1,50 @@
+{
+  "id": "parent-v2-0-real-analysis-loop",
+  "name": "parent-v2-0-real-analysis-loop",
+  "title": "Parent v2.0: real analysis loop",
+  "description": "Challenge PRD_MASTER and set a staged parent task for v2.0 real analysis loop.",
+  "status": "completed",
+  "dev_type": null,
+  "scope": "Challenge PRD_MASTER, draft v2.0 parent boundary, and plan child gates for real analysis loop.",
+  "tier": "parent",
+  "owner": "codex",
+  "touches": [
+    "docs/PRD/PRD_MASTER.md",
+    "docs/PRD/releases/PRD_v2.0.md",
+    "hermes_benchmark/**"
+  ],
+  "package": null,
+  "priority": "P1",
+  "creator": "jym",
+  "assignee": "jym",
+  "createdAt": "2026-07-05",
+  "completedAt": "2026-07-06",
+  "branch": null,
+  "base_branch": "codex/workflow-v2-m4-board",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "07-05-child-0-v2-0-release-prd",
+    "07-05-child-1-v2-0-hermes-skill-invocation",
+    "07-05-child-2-v2-0-real-analysis-handoff-consumer",
+    "07-05-child-3-v2-0-internal-digest-message",
+    "07-05-child-4-v2-0-human-feedback-intake",
+    "07-05-child-5-v2-0-m3-write-table-gate"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "force-archive: user requested archiving completed parent after child evidence was moved to archive",
+  "meta": {
+    "workflow_mode": "harness_state_machine",
+    "state_machine": {
+      "kind": "parent",
+      "current_state": "parent_archived",
+      "previous_state": "parent_archive_ready",
+      "last_event": "parent_archive_completed",
+      "blocked_from_state": null,
+      "updated_at": "2026-07-06T09:40:42Z"
+    }
+  }
+}

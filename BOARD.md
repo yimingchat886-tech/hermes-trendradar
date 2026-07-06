@@ -8,8 +8,7 @@ owner=jym
 
 | Task | Tier | Owner | Status | Updated | Blocked |
 |---|---|---|---|---|---|
-| 07-05-parent-v2-0-real-analysis-loop [6/6 done] | parent | codex | in_progress | 2026-07-05 23:01 | no |
-| 07-05-trellis-workflow-migration-skill | light | codex | in_progress | 2026-07-05 00:46 | no |
+| - | - | - | - | - | - |
 
 ## Waiting For Acceptance
 
@@ -21,23 +20,23 @@ owner=jym
 
 ## Recent Archives (7d)
 
+- 07-05-trellis-workflow-migration-skill (completed, 2026-07-06 02:40)
+- 07-05-parent-v2-0-real-analysis-loop (completed, 2026-07-06 02:40)
+- 07-05-child-5-v2-0-m3-write-table-gate (completed, 2026-07-06 02:40)
+- 07-05-child-4-v2-0-human-feedback-intake (completed, 2026-07-06 02:40)
+- 07-05-child-3-v2-0-internal-digest-message (completed, 2026-07-06 02:40)
+- 07-05-child-2-v2-0-real-analysis-handoff-consumer (completed, 2026-07-06 02:40)
+- 07-05-child-1-v2-0-hermes-skill-invocation (completed, 2026-07-06 02:40)
+- 07-05-child-0-v2-0-release-prd (completed, 2026-07-06 02:40)
+- 07-04-workflow-v2-m6-3-worktree-parallel-trial (completed, 2026-07-06 02:40)
+- 07-04-workflow-v2-m6-2-merge-collision-protocol (completed, 2026-07-06 02:40)
+- 07-04-workflow-v2-m6-1-claim-guard-block (completed, 2026-07-06 02:40)
+- 07-04-workflow-v2-m5-4-acceptance-automation (completed, 2026-07-06 02:40)
+- 07-04-workflow-v2-m5-3-staging-deploy-g6 (completed, 2026-07-06 02:40)
+- 07-04-workflow-v2-m5-2-ci (completed, 2026-07-06 02:40)
+- 07-04-workflow-v2-m5-1-remote-branch-protection (completed, 2026-07-06 02:40)
+- 07-04-workflow-v2-m4-board (completed, 2026-07-06 02:40)
+- 07-04-workflow-v2-m3-pr-gates (completed, 2026-07-06 02:40)
+- 07-04-workflow-v2-m2-taskpy-gates (completed, 2026-07-06 02:40)
+- 07-02-mediacrawler-long-running-stability (completed, 2026-07-06 02:40)
 - 07-05-stabilize-gitnexus-generated-guidance (completed, 2026-07-05 23:16)
-- 07-04-workflow-v2-m6-parallel-development (completed, 2026-07-04 23:41)
-- 07-04-workflow-v2-m5-remote-ci-staging (completed, 2026-07-04 21:03)
-- 07-04-workflow-v2-mechanization (completed, 2026-07-04 16:47)
-- 07-03-prd-pre-design-input-skill (cancelled, 2026-07-04 13:58)
-- 07-03-staged-acceptance-commit-archive-rule (cancelled, 2026-07-04 13:58)
-- 07-03-v2-1-0-state-engine-mvp (completed, 2026-07-04 13:58)
-- 07-01-parent-v1-4-benchmark-productionization (completed, 2026-07-04 13:58)
-- 07-02-child-6a-v1-4-media-download-manifest (completed, 2026-07-04 13:58)
-- 07-03-gitignore-development-hygiene (cancelled, 2026-07-04 13:58)
-- 07-01-production-deployment-handoff (cancelled, 2026-07-04 13:58)
-- 07-01-child-9-v1-4-production-hardening (cancelled, 2026-07-04 13:58)
-- 07-01-child-8-v1-4-feishu-limited-live-table4 (cancelled, 2026-07-04 13:58)
-- 07-01-child-7-v1-4-hermes-handoff-package (completed, 2026-07-04 13:58)
-- 07-01-child-3-v1-4-sqlite-dedup-state (completed, 2026-07-04 13:58)
-- 07-01-child-5-v1-4-whisper-batch-runner (completed, 2026-07-04 13:58)
-- 07-01-child-4-v1-4-douyin-collection-runner (completed, 2026-07-04 13:58)
-- 07-01-child-6-v1-4-transcription-threshold-smoke (completed, 2026-07-04 13:58)
-- 06-30-local-ai-state-versioning (completed, 2026-07-04 13:58)
-- 06-30-child-8-mediacrawler-collection-runner (completed, 2026-07-04 13:58)

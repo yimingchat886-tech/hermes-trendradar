@@ -1,0 +1,6 @@
+{"by": "system", "created_at": "2026-07-06T03:08:27Z", "current_state": "parent_prd_draft", "event": "init", "kind": "parent", "note": "task.py create", "previous_state": null}
+{"by": "agent", "created_at": "2026-07-06T09:40:42Z", "current_state": null, "event": "force_archive", "kind": "audit", "note": "user requested archiving completed parent after child evidence was moved to archive", "previous_state": null}
+{"by": "system", "created_at": "2026-07-06T09:40:42Z", "current_state": "parent_waiting_completion_signal", "event": "prd_drafted", "kind": "parent", "note": "task.py archive", "previous_state": "parent_prd_draft"}
+{"by": "system", "created_at": "2026-07-06T09:40:42Z", "current_state": "parent_commit_ready", "event": "parent_completion_signal_received", "kind": "parent", "note": "task.py archive", "previous_state": "parent_waiting_completion_signal"}
+{"by": "system", "created_at": "2026-07-06T09:40:42Z", "current_state": "parent_archive_ready", "event": "parent_commit_created", "kind": "parent", "note": "task.py archive", "previous_state": "parent_commit_ready"}
+{"by": "system", "created_at": "2026-07-06T09:40:42Z", "current_state": "parent_archived", "event": "parent_archive_completed", "kind": "parent", "note": "task.py archive", "previous_state": "parent_archive_ready"}
