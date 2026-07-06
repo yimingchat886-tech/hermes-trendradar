@@ -203,3 +203,55 @@ hermes-benchmark healthcheck --profile profiles/local/hermes.v1.4.douyin.local.j
 hermes-benchmark healthcheck --profile profiles/local/hermes.v1.4.douyin.local.json --json
 # check-only; returns launch_required + run_eligible=true when smoke/run can launch runner Chrome
 ```
+
+## Scenario: v2.0 Hermes Analysis Result Recording
+
+### 1. Scope / Trigger
+
+- Trigger: `record-analysis-result` consumes a v1.4 handoff package and a Hermes-owned analysis result file.
+- Scope: local package/result validation, SQLite reference persistence, JSON envelope, and deterministic invalid-result errors.
+- Out of scope: generating the real analysis text, prompt tuning, digest delivery, feedback intake, and Feishu writes.
+
+### 2. Signatures
+
+- `hermes-benchmark record-analysis-result --profile <path> --package <file-or-file-ref> --result <path> --json`
+- `--config <path>` remains a compatibility alias for `--profile`.
+
+### 3. Contracts
+
+Success JSON:
+
+```json
+{"ok":true,"command":"record-analysis-result","mode":"runtime","data":{"schema_version":"1.4","analysis_result_id":"analysis_result_...","package_id":"package_...","content_id":"...","transcript_artifact_ref":"file:...","result_ref":"file:...","result_hash":"sha256:...","status":"succeeded"},"error":null}
+```
+
+Invalid result JSON:
+
+```json
+{"ok":false,"command":"record-analysis-result","mode":"runtime","data":null,"error":{"code":"analysis_result_invalid","message":"..."},"exit_code":6}
+```
+
+The command persists only refs, hashes, ids, and status. It must not import or call `mock_hermes_output`, and it must not store raw analysis body text in SQLite.
+
+### 4. Validation & Error Matrix
+
+| Condition | Exit | JSON error |
+|---|---:|---|
+| Package ref and result match handoff trace refs | 0 | none |
+| Package is unreadable, invalid JSON, or invalid handoff package | 6 | `analysis_result_invalid` |
+| Result is unreadable, invalid JSON, or missing required fields | 6 | `analysis_result_invalid` |
+| Result `package_id`, `run_id`, `content_id`, or `transcript_artifact_ref` does not match the handoff package | 6 | `analysis_result_invalid` |
+| Result ref is not a relative `file:` ref | 6 | `analysis_result_invalid` |
+
+### 5. Good/Base/Bad Cases
+
+- Good: a result file for one handoff content row stores one `analysis_results` row keyed by `(package_id, content_id)`.
+- Base: repeating the same record command updates the same row and returns the same deterministic `analysis_result_id`.
+- Bad: a mismatched package id or transcript ref fails closed with exit 6 and does not persist raw analysis output.
+
+### 6. Tests Required
+
+- Assert valid package/result refs persist an `analysis_results` row linked to package/content/transcript refs.
+- Assert invalid result files return exit 6 with `error.code = analysis_result_invalid`.
+- Assert the real result-recording path does not import or call mock decomposition.
+- Assert persisted rows and JSON envelopes contain no raw analysis body text.

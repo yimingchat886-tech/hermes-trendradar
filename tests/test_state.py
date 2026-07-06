@@ -7,11 +7,13 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from hermes_benchmark.state import (
+    SCHEMA_VERSION,
     begin_run,
     connect,
     finish_run,
     init_schema,
     record_analysis_package_ref,
+    record_analysis_result_ref,
     record_operation_ref,
     record_error,
     record_transcript_state,
@@ -48,8 +50,19 @@ def test_schema_initializes_without_dependencies() -> None:
         row["name"]
         for row in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")
     }
-    assert {"runs", "content_ledger", "transcripts", "analysis_packages", "feishu_operations", "write_audit", "errors"} <= tables
-    assert conn.execute("PRAGMA user_version").fetchone()[0] == 1
+    assert {"runs", "content_ledger", "transcripts", "analysis_packages", "analysis_results", "feishu_operations", "write_audit", "errors"} <= tables
+    assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
+
+
+def test_future_schema_version_fails_closed() -> None:
+    conn = connect()
+    conn.execute("PRAGMA user_version = 999")
+    try:
+        init_schema(conn)
+    except Exception as exc:
+        assert "unsupported future schema version" in str(exc)
+    else:
+        raise AssertionError("expected future schema version to fail")
 
 
 def test_same_scope_run_lock_and_terminal_noop() -> None:
@@ -132,14 +145,47 @@ def test_artifact_and_operation_helpers_are_idempotent_refs_only() -> None:
 
     transcript_id = record_transcript_state(conn, content["content_id"], "funasr-sensevoice", "done", artifact_ref="file:artifacts/t.json")
     package_id = record_analysis_package_ref(conn, run["run_id"], "hermes-handoff", "ready", "file:artifacts/package.json")
+    package_id = record_analysis_package_ref(
+        conn,
+        run["run_id"],
+        "hermes-handoff",
+        "ready",
+        "file:artifacts/package.json",
+        package_id="package_handoff_authoritative",
+    )
+    result_id = record_analysis_result_ref(
+        conn,
+        run_id=run["run_id"],
+        package_id=package_id,
+        content_id=content["content_id"],
+        transcript_artifact_ref="file:artifacts/t.json",
+        result_ref="file:analysis/results/content-1.json",
+        result_hash="sha256:result",
+        status="succeeded",
+    )
+    same_result_id = record_analysis_result_ref(
+        conn,
+        run_id=run["run_id"],
+        package_id=package_id,
+        content_id=content["content_id"],
+        transcript_artifact_ref="file:artifacts/t.json",
+        result_ref="file:analysis/results/content-1.json",
+        result_hash="sha256:result",
+        status="succeeded",
+    )
     operation_id = record_operation_ref(conn, run["run_id"], "status_update", "table_4", content["content_id"], "sha256:op", "pending")
     audit_id = record_write_audit(conn, operation_id, "sha256:op", content["content_id"], "noop")
 
     assert transcript_id.startswith("transcript_")
-    assert package_id.startswith("package_")
+    assert package_id == "package_handoff_authoritative"
+    assert result_id.startswith("analysis_result_")
+    assert same_result_id == result_id
     assert operation_id.startswith("op_")
     assert audit_id.startswith("audit_")
     assert conn.execute("SELECT artifact_ref FROM transcripts").fetchone()[0] == "file:artifacts/t.json"
+    result = conn.execute("SELECT * FROM analysis_results").fetchone()
+    assert result["result_ref"] == "file:analysis/results/content-1.json"
+    assert result["result_hash"] == "sha256:result"
     assert conn.execute("SELECT COUNT(*) FROM write_audit").fetchone()[0] == 1
 
 
@@ -153,6 +199,7 @@ def test_record_error_is_deterministic_when_called_directly() -> None:
 
 if __name__ == "__main__":
     test_schema_initializes_without_dependencies()
+    test_future_schema_version_fails_closed()
     test_same_scope_run_lock_and_terminal_noop()
     test_failed_or_stale_run_reuses_run_id_for_resume()
     test_reingesting_existing_content_is_noop()

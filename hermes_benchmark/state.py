@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 ACTIVE_RUN_STATUS = "running"
 TERMINAL_RUN_STATUSES = {"succeeded", "partial_failed", "failed", "cancelled"}
 IMMUTABLE_CONTENT_FIELDS = (
@@ -254,10 +254,11 @@ def record_analysis_package_ref(
     *,
     artifact_hash: str | None = None,
     content_count: int | None = None,
+    package_id: str | None = None,
     now: str | None = None,
 ) -> str:
     timestamp = now or _now()
-    package_id = _stable_id("package", run_id, mode)
+    package_id = package_id or _stable_id("package", run_id, mode)
     with _transaction(conn):
         conn.execute(
             """
@@ -267,6 +268,7 @@ def record_analysis_package_ref(
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(run_id, mode) DO UPDATE SET
+              package_id = excluded.package_id,
               status = excluded.status,
               artifact_ref = excluded.artifact_ref,
               artifact_hash = excluded.artifact_hash,
@@ -276,6 +278,54 @@ def record_analysis_package_ref(
             (package_id, run_id, mode, status, artifact_ref, artifact_hash, content_count, timestamp),
         )
     return package_id
+
+
+def record_analysis_result_ref(
+    conn: sqlite3.Connection,
+    *,
+    run_id: str,
+    package_id: str,
+    content_id: str,
+    transcript_artifact_ref: str,
+    result_ref: str,
+    result_hash: str,
+    status: str,
+    now: str | None = None,
+) -> str:
+    for label, value in {
+        "run_id": run_id,
+        "package_id": package_id,
+        "content_id": content_id,
+        "transcript_artifact_ref": transcript_artifact_ref,
+        "result_ref": result_ref,
+        "result_hash": result_hash,
+        "status": status,
+    }.items():
+        if not value:
+            raise StateError(f"analysis result {label} is required")
+    if not result_hash.startswith("sha256:"):
+        raise StateError("analysis result_hash must be sha256")
+    timestamp = now or _now()
+    result_id = _stable_id("analysis_result", package_id, content_id)
+    with _transaction(conn):
+        conn.execute(
+            """
+            INSERT INTO analysis_results (
+              analysis_result_id, run_id, package_id, content_id,
+              transcript_artifact_ref, result_ref, result_hash, status, updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(package_id, content_id) DO UPDATE SET
+              run_id = excluded.run_id,
+              transcript_artifact_ref = excluded.transcript_artifact_ref,
+              result_ref = excluded.result_ref,
+              result_hash = excluded.result_hash,
+              status = excluded.status,
+              updated_at = excluded.updated_at
+            """,
+            (result_id, run_id, package_id, content_id, transcript_artifact_ref, result_ref, result_hash, status, timestamp),
+        )
+    return result_id
 
 
 def record_operation_ref(
@@ -525,6 +575,19 @@ CREATE TABLE IF NOT EXISTS analysis_packages (
   content_count INTEGER,
   updated_at TEXT NOT NULL,
   UNIQUE(run_id, mode)
+);
+
+CREATE TABLE IF NOT EXISTS analysis_results (
+  analysis_result_id TEXT PRIMARY KEY,
+  run_id TEXT NOT NULL,
+  package_id TEXT NOT NULL,
+  content_id TEXT NOT NULL,
+  transcript_artifact_ref TEXT NOT NULL,
+  result_ref TEXT NOT NULL,
+  result_hash TEXT NOT NULL,
+  status TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  UNIQUE(package_id, content_id)
 );
 
 CREATE TABLE IF NOT EXISTS feishu_operations (

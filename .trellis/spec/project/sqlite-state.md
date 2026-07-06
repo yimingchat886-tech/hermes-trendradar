@@ -4,7 +4,7 @@
 
 ### 1. Scope / Trigger
 
-- Trigger: changes to local SQLite schema, run state, dedup ledger, transcript/package refs, operations, write-audit, or deterministic error persistence.
+- Trigger: changes to local SQLite schema, run state, dedup ledger, transcript/package/result refs, operations, write-audit, or deterministic error persistence.
 - Scope: pure local persistence helpers using stdlib `sqlite3`.
 - Out of scope: collection runner, transcription runner, Hermes analysis generation, Feishu authorization, Feishu API I/O, and scheduler behavior.
 
@@ -18,15 +18,17 @@
 - `record_error(conn, run_id, scope, object_id, error_code, summary, retryable, redacted_details_ref=None) -> str`
 - `record_transcript_state(...) -> str`
 - `record_analysis_package_ref(...) -> str`
+- `record_analysis_result_ref(...) -> str`
 - `record_operation_ref(...) -> str`
 - `record_write_audit(...) -> str`
 
 ### 3. Contracts
 
-- Schema version is `PRAGMA user_version = 1`; future unknown versions fail closed.
+- Schema version is `PRAGMA user_version = 2`; future unknown versions fail closed.
 - `runs` has `UNIQUE(run_date, profile_hash)` and reuses the same `run_id` for same-scope resume/no-op.
 - `content_ledger` stores three independent dedup keys: `p0_key`, `fallback_1_key`, and `fallback_2_key`, each with a partial unique index.
-- Transcript, package, operation, audit, and error helpers store refs or hashes only. Do not store raw videos or raw full transcript text.
+- Transcript, package, analysis-result, operation, audit, and error helpers store refs or hashes only. Do not store raw videos, raw full transcript text, or raw analysis output.
+- Analysis result refs are idempotent by `(package_id, content_id)` and must link back to the handoff package, content id, transcript artifact ref, result ref, result hash, and result status.
 - Public helpers that mutate state must be transactional. Run acquisition and content upsert use `BEGIN IMMEDIATE`.
 
 ### 4. Validation & Error Matrix
@@ -44,7 +46,7 @@
 ### 5. Good/Base/Bad Cases
 
 - Good: repeated ingest of the same content returns `noop` and leaves one ledger row.
-- Base: duplicate schema initialization is safe and keeps `user_version = 1`.
+- Base: duplicate schema initialization is safe and keeps `user_version = 2`.
 - Bad: a content item matching one row by P0 and another by fallback key must not create or overwrite content; it writes one deterministic error.
 
 ### 6. Tests Required
@@ -52,7 +54,7 @@
 - Schema initialization and duplicate initialization.
 - Same-scope run start, lock conflict, terminal no-op, and failed/stale resume.
 - Content insert, duplicate no-op, split-key dedup conflict, and deterministic error idempotency.
-- Transcript/package/operation/write-audit helpers store refs only and are idempotent by key/hash.
+- Transcript/package/analysis-result/operation/write-audit helpers store refs only and are idempotent by key/hash.
 
 ### 7. Wrong vs Correct
 

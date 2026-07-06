@@ -11,6 +11,13 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Sequence
 
+from .analysis_result import (
+    ERROR_ANALYSIS_RESULT_INVALID,
+    AnalysisResultError,
+    load_analysis_result,
+    load_handoff_package,
+    validate_analysis_result,
+)
 from .collection_runner import (
     content_to_ledger_item,
     enabled_douyin_accounts,
@@ -36,6 +43,7 @@ from .runtime_cdp import (
     resolve_runtime_config,
 )
 from .state import begin_run, connect, finish_run, init_schema, record_analysis_package_ref, record_error, upsert_content_ledger
+from .state import record_analysis_result_ref
 
 VERSION = "0.1.0"
 EXIT_OK = 0
@@ -44,6 +52,7 @@ EXIT_CONFIG_INVALID = 2
 EXIT_RUNTIME_UNAVAILABLE = 3
 EXIT_COLLECTION_FAILED = 4
 EXIT_HANDOFF_PACKAGE_INVALID = 6
+EXIT_ANALYSIS_RESULT_INVALID = 6
 EXIT_RUN_LOCK_CONFLICT = 9
 ERROR_CONTRACT_MISMATCH = "contract_mismatch"
 ERROR_CONFIG_INVALID = "config_invalid"
@@ -80,6 +89,19 @@ def main(argv: Sequence[str] | None = None) -> int:
         else:
             print(f"error: {exc}", file=sys.stderr)
         return EXIT_CONFIG_INVALID
+    except AnalysisResultError as exc:
+        payload = command_error_envelope(
+            "record-analysis-result",
+            "runtime",
+            ERROR_ANALYSIS_RESULT_INVALID,
+            str(exc),
+            EXIT_ANALYSIS_RESULT_INVALID,
+        )
+        if wants_json(args_list):
+            print_json(payload)
+        else:
+            print(f"error: {exc}", file=sys.stderr)
+        return EXIT_ANALYSIS_RESULT_INVALID
 
     exit_code = int(payload.get("exit_code", EXIT_OK))
     if getattr(args, "json", False):
@@ -102,6 +124,13 @@ def build_parser() -> argparse.ArgumentParser:
     add_command(subparsers, "smoke-mediacrawler", smoke_mediacrawler, profile=True)
     add_command(subparsers, "run-daily", run_daily, profile=True, daily=True)
     add_command(subparsers, "apply-limited-live", apply_limited_live, profile=True)
+    analysis = subparsers.add_parser("record-analysis-result")
+    analysis.add_argument("--profile", default="", help="Path to a local runtime profile.")
+    analysis.add_argument("--config", default="", help="Compatibility alias for --profile.")
+    analysis.add_argument("--package", dest="package_ref", required=True, help="Handoff package file path or storage file: ref.")
+    analysis.add_argument("--result", required=True, help="Hermes analysis result JSON file.")
+    analysis.add_argument("--json", action="store_true", help="Print a JSON envelope.")
+    analysis.set_defaults(handler=record_analysis_result)
     return parser
 
 
@@ -268,6 +297,7 @@ def _run_daily_handoff(args: argparse.Namespace, profile_path: str) -> dict[str,
             package_ref,
             artifact_hash=package_hash,
             content_count=len(package["contents"]),
+            package_id=package["package_id"],
         )
         if run_status != "noop":
             finish_run(conn, run_id, "succeeded")
@@ -321,6 +351,39 @@ def apply_limited_live(args: argparse.Namespace) -> dict[str, Any]:
             "reason": "stub_only",
         },
     )
+
+
+def record_analysis_result(args: argparse.Namespace) -> dict[str, Any]:
+    profile_path = profile_arg(args, required=True)
+    profile = load_profile(profile_path)
+    config = resolve_runtime_config(profile)
+    handoff_package = load_handoff_package(args.package_ref, config.storage_dir)
+    result, result_hash = load_analysis_result(Path(args.result))
+    normalized = validate_analysis_result(handoff_package, result, result_hash=result_hash)
+
+    config.database_path.parent.mkdir(parents=True, exist_ok=True)
+    conn = connect(config.database_path)
+    try:
+        init_schema(conn)
+        result_id = record_analysis_result_ref(
+            conn,
+            run_id=normalized["run_id"],
+            package_id=normalized["package_id"],
+            content_id=normalized["content_id"],
+            transcript_artifact_ref=normalized["transcript_artifact_ref"],
+            result_ref=normalized["result_ref"],
+            result_hash=normalized["result_hash"],
+            status=normalized["status"],
+        )
+    finally:
+        conn.close()
+
+    data = {
+        "schema_version": "1.4",
+        "analysis_result_id": result_id,
+        **normalized,
+    }
+    return success_envelope("record-analysis-result", data, mode="runtime")
 
 
 def profile_arg(args: argparse.Namespace, *, required: bool = False) -> str:
