@@ -3,7 +3,7 @@
   "name": "child-0-v2-0-release-prd",
   "title": "Child 0: v2.0 release PRD and PRD map",
   "description": "Create the v2.0 release PRD, update PRD_MASTER, and preserve the PRD/task boundary.",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": null,
   "scope": "Create docs/PRD/releases/PRD_v2.0.md and update PRD_MASTER without code changes.",
   "tier": "child",
@@ -32,11 +32,11 @@
     "workflow_mode": "harness_state_machine",
     "state_machine": {
       "kind": "child",
-      "current_state": "child_plan_draft",
-      "previous_state": null,
-      "last_event": "init",
+      "current_state": "child_commit_ready",
+      "previous_state": "child_waiting_completion_signal",
+      "last_event": "completion_signal_received",
       "blocked_from_state": null,
-      "updated_at": "2026-07-06T03:20:46Z"
+      "updated_at": "2026-07-06T05:43:30Z"
     }
   }
 }
