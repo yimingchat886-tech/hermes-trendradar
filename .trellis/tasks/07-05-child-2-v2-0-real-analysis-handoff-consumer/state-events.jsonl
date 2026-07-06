@@ -1,3 +1,5 @@
 {"by": "system", "created_at": "2026-07-06T03:21:10Z", "current_state": "child_plan_draft", "event": "init", "kind": "child", "note": "task.py create", "previous_state": null}
 {"by": "agent", "created_at": "2026-07-06T04:38:58Z", "current_state": "child_waiting_completion_signal", "event": "plan_drafted", "kind": "child", "note": "implementation verified; waiting for user completion signal", "previous_state": "child_plan_draft"}
 {"by": "user", "created_at": "2026-07-06T04:41:45Z", "current_state": "child_commit_ready", "event": "completion_signal_received", "kind": "child", "note": "通过 提交git", "previous_state": "child_waiting_completion_signal"}
+{"by": "system", "created_at": "2026-07-06T04:43:07Z", "current_state": "child_archive_ready", "event": "commit_created", "kind": "child", "note": "task.py soft-archive", "previous_state": "child_commit_ready"}
+{"by": "system", "created_at": "2026-07-06T04:43:07Z", "current_state": "child_archived", "event": "child_archive_completed", "kind": "child", "note": "task.py soft-archive", "previous_state": "child_archive_ready"}
