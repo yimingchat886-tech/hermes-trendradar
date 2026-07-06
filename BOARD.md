@@ -8,7 +8,7 @@ owner=jym
 
 | Task | Tier | Owner | Status | Updated | Blocked |
 |---|---|---|---|---|---|
-| 07-05-parent-v2-0-real-analysis-loop [6/6 done] | parent | codex | in_progress | 2026-07-05 22:47 | no |
+| 07-05-parent-v2-0-real-analysis-loop [6/6 done] | parent | codex | in_progress | 2026-07-05 23:01 | no |
 | 07-05-trellis-workflow-migration-skill | light | codex | in_progress | 2026-07-05 00:46 | no |
 
 ## Waiting For Acceptance
@@ -21,6 +21,7 @@ owner=jym
 
 ## Recent Archives (7d)
 
+- 07-05-stabilize-gitnexus-generated-guidance (completed, 2026-07-05 23:16)
 - 07-04-workflow-v2-m6-parallel-development (completed, 2026-07-04 23:41)
 - 07-04-workflow-v2-m5-remote-ci-staging (completed, 2026-07-04 21:03)
 - 07-04-workflow-v2-mechanization (completed, 2026-07-04 16:47)
@@ -40,4 +41,3 @@ owner=jym
 - 07-01-child-6-v1-4-transcription-threshold-smoke (completed, 2026-07-04 13:58)
 - 06-30-local-ai-state-versioning (completed, 2026-07-04 13:58)
 - 06-30-child-8-mediacrawler-collection-runner (completed, 2026-07-04 13:58)
-- 07-01-child-2-v1-4-profile-local-config (completed, 2026-07-04 13:58)
