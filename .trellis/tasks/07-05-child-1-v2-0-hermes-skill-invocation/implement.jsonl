@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/guides/project-development.md", "reason": "repo task and verification rules"}
+{"file": ".trellis/spec/project/ponytail-boundary.md", "reason": "avoid MCP/dependency/scheduler expansion before proof"}
+{"file": ".trellis/spec/project/cli-contracts.md", "reason": "CLI JSON envelope and exit-code constraints"}
+{"file": "docs/PRD/PRD_MASTER.md", "reason": "Hermes skill path and M0 gate"}
+{"file": ".trellis/tasks/07-05-parent-v2-0-real-analysis-loop/prd.md", "reason": "parent P20-REQ-010/P20-REQ-020 scope"}

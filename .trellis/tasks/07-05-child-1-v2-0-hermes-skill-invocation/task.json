@@ -1,0 +1,43 @@
+{
+  "id": "child-1-v2-0-hermes-skill-invocation",
+  "name": "child-1-v2-0-hermes-skill-invocation",
+  "title": "Child 1: Hermes skill invocation gate",
+  "description": "Define a no-secret Hermes skill invocation contract and prove healthcheck/handoff invocation.",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": "Define no-secret Hermes skill invocation and prove healthcheck/handoff call path.",
+  "tier": "child",
+  "owner": "codex",
+  "touches": [
+    "profiles/examples/**",
+    "docs/runbooks/**",
+    "hermes_benchmark/**"
+  ],
+  "package": null,
+  "priority": "P1",
+  "creator": "jym",
+  "assignee": "jym",
+  "createdAt": "2026-07-05",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "codex/workflow-v2-m4-board",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "07-05-parent-v2-0-real-analysis-loop",
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {
+    "workflow_mode": "harness_state_machine",
+    "state_machine": {
+      "kind": "child",
+      "current_state": "child_commit_ready",
+      "previous_state": "child_waiting_completion_signal",
+      "last_event": "completion_signal_received",
+      "blocked_from_state": null,
+      "updated_at": "2026-07-06T04:02:27Z"
+    }
+  }
+}
