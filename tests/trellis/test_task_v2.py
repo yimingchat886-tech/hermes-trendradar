@@ -124,9 +124,9 @@ pass
         encoding="utf-8",
     )
 
-    assert cmd_validate(args(dir=str(parent))) == 0
     assert cmd_validate(args(dir=str(child))) == 0
     assert cmd_soft_archive(args(name=str(child), commit="abc123", force_archive=False, reason="")) == 0
+    assert cmd_validate(args(dir=str(parent))) == 0
 
     cdata = read_json(child / "task.json")
     assert cdata["status"] == "completed"

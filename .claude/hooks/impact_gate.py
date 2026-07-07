@@ -8,8 +8,8 @@ from pathlib import Path
 from typing import Any
 
 MODE = "BLOCK"
-SOURCE_PREFIXES = ("src/", "scripts/", "hermes_benchmark/", "tests/")
-EXEMPT_PREFIXES = ("docs/", ".trellis/", ".claude/")
+SOURCE_PREFIXES = (".trellis/scripts/", ".codex/hooks/")
+EXEMPT_PREFIXES = ("docs/", ".agents/", ".claude/", ".trellis/spec/", ".trellis/tasks/", ".trellis/templates/")
 
 
 def repo_root() -> Path:
@@ -32,20 +32,17 @@ def hook_payload() -> dict[str, Any]:
 
 
 def find_paths(value: Any) -> list[str]:
+    paths: list[str] = []
     if isinstance(value, dict):
-        paths: list[str] = []
         for key, item in value.items():
             if key in {"file_path", "path"} and isinstance(item, str):
                 paths.append(item)
             else:
                 paths.extend(find_paths(item))
-        return paths
-    if isinstance(value, list):
-        paths: list[str] = []
+    elif isinstance(value, list):
         for item in value:
             paths.extend(find_paths(item))
-        return paths
-    return []
+    return paths
 
 
 def session_id(payload: dict[str, Any]) -> str:
@@ -61,7 +58,9 @@ def session_id(payload: dict[str, Any]) -> str:
 
 
 def needs_impact(path: str) -> bool:
-    normalized = path.replace("\\", "/").lstrip("./")
+    normalized = path.replace("\\", "/")
+    while normalized.startswith("./"):
+        normalized = normalized[2:]
     if normalized.startswith(EXEMPT_PREFIXES):
         return False
     return normalized.startswith(SOURCE_PREFIXES)
@@ -74,8 +73,7 @@ def main() -> int:
     if not any(needs_impact(path) for path in targets):
         return 0
 
-    sid = session_id(payload)
-    marker = root / ".trellis" / ".runtime" / f"impact-{sid}.ok"
+    marker = root / ".trellis" / ".runtime" / f"impact-{session_id(payload)}.ok"
     if marker.is_file():
         return 0
 

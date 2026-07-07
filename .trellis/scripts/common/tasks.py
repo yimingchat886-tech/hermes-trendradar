@@ -84,7 +84,22 @@ def get_all_statuses(tasks_dir: Path) -> dict[str, str]:
     Returns:
         Dict mapping directory names to status strings.
     """
-    return {t.dir_name: t.status for t in iter_active_tasks(tasks_dir)}
+    return {t.dir_name: task_state(t) for t in iter_active_tasks(tasks_dir)}
+
+
+def task_state(task: TaskInfo | object) -> str:
+    """Return canonical display state, preferring v3 state-machine state."""
+    raw = getattr(task, "raw", {}) or {}
+    machine = (raw.get("meta") or {}).get("state_machine") or {}
+    current_state = machine.get("current_state")
+    if isinstance(current_state, str) and current_state:
+        return current_state
+    status = raw.get("status") or getattr(task, "status", "")
+    return str(status or "unknown")
+
+
+def is_done_state(status: str) -> bool:
+    return status in {"completed", "done"} or status.endswith("_archived")
 
 
 def children_progress(
@@ -106,7 +121,8 @@ def children_progress(
     # sets status=completed before moving the dir). Count it as done so
     # parent progress doesn't regress when children are archived.
     done = sum(
-        1 for c in children
-        if c not in all_statuses or all_statuses.get(c) in ("completed", "done")
+        1
+        for c in children
+        if c not in all_statuses or is_done_state(all_statuses.get(c, ""))
     )
     return f" [{done}/{len(children)} done]"

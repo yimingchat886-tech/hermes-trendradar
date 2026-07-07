@@ -103,7 +103,7 @@ def test_impact_gate_blocks_source_until_marker_and_marker_hook_writes_it(tmp_pa
     gate = ROOT / ".claude" / "hooks" / "impact_gate.py"
     marker = ROOT / ".claude" / "hooks" / "impact_marker.py"
 
-    source_payload = json.dumps({"session_id": "s1", "tool_input": {"file_path": "src/app.py"}})
+    source_payload = json.dumps({"session_id": "s1", "tool_input": {"file_path": ".trellis/scripts/task.py"}})
     blocked = run([sys.executable, str(gate)], tmp_path, stdin=source_payload, check=False)
     assert blocked.returncode == 2
     assert "G2 impact gate" in blocked.stderr

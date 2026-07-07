@@ -2,7 +2,7 @@
 
 ## When To Use
 
-Use PM intake for non-trivial requests before drafting a PRD or implementing staged overlay work.
+Use PM intake for non-trivial requests before drafting a PRD or implementing v3 parent/child harness work.
 
 ## Required Output
 

@@ -16,7 +16,7 @@ def find_command(value: Any) -> str:
             found = find_command(item)
             if found:
                 return found
-    if isinstance(value, list):
+    elif isinstance(value, list):
         for item in value:
             found = find_command(item)
             if found:

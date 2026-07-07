@@ -15,17 +15,11 @@ When the user wants to change `trellis-research`, `trellis-implement`, or `trell
 | Platform | Path |
 | --- | --- |
 | Claude Code | `.claude/agents/trellis-*.md` |
-| Cursor | `.cursor/agents/trellis-*.md` |
-| OpenCode | `.opencode/agents/trellis-*.md` |
 | Codex | `.codex/agents/trellis-*.toml` |
-| Kiro | `.kiro/agents/trellis-*.json` |
-| Gemini CLI | `.gemini/agents/trellis-*.md` |
-| Qoder | `.qoder/agents/trellis-*.md` |
-| CodeBuddy | `.codebuddy/agents/trellis-*.md` |
-| Factory Droid | `.factory/droids/trellis-*.md` |
-| Pi Agent | `.pi/agents/trellis-*.md` |
 
-Use the actual paths in the user project as authoritative.
+Use the actual paths in the user project as authoritative. Older adapter
+directories such as `.cursor/`, `.opencode/`, `.gemini/`, `.qoder/`,
+`.codebuddy/`, `.factory/`, and `.pi/` are legacy compatibility paths only.
 
 ## Common Needs
 
@@ -43,7 +37,7 @@ Use the actual paths in the user project as authoritative.
 2. **Do not hard-code project specs into agents**: long-term specs belong in `.trellis/spec/`; agents are responsible for reading them.
 3. **Make read order explicit**: active task -> PRD -> info -> JSONL -> spec/research.
 4. **Make write boundaries explicit**: which directories may be written and which may not.
-5. **Synchronize across platforms**: when the user configured multiple platforms, decide whether to change only the current platform or all platform agents.
+5. **Synchronize across v3 platforms**: when the user configured both Codex and Claude Code, decide whether to change only the current platform or both agent sets.
 
 ## Agent Pull Platforms
 

@@ -2,7 +2,7 @@
 
 ## Paths
 
-Preferred staged overlay paths:
+Preferred parent/child delivery paths:
 
 - `docs/requirements-traceability-matrix.md`
 - `docs/requirements-traceability-matrix.json`
@@ -11,7 +11,7 @@ This repo currently also has `docs/requirements traceability matrix.md`. Do not 
 
 Decision:
 
-- New staged overlay work should use the hyphenated Markdown/JSON pair above.
+- New parent/child delivery work should use the hyphenated Markdown/JSON pair above.
 - Existing references to `docs/requirements traceability matrix.md` are legacy-compatible and should be read when relevant.
 - Migrating or renaming the legacy spaced path is a separate scoped task.
 
@@ -77,5 +77,5 @@ Do not mark a requirement done unless it has:
 - linked child task or clear parent closeout note
 - implementation commit hash
 - verification evidence
-- soft archive evidence for staged overlay children
+- soft archive evidence for v3 child tasks
 - no unresolved blocker

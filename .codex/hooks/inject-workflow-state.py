@@ -1,26 +1,20 @@
 #!/usr/bin/env python3
-"""Trellis per-turn breadcrumb hook (UserPromptSubmit / BeforeAgent equivalent).
+"""Trellis per-turn breadcrumb hook for Codex.
 
 Runs on every user prompt. Resolves the active task through Trellis'
 session-aware active task resolver and emits a short <workflow-state>
 block reminding the main AI what task is active and its expected flow.
 
-The emitted ``hookEventName`` field is platform-aware: most hosts expect
-``UserPromptSubmit`` (Claude Code naming, also accepted by Cursor / Qoder /
-CodeBuddy / Droid / Codex / Copilot wiring), but Gemini CLI 0.40.x renamed
-its per-turn event to ``BeforeAgent`` and its schema validator rejects the
-legacy name. ``_detect_platform`` picks the right value at runtime.
-Breadcrumb text is pulled exclusively from workflow.md
+The v3-supported surfaces are Codex and Claude Code. This repository wires
+Codex now; Claude Code wiring lands separately. A few older platform probes
+remain below as legacy read-compatibility for projects that still carry this
+shared hook script, but they are not v3 support claims. Breadcrumb text is
+pulled exclusively from workflow.md
 [workflow-state:STATUS] tag blocks — workflow.md is the single source of
 truth. There are no fallback dicts in this script: when workflow.md is
 missing or a tag is absent, the breadcrumb degrades to a generic
 "Refer to workflow.md for current step." line so users see (and fix)
 the broken state instead of the hook silently masking it.
-
-Shared across all hook-capable platforms (Claude, Cursor, Codex, Qoder,
-CodeBuddy, Droid, Gemini, Copilot). Kiro is not wired (no per-turn
-hook entry point). Written to each platform's hooks directory via
-writeSharedHooks() at init time.
 
 Silent exit 0 cases (no output):
   - No .trellis/ directory found (not a Trellis project)
@@ -273,7 +267,7 @@ def _codex_mode_banner(config: dict) -> str:
 def resolve_breadcrumb_key(
     status: str, platform: str | None, config: dict
 ) -> str:
-    """Pick the breadcrumb tag key based on Codex dispatch_mode.
+    """Choose the breadcrumb tag key based on Codex dispatch_mode.
 
     Codex defaults to ``inline`` because sub-agents run with ``fork_turns="none"``
     isolation and can't inherit the parent session's task context. Users can
@@ -366,9 +360,8 @@ def main() -> int:
         parts.append(breadcrumb)
         breadcrumb = "\n\n".join(parts)
 
-    # Gemini CLI 0.40.x rejects "UserPromptSubmit" — its per-turn event is
-    # named "BeforeAgent". Other platforms (Claude/Cursor/Qoder/CodeBuddy/
-    # Droid/Codex/Copilot) accept the original Claude-style name.
+    # Legacy compatibility: older shared copies used a different per-turn
+    # event name for one adapter. Codex and Claude Code use UserPromptSubmit.
     hook_event_name = (
         "BeforeAgent" if platform == "gemini" else "UserPromptSubmit"
     )

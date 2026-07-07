@@ -48,7 +48,9 @@ This skill documents this repository's Trellis customizations only.
 - ...
 ```
 
-For multi-platform projects, place equivalent versions in other platform skill directories, or use `.agents/skills/` for platforms that support the shared layer.
+For v3 multi-platform projects, place equivalent versions in the Codex and
+Claude Code skill roots, or use `.agents/skills/` when Codex is the intended
+consumer.
 
 ## Write To `.trellis/spec/`
 

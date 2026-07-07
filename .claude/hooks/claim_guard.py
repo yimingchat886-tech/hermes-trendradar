@@ -23,8 +23,9 @@ def repo_root() -> Path:
 
 def developer(root: Path) -> str:
     for key in ("TRELLIS_OWNER", "CLAUDE_OWNER", "TRELLIS_DEVELOPER"):
-        if os.environ.get(key):
-            return os.environ[key].strip()
+        value = os.environ.get(key)
+        if value:
+            return value.strip()
     dev = root / ".trellis" / ".developer"
     if dev.is_file():
         for line in dev.read_text(encoding="utf-8").splitlines():
@@ -50,10 +51,8 @@ def find_paths(value: Any) -> list[str]:
 def find_override_reason(value: Any) -> str:
     if isinstance(value, dict):
         for key, item in value.items():
-            normalized = key.replace("-", "_")
-            if normalized in {"override_claim", "override_claim_reason"}:
-                if isinstance(item, str):
-                    return item.strip()
+            if key.replace("-", "_") in {"override_claim", "override_claim_reason"}:
+                return item.strip() if isinstance(item, str) else ""
             found = find_override_reason(item)
             if found:
                 return found
@@ -121,9 +120,10 @@ def main() -> int:
     root = repo_root()
     who = developer(root)
     payload = load_hook_input()
-    targets = [normalize_target(root, p) for p in find_paths(payload)]
+    targets = [normalize_target(root, path) for path in find_paths(payload)]
     if not targets:
         return 0
+
     override_reason = os.environ.get("TRELLIS_OVERRIDE_CLAIM_REASON", "").strip()
     override_reason = override_reason or find_override_reason(payload)
 

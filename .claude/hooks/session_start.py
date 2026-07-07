@@ -20,11 +20,13 @@ def main() -> int:
     board = root / ".trellis" / "scripts" / "board.py"
     if not board.is_file():
         return 0
+
     result = subprocess.run(
         [sys.executable, str(board), "--summary", "--max-lines", "10"],
         cwd=root,
         text=True,
         capture_output=True,
+        check=False,
     )
     if result.stdout:
         print(result.stdout.rstrip())

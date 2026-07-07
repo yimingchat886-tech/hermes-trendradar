@@ -26,6 +26,7 @@ from .io import read_json
 from .log import Colors, colored
 from .paths import FILE_TASK_JSON, get_repo_root, get_tasks_dir
 from .task_utils import find_task_by_name, resolve_task_dir
+from .done_gate import done_gate_errors
 
 V2_TIERS = {"parent", "child", "light"}
 
@@ -251,12 +252,16 @@ def _validate_v2_task(target_dir: Path, repo_root: Path) -> int:
             if not _meaningful(_section_body(prd, header)):
                 errors.append(f"light prd.md missing answer: {header}")
 
+    for error in done_gate_errors(target_dir, data, repo_root):
+        if error not in errors:
+            errors.append(error)
+
     if errors:
-        print(f"  {colored('v2 metadata: ✗', Colors.RED)}")
+        print(f"  {colored('task metadata: ✗', Colors.RED)}")
         for error in errors:
             print(f"    - {error}")
     else:
-        print(f"  {colored('v2 metadata: ✓', Colors.GREEN)}")
+        print(f"  {colored('task metadata: ✓', Colors.GREEN)}")
     return len(errors)
 
 

@@ -5,10 +5,11 @@ from __future__ import annotations
 
 import json
 import os
-import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+from common.io import json_bytes, write_temp_bytes
 
 
 HARNESS_MODE = "harness_state_machine"
@@ -132,6 +133,37 @@ def status(task_dir: Path | str) -> dict[str, Any]:
     return {"state_machine": machine, "event_count": event_count}
 
 
+def archive_transition_events(kind: str, current: str) -> list[str]:
+    """Return the canonical events needed to reach the archived state."""
+
+    if kind not in TRANSITIONS:
+        raise StateMachineError(f"invalid state machine kind: {kind}")
+    archived = ARCHIVED_STATES[kind]
+    if current == archived:
+        return []
+    if current not in ALL_STATES[kind] or current == BLOCKED_STATES[kind]:
+        raise StateMachineError(f"cannot archive {kind} from state: {current}")
+
+    events: list[str] = []
+    seen: set[str] = set()
+    while current != archived:
+        if current in seen:
+            raise StateMachineError(f"archive transition cycle from state: {current}")
+        seen.add(current)
+        candidates = [
+            (event, next_state)
+            for (state, event), next_state in TRANSITIONS[kind].items()
+            if state == current
+        ]
+        if len(candidates) != 1:
+            raise StateMachineError(f"cannot archive {kind} from state: {current}")
+        event, current = candidates[0]
+        events.append(event)
+        if current not in ALL_STATES[kind]:
+            raise StateMachineError(f"archive transition reaches invalid state: {current}")
+    return events
+
+
 def _load_harness_task(task_dir: Path | str) -> tuple[Path, Path, dict[str, Any]]:
     task_path = Path(task_dir) / TASK_JSON
     log_path = Path(task_dir) / EVENT_LOG
@@ -195,7 +227,7 @@ def _write_task_and_log(
     old_log_exists = log_path.exists()
     old_log = log_path.read_bytes() if old_log_exists else b""
     new_log = _appended_log(old_log, event)
-    task_bytes = (json.dumps(task, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
+    task_bytes = json_bytes(task)
 
     log_tmp = _write_temp(log_path, new_log)
     task_tmp = _write_temp(task_path, task_bytes)
@@ -225,9 +257,7 @@ def _restore_log(log_path: Path, old_log: bytes, old_log_exists: bool) -> None:
 
 
 def _write_temp(path: Path, data: bytes) -> Path:
-    tmp = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
-    tmp.write_bytes(data)
-    return tmp
+    return write_temp_bytes(path, data)
 
 
 def _unlink_if_exists(path: Path) -> None:

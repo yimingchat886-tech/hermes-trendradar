@@ -37,7 +37,7 @@ def tool_name(value: Any) -> str:
             found = tool_name(item)
             if found:
                 return found
-    if isinstance(value, list):
+    elif isinstance(value, list):
         for item in value:
             found = tool_name(item)
             if found:
@@ -53,8 +53,8 @@ def main() -> int:
     name = tool_name(payload)
     if "gitnexus" not in name or not any(part in name for part in ("impact", "context")):
         return 0
-    root = repo_root()
-    runtime = root / ".trellis" / ".runtime"
+
+    runtime = repo_root() / ".trellis" / ".runtime"
     runtime.mkdir(parents=True, exist_ok=True)
     marker = runtime / f"impact-{session_id(payload)}.ok"
     marker.write_text("ok\n", encoding="utf-8")

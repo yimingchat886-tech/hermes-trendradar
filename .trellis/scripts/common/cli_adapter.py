@@ -1,25 +1,29 @@
 """
-CLI Adapter for Multi-Platform Support.
+CLI Adapter for legacy multi-platform compatibility.
 
-Abstracts differences between Claude Code, OpenCode, Cursor, iFlow, Codex, Kilo, Kiro Code, Gemini CLI, Antigravity, Devin, Qoder, CodeBuddy, GitHub Copilot, Factory Droid, and Pi Agent interfaces.
+v3 first-class Trellis support is scoped to Codex and Claude Code. The
+additional adapter branches in this module are retained for older init/update
+paths and migration reads; they are not v3 support claims.
 
-Supported platforms:
+First-class platforms:
 - claude: Claude Code (default)
-- opencode: OpenCode
-- cursor: Cursor IDE
-- iflow: iFlow CLI
-- codex: Codex CLI (skills-based)
-- kilo: Kilo CLI
-- kiro: Kiro Code (skills-based)
-- gemini: Gemini CLI
-- antigravity: Antigravity (workflow-based)
-- devin: Devin (formerly Windsurf; workflow-based)
-- qoder: Qoder
-- codebuddy: CodeBuddy
-- copilot: GitHub Copilot (VS Code)
-- droid: Factory Droid (commands-based)
-- pi: Pi Agent (extension-backed)
-- trae: Trae IDE (IDE-only, hooks-based)
+- codex: Codex CLI
+
+Legacy adapter keys retained for compatibility:
+- opencode
+- cursor
+- iflow
+- kilo
+- kiro
+- gemini
+- antigravity
+- devin
+- qoder
+- codebuddy
+- copilot
+- droid
+- pi
+- trae
 
 Usage:
     from common.cli_adapter import CLIAdapter
@@ -68,13 +72,13 @@ class CLIAdapter:
     # Agent Name Mapping
     # =========================================================================
 
-    # OpenCode has built-in agents that cannot be overridden
+    # Legacy opencode has built-in agents that cannot be overridden
     # See: https://github.com/sst/opencode/issues/4271
     # Note: Class-level constant, not a dataclass field
     _AGENT_NAME_MAP: ClassVar[dict[Platform, dict[str, str]]] = {
         "claude": {},  # No mapping needed
         "opencode": {
-            "plan": "trellis-plan",  # 'plan' is built-in in OpenCode
+            "plan": "trellis-plan",  # 'plan' is built-in there
         },
     }
 
@@ -85,7 +89,7 @@ class CLIAdapter:
             agent: Original agent name (e.g., 'plan', 'dispatch')
 
         Returns:
-            Platform-specific agent name (e.g., 'trellis-plan' for OpenCode)
+            Platform-specific agent name (e.g., 'trellis-plan')
         """
         mapping = self._AGENT_NAME_MAP.get(self.platform, {})
         return mapping.get(agent, agent)
@@ -171,12 +175,9 @@ class CLIAdapter:
             Path to commands directory or file
 
         Note:
-            Cursor uses prefix naming: .cursor/commands/trellis-<name>.md
-            Antigravity uses workflow directory: .agent/workflows/<name>.md
-            Devin uses workflow directory: .devin/workflows/trellis-<name>.md
-            Copilot uses prompt files: .github/prompts/<name>.prompt.md
-            Pi uses prompt templates: .pi/prompts/trellis-<name>.md
-            Claude/OpenCode use subdirectory: .claude/commands/trellis/<name>.md
+            Legacy adapters use their historical command, prompt, or workflow
+            directories. v3 first-class paths are `.claude/commands/trellis/`
+            and `.agents/skills/trellis-<name>/SKILL.md`.
         """
         if self.platform == "pi":
             prompts_dir = self.get_config_dir(project_root) / "prompts"
@@ -221,7 +222,7 @@ class CLIAdapter:
         if not parts:
             return self.get_config_dir(project_root) / "commands"
 
-        # Cursor uses prefix naming instead of subdirectory
+        # Legacy cursor uses prefix naming instead of subdirectory
         if self.platform == "cursor" and len(parts) >= 2 and parts[0] == "trellis":
             # Convert trellis/<name>.md to trellis-<name>.md
             filename = parts[-1]
@@ -241,14 +242,8 @@ class CLIAdapter:
             Relative path string for use in JSONL entries
 
         Note:
-            Cursor: .cursor/commands/trellis-<name>.md
             Codex: .agents/skills/trellis-<name>/SKILL.md
-            Kiro: .kiro/skills/trellis-<name>/SKILL.md
-            Gemini: .gemini/commands/trellis/<name>.toml
-            Antigravity: .agent/workflows/<name>.md
-            Devin: .devin/workflows/trellis-<name>.md
-            Pi: .pi/prompts/trellis-<name>.md
-            Others: .{platform}/commands/trellis/<name>.md
+            Claude Code and legacy adapters: platform-specific locations.
         """
         if self.platform == "cursor":
             return f".cursor/commands/trellis-{name}.md"
@@ -294,7 +289,7 @@ class CLIAdapter:
         elif self.platform == "kiro":
             return {"KIRO_NON_INTERACTIVE": "1"}
         elif self.platform == "gemini":
-            return {}  # Gemini CLI doesn't have a non-interactive env var
+            return {}  # legacy adapter has no non-interactive env var
         elif self.platform == "antigravity":
             return {}
         elif self.platform == "devin":
@@ -346,7 +341,7 @@ class CLIAdapter:
             cmd = ["opencode", "run"]
             cmd.extend(["--agent", mapped_agent])
 
-            # Note: OpenCode 'run' mode is non-interactive by default
+            # Note: legacy opencode 'run' mode is non-interactive by default
             # No equivalent to Claude Code's --dangerously-skip-permissions
             # See: https://github.com/anomalyco/opencode/issues/9070
 
@@ -356,7 +351,7 @@ class CLIAdapter:
             if verbose:
                 cmd.extend(["--log-level", "DEBUG", "--print-logs"])
 
-            # Note: OpenCode doesn't support --session-id on creation
+            # Note: legacy opencode doesn't support --session-id on creation
             # Session ID must be extracted from logs after startup
 
             cmd.append(prompt)
@@ -374,31 +369,31 @@ class CLIAdapter:
             cmd.append(prompt)
         elif self.platform == "antigravity":
             raise ValueError(
-                "Antigravity workflows are UI slash commands; CLI agent run is not supported."
+                "legacy antigravity workflows are UI slash commands; CLI agent run is not supported."
             )
         elif self.platform == "devin":
             raise ValueError(
-                "Devin workflows are UI slash commands; CLI agent run is not supported."
+                "legacy devin workflows are UI slash commands; CLI agent run is not supported."
             )
         elif self.platform == "qoder":
             cmd = ["qodercli", "-p", prompt]
         elif self.platform == "codebuddy":
             raise ValueError(
-                "CodeBuddy does not support non-interactive mode (no CLI agent)"
+                "legacy codebuddy does not support non-interactive mode (no CLI agent)"
             )
         elif self.platform == "copilot":
             raise ValueError(
-                "GitHub Copilot is IDE-only; CLI agent run is not supported."
+                "legacy copilot is IDE-only; CLI agent run is not supported."
             )
         elif self.platform == "droid":
             raise ValueError(
-                "Factory Droid CLI agent run is not yet supported."
+                "legacy droid CLI agent run is not yet supported."
             )
         elif self.platform == "pi":
             cmd = ["pi", "-p", prompt]
         elif self.platform == "trae":
             raise ValueError(
-                "Trae is IDE-only; CLI agent run is not supported."
+                "legacy trae is IDE-only; CLI agent run is not supported."
             )
 
         else:  # claude
@@ -425,7 +420,7 @@ class CLIAdapter:
         """Build CLI command for resuming a session.
 
         Args:
-            session_id: Session ID to resume (ignored for iFlow)
+            session_id: Session ID to resume (ignored for legacy iflow)
 
         Returns:
             List of command arguments
@@ -433,8 +428,8 @@ class CLIAdapter:
         if self.platform == "opencode":
             return ["opencode", "run", "--session", session_id]
         elif self.platform == "iflow":
-            # iFlow uses -c to continue most recent conversation
-            # session_id is ignored as iFlow doesn't support session IDs
+            # Legacy iflow uses -c to continue most recent conversation.
+            # session_id is ignored because that adapter lacks session IDs.
             return ["iflow", "-c"]
         elif self.platform == "codex":
             return ["codex", "resume", session_id]
@@ -444,31 +439,31 @@ class CLIAdapter:
             return ["gemini", "--resume", session_id]
         elif self.platform == "antigravity":
             raise ValueError(
-                "Antigravity workflows are UI slash commands; CLI resume is not supported."
+                "legacy antigravity workflows are UI slash commands; CLI resume is not supported."
             )
         elif self.platform == "devin":
             raise ValueError(
-                "Devin workflows are UI slash commands; CLI resume is not supported."
+                "legacy devin workflows are UI slash commands; CLI resume is not supported."
             )
         elif self.platform == "qoder":
             return ["qodercli", "--resume", session_id]
         elif self.platform == "codebuddy":
             raise ValueError(
-                "CodeBuddy does not support non-interactive mode (no CLI agent)"
+                "legacy codebuddy does not support non-interactive mode (no CLI agent)"
             )
         elif self.platform == "copilot":
             raise ValueError(
-                "GitHub Copilot is IDE-only; CLI resume is not supported."
+                "legacy copilot is IDE-only; CLI resume is not supported."
             )
         elif self.platform == "droid":
             raise ValueError(
-                "Factory Droid CLI resume is not yet supported."
+                "legacy droid CLI resume is not yet supported."
             )
         elif self.platform == "pi":
             return ["pi", "-c", session_id]
         elif self.platform == "trae":
             raise ValueError(
-                "Trae is IDE-only; CLI resume is not supported."
+                "legacy trae is IDE-only; CLI resume is not supported."
             )
         else:
             return ["claude", "--resume", session_id]
@@ -496,7 +491,7 @@ class CLIAdapter:
 
     @property
     def is_opencode(self) -> bool:
-        """Check if platform is OpenCode."""
+        """Check if platform is legacy opencode."""
         return self.platform == "opencode"
 
     @property
@@ -506,24 +501,24 @@ class CLIAdapter:
 
     @property
     def is_cursor(self) -> bool:
-        """Check if platform is Cursor."""
+        """Check if platform is legacy cursor."""
         return self.platform == "cursor"
 
     @property
     def is_iflow(self) -> bool:
-        """Check if platform is iFlow CLI."""
+        """Check if platform is legacy iflow."""
         return self.platform == "iflow"
 
     @property
     def cli_name(self) -> str:
         """Get CLI executable name.
 
-        Note: Cursor doesn't have a CLI tool, returns None-like value.
+        Note: legacy cursor doesn't have a CLI tool, returns None-like value.
         """
         if self.is_opencode:
             return "opencode"
         elif self.is_cursor:
-            return "cursor"  # Note: Cursor is IDE-only, no CLI
+            return "cursor"  # Note: legacy cursor is IDE-only, no CLI
         elif self.platform == "iflow":
             return "iflow"
         elif self.platform == "kiro":
@@ -553,8 +548,8 @@ class CLIAdapter:
     def supports_cli_agents(self) -> bool:
         """Check if platform supports running agents via CLI.
 
-        Claude Code, OpenCode, iFlow, and Codex support CLI agent execution.
-        Cursor is IDE-only and doesn't support CLI agents.
+        Claude Code and Codex are first-class. Some legacy adapters also
+        support CLI agent execution; legacy cursor is IDE-only.
         """
         return self.platform in ("claude", "opencode", "iflow", "codex", "pi")
 
@@ -562,7 +557,7 @@ class CLIAdapter:
     def requires_agent_definition_file(self) -> bool:
         """Check if platform requires an agent definition file (.md/.toml) to run.
 
-        Claude Code, OpenCode, iFlow: require agent .md files (--agent flag).
+        Claude Code and some legacy adapters require agent .md files.
         Codex: auto-discovers agents from .codex/agents/*.toml, no --agent flag.
         """
         return self.platform in ("claude", "opencode", "iflow")
@@ -576,15 +571,15 @@ class CLIAdapter:
         """Check if platform supports specifying session ID on creation.
 
         Claude Code: Yes (--session-id)
-        OpenCode: No (auto-generated, extract from logs)
-        iFlow: No (no session ID support)
+        legacy opencode: No (auto-generated, extract from logs)
+        legacy iflow: No (no session ID support)
         """
         return self.platform == "claude"
 
     def extract_session_id_from_log(self, log_content: str) -> str | None:
-        """Extract session ID from log output (OpenCode only).
+        """Extract session ID from log output for legacy opencode.
 
-        OpenCode generates session IDs in format: ses_xxx
+        The legacy adapter generates session IDs in format: ses_xxx
 
         Args:
             log_content: Log file content
@@ -594,7 +589,7 @@ class CLIAdapter:
         """
         import re
 
-        # OpenCode session ID pattern
+        # Legacy opencode session ID pattern
         match = re.search(r"ses_[a-zA-Z0-9]+", log_content)
         if match:
             return match.group(0)
@@ -602,7 +597,7 @@ class CLIAdapter:
 
 
 # =============================================================================
-# Factory Function
+# Adapter Builder
 # =============================================================================
 
 
@@ -619,10 +614,10 @@ def get_cli_adapter(platform: str = "claude") -> CLIAdapter:
         ValueError: If platform is not supported
 
     Note:
-        'windsurf' is accepted as a deprecated alias for 'devin' (Windsurf was
-        renamed to Devin) and normalized before validation.
+        'windsurf' is accepted as a deprecated legacy alias for 'devin' and
+        normalized before validation.
     """
-    # Deprecated alias: Windsurf was renamed to Devin.
+    # Deprecated legacy alias.
     if platform == "windsurf":
         platform = "devin"
     if platform not in (
@@ -643,8 +638,14 @@ def get_cli_adapter(platform: str = "claude") -> CLIAdapter:
         "pi",
         "trae",
     ):
+        recognized = (
+            "'claude', 'opencode', 'cursor', 'iflow', 'codex', 'kilo', "
+            "'kiro', 'gemini', 'antigravity', 'devin', 'qoder', "
+            "'codebuddy', 'copilot', 'droid', 'pi', or 'trae'"
+        )
         raise ValueError(
-            f"Unsupported platform: {platform} (must be 'claude', 'opencode', 'cursor', 'iflow', 'codex', 'kilo', 'kiro', 'gemini', 'antigravity', 'devin', 'qoder', 'codebuddy', 'copilot', 'droid', 'pi', or 'trae')"
+            f"Unknown adapter key: {platform} (recognized keys: {recognized}; "
+            "v3 support is scoped to 'claude' and 'codex')"
         )
 
     return CLIAdapter(platform=platform)  # type: ignore
@@ -661,7 +662,7 @@ _ALL_PLATFORM_CONFIG_DIRS = (
     ".gemini",
     ".agent",
     ".devin",
-    ".windsurf",  # deprecated: pre-rename Devin config dir (still a platform signal)
+    ".windsurf",  # deprecated pre-rename legacy config dir
     ".qoder",
     ".codebuddy",
     ".github/copilot",
@@ -673,7 +674,7 @@ _ALL_PLATFORM_CONFIG_DIRS = (
 checks. `.agents/skills/` is NOT listed here: it is a shared cross-platform
 layer (written by Codex, also consumed by Amp/Cline/Warp/etc. via the
 agentskills.io standard), not a single-platform signal. Its presence must not
-block detection of Kiro, Antigravity, Devin, or other platforms."""
+block detection of legacy platform directories."""
 
 
 def _has_other_platform_dir(project_root: Path, exclude: set[str]) -> bool:
@@ -717,7 +718,7 @@ def detect_platform(project_root: Path) -> Platform:
 
     # Check environment variable first
     env_platform = os.environ.get("TRELLIS_PLATFORM", "").lower()
-    # Deprecated alias: Windsurf was renamed to Devin.
+    # Deprecated legacy alias.
     if env_platform == "windsurf":
         env_platform = "devin"
     if env_platform in (
@@ -740,20 +741,20 @@ def detect_platform(project_root: Path) -> Platform:
     ):
         return env_platform  # type: ignore
 
-    # Check for .opencode directory (OpenCode-specific)
+    # Check for legacy .opencode directory
     if (project_root / ".opencode").is_dir():
         return "opencode"
 
-    # Check for .iflow directory (iFlow-specific)
+    # Check for legacy .iflow directory
     if (project_root / ".iflow").is_dir():
         return "iflow"
 
-    # Check for .cursor directory (Cursor-specific)
+    # Check for legacy .cursor directory
     # Only detect as cursor if .claude doesn't exist (to avoid confusion)
     if (project_root / ".cursor").is_dir() and not (project_root / ".claude").is_dir():
         return "cursor"
 
-    # Check for .gemini directory (Gemini CLI-specific)
+    # Check for legacy .gemini directory
     if (project_root / ".gemini").is_dir():
         return "gemini"
 
@@ -764,17 +765,17 @@ def detect_platform(project_root: Path) -> Platform:
     ):
         return "codex"
 
-    # Check for .kilocode directory (Kilo-specific)
+    # Check for legacy .kilocode directory
     if (project_root / ".kilocode").is_dir():
         return "kilo"
 
-    # Check for Kiro skills directory only when no other platform config exists
+    # Check for legacy .kiro skills directory only when no other platform config exists
     if (project_root / ".kiro" / "skills").is_dir() and not _has_other_platform_dir(
         project_root, {".kiro"}
     ):
         return "kiro"
 
-    # Check for Antigravity workflow directory only when no other platform config exists
+    # Check for legacy .agent workflow directory only when no other platform config exists
     if (
         project_root / ".agent" / "workflows"
     ).is_dir() and not _has_other_platform_dir(
@@ -782,7 +783,7 @@ def detect_platform(project_root: Path) -> Platform:
     ):
         return "antigravity"
 
-    # Check for Devin workflow directory only when no other platform config
+    # Check for legacy devin workflow directory only when no other platform config
     # exists. `.windsurf/workflows` is the legacy pre-rename path (still detected
     # as devin for back-compat until users migrate via `trellis update --migrate`).
     if (
@@ -793,27 +794,27 @@ def detect_platform(project_root: Path) -> Platform:
     ):
         return "devin"
 
-    # Check for .codebuddy directory (CodeBuddy-specific)
+    # Check for legacy .codebuddy directory
     if (project_root / ".codebuddy").is_dir():
         return "codebuddy"
 
-    # Check for .qoder directory (Qoder-specific)
+    # Check for legacy .qoder directory
     if (project_root / ".qoder").is_dir():
         return "qoder"
 
-    # Check for .github/copilot directory (GitHub Copilot-specific)
+    # Check for legacy .github/copilot directory
     if (project_root / ".github" / "copilot").is_dir():
         return "copilot"
 
-    # Check for .factory directory (Factory Droid-specific)
+    # Check for legacy .factory directory
     if (project_root / ".factory").is_dir():
         return "droid"
 
-    # Check for .pi directory (Pi Agent-specific)
+    # Check for legacy .pi directory
     if (project_root / ".pi").is_dir():
         return "pi"
 
-    # Check for .trae directory (Trae IDE-specific)
+    # Check for legacy .trae directory
     if (project_root / ".trae").is_dir():
         return "trae"
 

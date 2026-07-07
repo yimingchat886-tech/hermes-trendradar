@@ -1,0 +1,31 @@
+{
+  "id": "sync-trellis-harness",
+  "name": "sync-trellis-harness",
+  "title": "sync trellis harness",
+  "description": "",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": null,
+  "tier": "light",
+  "owner": "codex",
+  "touches": [],
+  "package": null,
+  "priority": "P2",
+  "creator": "jym",
+  "assignee": "jym",
+  "createdAt": "2026-07-06",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "codex/workflow-v2-m4-board",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {
+    "workflow_mode": "harness_state_machine"
+  }
+}

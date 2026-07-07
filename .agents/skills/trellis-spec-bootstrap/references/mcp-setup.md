@@ -36,9 +36,11 @@ npx -y gitnexus mcp
 | `gitnexus_query` | Find execution flows and functional areas by concept |
 | `gitnexus_context` | Inspect callers, callees, references, and process participation for a symbol |
 | `gitnexus_impact` | Understand blast radius before changing a symbol |
-| `gitnexus_detect_changes` | Check changed symbols and affected flows before finishing |
 | `gitnexus_cypher` | Run direct graph queries |
 | `gitnexus_list_repos` | List indexed repositories |
+
+For changed-scope review, use the GitNexus tools available in the current host
+alongside `git diff --name-only` and the project's own verification commands.
 
 ## ABCoder
 

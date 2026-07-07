@@ -57,10 +57,12 @@ from .task_utils import (
     resolve_task_dir,
     run_task_hooks,
 )
+from .done_gate import done_gate_errors as _done_gate_errors
 
 HARNESS_MODE = "harness_state_machine"
 V2_TIERS = {"parent", "child", "light"}
 OWNERS = {"cc", "codex", "jym"}
+TEMPLATE_VERSION = "v3"
 
 
 # =============================================================================
@@ -119,24 +121,12 @@ def _repo_relative_path(path: Path, repo_root: Path) -> str:
 # Sub-agent platform detection + JSONL seeding
 # =============================================================================
 
-# Config directories of platforms that consume implement.jsonl / check.jsonl.
-# Keep in sync with src/types/ai-tools.ts AI_TOOLS entries — these are the
-# platforms listed in workflow.md's "agent-capable" Skill Routing block
-# (Class-1 hook-inject + Class-2 pull-based preludes). Kilo / Antigravity /
-# Devin are NOT in this list: they do not consume JSONL.
+# v3 first-class platforms that consume implement.jsonl / check.jsonl.
+# Legacy adapter branches remain elsewhere for read-compatibility, but new
+# task seeding is scoped to Codex and Claude Code.
 _SUBAGENT_CONFIG_DIRS: tuple[str, ...] = (
     ".claude",
-    ".cursor",
     ".codex",
-    ".kiro",
-    ".gemini",
-    ".opencode",
-    ".qoder",
-    ".codebuddy",
-    ".factory",   # Factory Droid
-    ".github/copilot",
-    ".pi",        # Pi Agent
-    ".trae",      # Trae IDE
 )
 
 _SEED_EXAMPLE = (
@@ -187,11 +177,15 @@ def _render_template(template: str, values: dict[str, str]) -> str:
 
 
 def _template_text(repo_root: Path, tier: str, name: str) -> str:
-    path = repo_root / DIR_WORKFLOW / "templates" / "v2" / tier / name
-    return path.read_text(encoding="utf-8")
+    base = repo_root / DIR_WORKFLOW / "templates"
+    for version in (TEMPLATE_VERSION, "v2"):
+        path = base / version / tier / name
+        if path.is_file():
+            return path.read_text(encoding="utf-8")
+    raise FileNotFoundError(f"template not found for {tier}/{name}")
 
 
-def _write_v2_files(task_dir: Path, repo_root: Path, tier: str, title: str, description: str) -> None:
+def _write_template_files(task_dir: Path, repo_root: Path, tier: str, title: str, description: str) -> None:
     values = {
         "title": title.strip() or "Untitled task",
         "description": description.strip() or "TBD",
@@ -218,94 +212,6 @@ def _init_state_if_supported(task_dir: Path, tier: str) -> None:
         init_task(task_dir, tier, by="system", note="task.py create")
     except (ImportError, StateMachineError) as exc:
         print(colored(f"Warning: state machine init skipped: {exc}", Colors.YELLOW), file=sys.stderr)
-
-
-def _section_body(text: str, header: str) -> str:
-    marker = f"{header}\n"
-    start = text.find(marker)
-    if start == -1:
-        return ""
-    body_start = start + len(marker)
-    next_header = text.find("\n## ", body_start)
-    if next_header == -1:
-        return text[body_start:].strip()
-    return text[body_start:next_header].strip()
-
-
-def _subsection_body(text: str, header: str) -> str:
-    marker = f"{header}"
-    start = text.find(marker)
-    if start == -1:
-        return ""
-    line_end = text.find("\n", start)
-    if line_end == -1:
-        return ""
-    body_start = line_end + 1
-    next_header = text.find("\n### ", body_start)
-    next_section = text.find("\n## ", body_start)
-    candidates = [i for i in (next_header, next_section) if i != -1]
-    end = min(candidates) if candidates else len(text)
-    return text[body_start:end].strip()
-
-
-def _meaningful(body: str) -> bool:
-    stripped = body.strip()
-    if not stripped:
-        return False
-    placeholders = {"tbd", "todo", "pending implementation.", "- [ ] tbd"}
-    lines = [line.strip().lower() for line in stripped.splitlines() if line.strip()]
-    return any(line not in placeholders for line in lines)
-
-
-def _done_gate_errors(task_dir: Path, data: dict[str, Any], repo_root: Path) -> list[str]:
-    tier = data.get("tier")
-    if tier not in V2_TIERS:
-        return []
-
-    errors: list[str] = []
-    stage_report = task_dir / "stage-report.md"
-    if tier in {"child", "light"}:
-        if not stage_report.is_file():
-            errors.append("missing stage-report.md")
-        else:
-            acceptance = _section_body(stage_report.read_text(encoding="utf-8"), "## Acceptance")
-            if not _meaningful(acceptance):
-                errors.append("stage-report.md ## Acceptance is empty or still template text")
-
-    tasks_dir = get_tasks_dir(repo_root)
-    if tier == "child":
-        parent_name = data.get("parent")
-        parent_dir = find_task_by_name(parent_name, tasks_dir) if parent_name else None
-        if not parent_dir:
-            errors.append("child parent is missing")
-        else:
-            governance = parent_dir / "governance.md"
-            if not governance.is_file():
-                errors.append("parent governance.md is missing")
-            else:
-                review = _subsection_body(governance.read_text(encoding="utf-8"), "### PRD Review")
-                if not _meaningful(review):
-                    errors.append("parent External Review / PRD Review is empty")
-
-    if tier == "parent":
-        children = data.get("children") or []
-        for child in children:
-            child_dir = find_task_by_name(child, tasks_dir)
-            child_json = child_dir / FILE_TASK_JSON if child_dir else None
-            child_data = read_json(child_json) if child_json and child_json.is_file() else None
-            status = (child_data or {}).get("status")
-            if status not in {"completed", "cancelled"}:
-                errors.append(f"child not completed/cancelled: {child}")
-
-        governance = task_dir / "governance.md"
-        if governance.is_file():
-            rtm = _section_body(governance.read_text(encoding="utf-8"), "## RTM").lower()
-            if "| planned |" in rtm:
-                errors.append("RTM still contains planned rows")
-        else:
-            errors.append("governance.md is missing")
-
-    return errors
 
 
 def _append_state_event(task_dir: Path, event: str, note: str, by: str = "agent") -> None:
@@ -440,46 +346,36 @@ def _update_parent_governance(parent_dir: Path, child_data: dict[str, Any], comm
 
 
 def _advance_child_to_archived(task_dir: Path) -> None:
-    from state_machine import StateMachineError, apply_event, init_task
+    from state_machine import StateMachineError, apply_event, archive_transition_events, init_task
 
     task = read_json(task_dir / FILE_TASK_JSON) or {}
     if not (task.get("meta") or {}).get("state_machine"):
         init_task(task_dir, "child", by="system", note="soft-archive init")
 
-    transitions = {
-        "child_plan_draft": ["plan_drafted", "completion_signal_received", "commit_created", "child_archive_completed"],
-        "child_waiting_completion_signal": ["completion_signal_received", "commit_created", "child_archive_completed"],
-        "child_commit_ready": ["commit_created", "child_archive_completed"],
-        "child_archive_ready": ["child_archive_completed"],
-        "child_archived": [],
-    }
     task = read_json(task_dir / FILE_TASK_JSON) or {}
     current = ((task.get("meta") or {}).get("state_machine") or {}).get("current_state")
-    if current not in transitions:
-        raise StateMachineError(f"cannot soft-archive from state: {current}")
-    for event in transitions[current]:
+    try:
+        events = archive_transition_events("child", current)
+    except StateMachineError as exc:
+        raise StateMachineError(f"cannot soft-archive from state: {current}") from exc
+    for event in events:
         apply_event(task_dir, event, by="system", note="task.py soft-archive")
 
 
 def _advance_parent_to_archived(task_dir: Path) -> None:
-    from state_machine import StateMachineError, apply_event, init_task
+    from state_machine import StateMachineError, apply_event, archive_transition_events, init_task
 
     task = read_json(task_dir / FILE_TASK_JSON) or {}
     if not (task.get("meta") or {}).get("state_machine"):
         init_task(task_dir, "parent", by="system", note="archive init")
 
-    transitions = {
-        "parent_prd_draft": ["prd_drafted", "parent_completion_signal_received", "parent_commit_created", "parent_archive_completed"],
-        "parent_waiting_completion_signal": ["parent_completion_signal_received", "parent_commit_created", "parent_archive_completed"],
-        "parent_commit_ready": ["parent_commit_created", "parent_archive_completed"],
-        "parent_archive_ready": ["parent_archive_completed"],
-        "parent_archived": [],
-    }
     task = read_json(task_dir / FILE_TASK_JSON) or {}
     current = ((task.get("meta") or {}).get("state_machine") or {}).get("current_state")
-    if current not in transitions:
-        raise StateMachineError(f"cannot archive parent from state: {current}")
-    for event in transitions[current]:
+    try:
+        events = archive_transition_events("parent", current)
+    except StateMachineError as exc:
+        raise StateMachineError(f"cannot archive parent from state: {current}") from exc
+    for event in events:
         apply_event(task_dir, event, by="system", note="task.py archive")
 
 
@@ -615,12 +511,10 @@ def cmd_create(args: argparse.Namespace) -> int:
 
     write_json(task_json_path, task_data)
 
-    _write_v2_files(task_dir, repo_root, tier, args.title, args.description or "")
+    _write_template_files(task_dir, repo_root, tier, args.title, args.description or "")
 
-    # Seed implement.jsonl / check.jsonl for sub-agent-capable platforms.
+    # Seed implement.jsonl / check.jsonl for v3 sub-agent-capable platforms.
     # Agent curates real entries during planning when the task needs them.
-    # Agent-less platforms (Kilo / Antigravity / Devin) skip this — they
-    # load specs via the trellis-before-dev skill instead of JSONL.
     seeded_jsonl = False
     if _has_subagent_platform(repo_root):
         for jsonl_name in ("implement.jsonl", "check.jsonl"):
@@ -886,7 +780,7 @@ def _auto_commit_archive(
 # =============================================================================
 
 def cmd_soft_archive(args: argparse.Namespace) -> int:
-    """Soft-archive a v2 child task without moving its directory."""
+    """Soft-archive a v3 child task without moving its directory."""
     repo_root = get_repo_root()
     tasks_dir = get_tasks_dir(repo_root)
     task_dir = resolve_task_dir(args.name, repo_root)

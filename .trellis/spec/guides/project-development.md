@@ -47,9 +47,14 @@ Before adding code, ask:
 3. Does the standard library or platform already solve it?
 4. Does an installed dependency already solve it?
 5. Is a direct function or direct call enough?
-6. What is the smallest test or check that covers the risk?
+6. What is the smallest implementation and check that satisfy the accepted scope?
 
-Ponytail does not justify weakening correctness, validation, security, accessibility, or data-loss protections.
+Ponytail full means complexity reduction: delete or reuse before adding,
+avoid dependencies when platform, standard library, or existing dependencies
+are enough, and make small repairs only when the accepted scope is already
+small. It does not justify weakening production completeness, confirmed
+requirements, validation, safety, verification, compatibility gates, security,
+accessibility, or data-loss protections.
 
 ## Context Loading Order
 
@@ -134,13 +139,11 @@ Do not add dependencies for small formatting, validation, conversion, or one-off
 
 ## Verification
 
-Run the narrowest relevant command set after changes. Current project commands include:
+Run the narrowest relevant command set after changes. Common project commands include:
 
 ```bash
 npm run typecheck
 npm test
-npm run test:v5
-npm run test:v6
 npm run test:backend
 npm run e2e:v6
 git diff --check
@@ -149,13 +152,13 @@ git diff --check
 For local Python lint in this repo, use:
 
 ```bash
-uvx --from ruff==0.15.20 ruff check --select E9,F63,F7,F82 hermes_benchmark tests .trellis/scripts
+uvx --from ruff==0.15.20 ruff check --select E9,F63,F7,F82 .trellis/scripts
 ```
 
-For routine GitNexus refreshes in this repo, avoid tracked guidance churn:
+For routine GitNexus refreshes in this repo, choose a repo name explicitly:
 
 ```bash
-node .gitnexus/run.cjs analyze --index-only --name hermes-trendradar
+node .gitnexus/run.cjs analyze --index-only --name "trellis-harness"
 ```
 
 Plain/full `gitnexus analyze` is only for an explicit AGENTS/CLAUDE/skill guidance refresh.

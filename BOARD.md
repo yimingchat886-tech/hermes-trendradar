@@ -8,7 +8,7 @@ owner=jym
 
 | Task | Tier | Owner | Status | Updated | Blocked |
 |---|---|---|---|---|---|
-| - | - | - | - | - | - |
+| 07-06-sync-trellis-harness | light | codex | planning | 2026-07-06 16:57 | no |
 
 ## Waiting For Acceptance
 

@@ -7,7 +7,7 @@ Usage:
     python3 add_session.py --title "Title" --commit "hash" --summary "Summary" [--package cli]
     python3 add_session.py --title "Title" --branch "feat/my-branch"
 
-    # Pipe detailed content via stdin (use --stdin to opt in):
+    # Send detailed content via stdin (use --stdin to opt in):
     cat << 'EOF' | python3 add_session.py --stdin --title "Title" --summary "Summary"
     <session content here>
     EOF

@@ -36,7 +36,7 @@ The user resumed work after a gap and the context is implicit.
 
 - "Where were we?"
 - "Continue from last time."
-- "Pick up where we left off."
+- "Resume where we left off."
 - "继续上次的"
 - "我们上次做到哪了"
 - "接着昨天那个任务"

@@ -54,11 +54,11 @@ If a command only repeats workflow rules, prefer making it reference/read `.trel
 | Platform | Entry directories |
 | --- | --- |
 | Claude Code | `.claude/skills/`, `.claude/commands/` |
-| Cursor | `.cursor/skills/`, `.cursor/commands/` |
-| OpenCode | `.opencode/skills/`, `.opencode/commands/` |
 | Codex | `.agents/skills/`, `.codex/skills/` |
-| GitHub Copilot | `.github/skills/`, `.github/prompts/` |
-| Kilo / Antigravity / Windsurf | workflows + skills |
+
+Legacy adapter directories such as `.cursor/`, `.opencode/`, `.github/`,
+`.kilocode/`, `.agent/`, and `.windsurf/` may exist in older projects; treat
+them as migration evidence, not v3 support targets.
 
 ## Add A Project-Local Skill
 
@@ -69,7 +69,9 @@ If the user wants to document team-private customizations, create a project-loca
 └── SKILL.md
 ```
 
-For multi-platform projects, add equivalent versions in each platform skill directory, or use `.agents/skills/` on platforms that support the shared layer.
+For v3 multi-platform projects, add equivalent versions in the Codex and
+Claude Code skill roots, or use `.agents/skills/` when Codex is the intended
+consumer.
 
 ## Notes
 

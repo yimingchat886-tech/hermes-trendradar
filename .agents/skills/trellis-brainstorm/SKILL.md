@@ -1,6 +1,6 @@
 ---
 name: trellis-brainstorm
-description: "Guides collaborative requirements discovery before implementation. Creates task directory, seeds PRD, asks high-value questions one at a time, researches technical choices, and converges on MVP scope. Use when requirements are unclear, there are multiple valid approaches, or the user describes a new feature or complex task."
+description: "Guides collaborative requirements discovery before implementation. Creates task directory, seeds PRD, asks high-value questions one at a time, researches technical choices, and converges on accepted scope. Use when requirements are unclear, there are multiple valid approaches, or the user describes a new feature or complex task."
 ---
 
 # Brainstorm - Requirements Discovery (AI Coding Enhanced)
@@ -18,7 +18,7 @@ Guide AI through collaborative requirements discovery **before implementation**,
 * **Task-first** (capture ideas immediately)
 * **Action-before-asking** (reduce low-value questions)
 * **Research-first** for technical choices (avoid asking users to invent options)
-* **Diverge → Converge** (expand thinking, then lock MVP)
+* **Diverge → Converge** (expand thinking, then lock accepted scope)
 
 ---
 
@@ -51,7 +51,7 @@ Triggered from `start` (Trellis command) when the user describes a development t
    If the decision depends on industry conventions / similar tools / established patterns, do research first, then propose options.
 
 6. **Diverge → Converge**
-   After initial understanding, proactively consider future evolution, related scenarios, and failure/edge cases — then converge to an MVP with explicit out-of-scope.
+   After initial understanding, proactively consider future evolution, related scenarios, and failure/edge cases — then converge to an accepted first slice with explicit out-of-scope.
 
 7. **No meta questions**
    Do not ask "should I search?" or "can you paste the code so I can continue?"
@@ -325,9 +325,9 @@ Before diving into design, let me quickly diverge to consider three categories (
 2. Related scenarios: <1–2 bullets>
 3. Failure/edge cases: <1–2 bullets>
 
-For this MVP, which would you like to include (or none)?
+For this accepted first slice, which would you like to include (or none)?
 
-1. Current requirement only (minimal viable)
+1. Current requirement only (accepted first slice)
 2. Add <X> (reserve for future extension)
 3. Add <Y> (improve robustness/consistency)
 4. Other: describe your preference
@@ -335,7 +335,7 @@ For this MVP, which would you like to include (or none)?
 
 Then update PRD:
 
-* What's in MVP → `Requirements`
+* What's in accepted scope → `Requirements`
 * What's excluded → `Out of Scope`
 
 ---
@@ -355,9 +355,9 @@ Then update PRD:
 
 ### Question priority (recommended)
 
-1. **MVP scope boundary** (what is included/excluded)
+1. **Accepted scope boundary** (what is included/excluded)
 2. **Preference decisions** (after presenting concrete options)
-3. **Failure/edge behavior** (only for MVP-critical paths)
+3. **Failure/edge behavior** (only for accepted-scope-critical paths)
 4. **Success metrics & Acceptance Criteria** (what proves it works)
 
 ### Preferred question format (multiple choice)

@@ -12,24 +12,16 @@ User approval of a PLAN means the agent may implement the current task. It does 
 
 ## Completion Signal
 
-For staged overlay tasks, report work, verification, missed/extra scope, commit plan, soft archive plan, and `Pushed: no`, then wait for a completion signal.
+For v3 parent/child tasks, report work, verification, missed/extra scope, commit plan, soft archive plan, and `Pushed: no`, then wait for a completion signal.
 
-Completion signal examples:
+Use `.trellis/spec/project/protocol-phrases.md` for the canonical completion,
+commit, archive, limit, and push phrase table. Limit phrases override positive
+phrases in the same user message.
 
-- `任务完成`
-- `验证通过`
-- `通过`
-- `可以提交`
-- `可以归档`
-- `可以提交并归档`
-- `这个任务 OK`
-
-If the user says `先别提交`, `不要归档`, `等等`, `还要改`, or `先不要动`, do not commit or archive.
-
-For staged child tasks, commit approval also allows soft archive by default. A
-signal such as `可以提交`, `提交git`, `验收`, or `验证通过` means commit the
-approved child scope and soft archive the child in the same close-out, unless
-the user explicitly excludes either action.
+For v3 child tasks, commit approval also allows soft archive by default. A
+commit-approval phrase means commit the approved child scope and soft archive
+the child in the same close-out, unless the user explicitly excludes either
+action.
 
 Record the signal in the stage report:
 
@@ -48,25 +40,25 @@ Record the signal in the stage report:
 
 After completion signal, commit only approved current-task files. Exclude unrelated dirty files.
 
-For staged child tasks, record the commit hash and complete the soft archive
+For v3 child tasks, record the commit hash and complete the soft archive
 metadata immediately after the approved commit. Do not ask for a second archive
 approval unless the user limited the original signal.
 
-For staged parent tasks, parent acceptance means commit approved parent evidence
+For v3 parent tasks, parent acceptance means commit approved parent evidence
 and archive the parent task with the built-in Trellis archive flow.
 
 ## Force-Adding Task Evidence
 
-Because `.trellis/tasks/` is ignored, staged overlay may use `git add -f` only for the current task's evidence files:
+Because `.trellis/tasks/` is ignored, v3 parent/child work may use `git add -f` only for the current task's evidence files:
 
 ```bash
-git add -f .trellis/tasks/<current-task>/{prd.md,implement.jsonl,check.jsonl,stage-report.md,task.json}
+git add -f .trellis/tasks/<current-task>/{prd.md,implement.md,implement.jsonl,check.jsonl,stage-report.md,state-events.jsonl,task.json}
 ```
 
 Allowed:
 
-- current staged task directory only
-- PRD, JSONL context, stage/subphase reports, harness capability report, and task metadata for the current task
+- current task directory only
+- PRD, implementation plan, JSONL context, stage/subphase reports, harness capability report, state events, and task metadata for the current task
 
 Forbidden:
 
@@ -78,9 +70,5 @@ Forbidden:
 
 ## Push
 
-Commit approval never implies push. Push requires an explicit command such as:
-
-- `push`
-- `推送`
-- `git push`
-- `可以推到远端`
+Commit approval never implies push. Push requires an explicit push-approval
+phrase from `.trellis/spec/project/protocol-phrases.md`.

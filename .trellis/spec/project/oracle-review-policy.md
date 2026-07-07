@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Oracle/GPT-5.5 Pro is an external review path for expensive or high-risk judgment. It is not run for every staged child task.
+Oracle/GPT-5.5 Pro is an external review path for expensive or high-risk judgment. It is not run for every v3 child task.
 
 ## Required Checkpoints
 

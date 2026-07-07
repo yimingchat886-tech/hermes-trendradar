@@ -12,7 +12,13 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 from common.paths import get_developer, get_repo_root, get_tasks_dir
-from common.tasks import children_progress, get_all_statuses, iter_active_tasks
+from common.tasks import (
+    children_progress,
+    get_all_statuses,
+    is_done_state,
+    iter_active_tasks,
+    task_state,
+)
 
 
 def task_mtime(task_dir: Path) -> float:
@@ -30,27 +36,22 @@ def fmt_time(ts: float) -> str:
     return datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M")
 
 
-def state(task: object) -> str:
-    raw = getattr(task, "raw", {}) or {}
-    machine = (raw.get("meta") or {}).get("state_machine") or {}
-    return machine.get("current_state") or raw.get("status") or "unknown"
-
-
 def is_blocked(task: object) -> bool:
-    value = state(task).lower()
-    return "blocked" in value or getattr(task, "status", "") == "blocked"
+    return "blocked" in task_state(task).lower()
 
 
 def is_waiting(task: object) -> bool:
-    return state(task) == "child_waiting_completion_signal"
+    return "waiting_completion_signal" in task_state(task)
 
 
 def active_cards(tasks_dir: Path) -> list[object]:
-    return [
-        task
-        for task in iter_active_tasks(tasks_dir)
-        if task.status not in {"completed", "cancelled"}
-    ]
+    cards = []
+    for task in iter_active_tasks(tasks_dir):
+        status = task_state(task)
+        if is_done_state(status) or status == "cancelled":
+            continue
+        cards.append(task)
+    return cards
 
 
 def recent_archives(tasks_dir: Path, days: int = 7) -> list[tuple[str, str, float]]:
@@ -102,7 +103,7 @@ def build_board(repo_root: Path) -> str:
                     name=name,
                     tier=raw.get("tier") or "-",
                     owner=raw.get("owner") or task.assignee or "-",
-                    status=task.status,
+                    status=task_state(task),
                     updated=fmt_time(task_mtime(task.directory)),
                     blocked="yes" if is_blocked(task) else "no",
                 )
@@ -112,7 +113,7 @@ def build_board(repo_root: Path) -> str:
 
     lines += ["", "## Waiting For Acceptance", ""]
     if waiting:
-        lines += [f"- {task.dir_name} ({state(task)})" for task in waiting]
+        lines += [f"- {task.dir_name} ({task_state(task)})" for task in waiting]
     else:
         lines.append("- none")
 

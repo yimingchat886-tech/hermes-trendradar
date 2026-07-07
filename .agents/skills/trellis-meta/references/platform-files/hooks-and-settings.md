@@ -1,6 +1,8 @@
 # Hooks And Settings
 
-Hooks/settings are the entry layer that connects a platform to Trellis. They decide which scripts, plugins, or extensions a platform runs for which events.
+Hooks/settings are the entry layer that connects a platform to Trellis. They
+decide which scripts, plugins, or extensions a platform runs for which events.
+For v3, first-class hook/settings targets are Codex and Claude Code only.
 
 ## Settings Responsibilities
 
@@ -12,23 +14,19 @@ settings/config files usually register:
 - shell/session bridge: lets shell commands see the same Trellis session identity.
 - platform plugin or extension entry points.
 
-Common files:
+## V3 Files
 
 | Platform | settings/config |
 | --- | --- |
 | Claude Code | `.claude/settings.json` |
-| Cursor | `.cursor/hooks.json` |
 | Codex | `.codex/hooks.json`, `.codex/config.toml` |
-| OpenCode | `.opencode/package.json`, `.opencode/plugins/*` |
-| Kiro | `.kiro/hooks/` + platform config |
-| Gemini CLI | `.gemini/settings.json` |
-| Qoder | `.qoder/settings.json` |
-| CodeBuddy | `.codebuddy/settings.json` |
-| GitHub Copilot | `.github/copilot/hooks.json` |
-| Factory Droid | `.factory/settings.json` |
-| Pi Agent | `.pi/settings.json`, `.pi/extensions/trellis/` |
 
-Whether these files exist in a project depends on which `trellis init --<platform>` flags the user ran.
+## Legacy Adapter Files
+
+Older projects may still contain hook/config files under `.cursor/`,
+`.opencode/`, `.kiro/`, `.gemini/`, `.qoder/`, `.codebuddy/`, `.github/`,
+`.factory/`, or `.pi/`. Treat those as legacy compatibility files and inspect
+them for migration only; do not infer v3 support from their presence.
 
 ## Hook Script Types
 
@@ -39,7 +37,9 @@ Whether these files exist in a project depends on which `trellis init --<platfor
 | `inject-subagent-context.py` | Injects PRD, JSONL context, and related spec/research into sub-agents. |
 | `inject-shell-session-context.py` | Lets shell commands inherit Trellis session identity. |
 
-Not every platform has every hook. Do not copy files from another platform just because a platform lacks a hook; first confirm whether that platform supports the corresponding event.
+Not every platform has every hook. Do not copy files from another platform just
+because a platform lacks a hook; first confirm whether that platform supports
+the corresponding event.
 
 ## Local Change Scenarios
 

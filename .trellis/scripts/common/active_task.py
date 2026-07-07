@@ -351,10 +351,10 @@ def _matching_cursor_ticket_context_key(
 
 
 def _lookup_cursor_shell_ticket_context_key() -> str | None:
-    """Resolve Cursor conversation identity from a short-lived shell ticket.
+    """Resolve legacy cursor conversation identity from a short-lived shell ticket.
 
-    Cursor exposes `conversation_id` to `beforeShellExecution`, but does not
-    export it into the shell command environment. The Cursor hook writes a
+    That adapter exposes `conversation_id` to `beforeShellExecution`, but does
+    not export it into the shell command environment. Its hook writes a
     short-lived ticket just before `task.py` runs. We accept a ticket only when
     the current `task.py` subcommand matches and exactly one fresh context key
     matches, which avoids cross-window pointer contamination.

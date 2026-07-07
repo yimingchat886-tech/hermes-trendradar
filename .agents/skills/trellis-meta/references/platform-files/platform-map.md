@@ -1,74 +1,73 @@
 # Platform File Map
 
-This page lists common Trellis file locations in a user project by platform. Whether a platform directory exists in an actual project depends on which `trellis init --<platform>` commands the user ran.
+This page lists Trellis file locations in a user project by platform. For v3,
+first-class support is limited to Codex and Claude Code. Older adapter paths
+are legacy compatibility references only; do not present them as supported v3
+targets.
 
-## Matrix
+## V3 Matrix
 
-| Platform | CLI flag | Main directory | Skill directory | Agent directory | Hooks/extensions |
+| Platform | CLI flag | Main directory | Skill directory | Agent directory | Hooks/settings |
 | --- | --- | --- | --- | --- | --- |
 | Claude Code | `--claude` | `.claude/` | `.claude/skills/` | `.claude/agents/` | `.claude/hooks/` + `.claude/settings.json` |
-| Cursor | `--cursor` | `.cursor/` | `.cursor/skills/` | `.cursor/agents/` | `.cursor/hooks.json` + `.cursor/hooks/` |
-| OpenCode | `--opencode` | `.opencode/` | `.opencode/skills/` | `.opencode/agents/` | `.opencode/plugins/` |
 | Codex | `--codex` | `.codex/` | `.agents/skills/` | `.codex/agents/` | `.codex/hooks/` + `.codex/hooks.json` |
-| Kilo | `--kilo` | `.kilocode/` | `.kilocode/skills/` | Usually none | `.kilocode/workflows/` |
-| Kiro | `--kiro` | `.kiro/` | `.kiro/skills/` | `.kiro/agents/` | `.kiro/hooks/` |
-| Gemini CLI | `--gemini` | `.gemini/` | `.agents/skills/` | `.gemini/agents/` | `.gemini/settings.json` + `.gemini/hooks/` |
-| Antigravity | `--antigravity` | `.agent/` | `.agent/skills/` | Usually none | `.agent/workflows/` |
-| Windsurf | `--windsurf` | `.windsurf/` | `.windsurf/skills/` | Usually none | `.windsurf/workflows/` |
-| Qoder | `--qoder` | `.qoder/` | `.qoder/skills/` | `.qoder/agents/` | `.qoder/hooks/` + `.qoder/settings.json` |
-| CodeBuddy | `--codebuddy` | `.codebuddy/` | `.codebuddy/skills/` | `.codebuddy/agents/` | `.codebuddy/hooks/` + `.codebuddy/settings.json` |
-| GitHub Copilot | `--copilot` | `.github/` | `.github/skills/` | `.github/agents/` | `.github/copilot/hooks/` + prompts |
-| Factory Droid | `--droid` | `.factory/` | `.factory/skills/` | `.factory/droids/` | `.factory/hooks/` + settings |
-| Pi Agent | `--pi` | `.pi/` | `.pi/skills/` | `.pi/agents/` | `.pi/extensions/trellis/` + `.pi/settings.json` |
+
+## Legacy Adapter Paths
+
+These paths may exist in older projects or migration fixtures. Treat them as
+read-compatibility evidence only unless a task explicitly reopens legacy
+adapter support:
+
+| Legacy flag | Main directory | Skill directory | Agent/prompt directory | Hook/config path |
+| --- | --- | --- | --- | --- |
+| `--cursor` | `.cursor/` | `.cursor/skills/` | `.cursor/agents/` | `.cursor/hooks.json` |
+| `--opencode` | `.opencode/` | `.opencode/skills/` | `.opencode/agents/` | `.opencode/plugins/` |
+| `--kilo` | `.kilocode/` | `.kilocode/skills/` | Usually none | `.kilocode/workflows/` |
+| `--kiro` | `.kiro/` | `.kiro/skills/` | `.kiro/agents/` | `.kiro/hooks/` |
+| `--gemini` | `.gemini/` | `.agents/skills/` | `.gemini/agents/` | `.gemini/settings.json` |
+| `--antigravity` | `.agent/` | `.agent/skills/` | Usually none | `.agent/workflows/` |
+| `--windsurf` | `.windsurf/` | `.windsurf/skills/` | Usually none | `.windsurf/workflows/` |
+| `--qoder` | `.qoder/` | `.qoder/skills/` | `.qoder/agents/` | `.qoder/settings.json` |
+| `--codebuddy` | `.codebuddy/` | `.codebuddy/skills/` | `.codebuddy/agents/` | `.codebuddy/settings.json` |
+| `--copilot` | `.github/` | `.github/skills/` | `.github/agents/` | `.github/copilot/hooks/` |
+| `--droid` | `.factory/` | `.factory/skills/` | `.factory/droids/` | `.factory/settings.json` |
+| `--pi` | `.pi/` | `.pi/skills/` | `.pi/agents/` | `.pi/extensions/trellis/` |
 
 ## Capability Groups
 
-### Trellis Sub-Agent Support
+### V3 Sub-Agent Support
 
-These platforms usually have `trellis-research`, `trellis-implement`, and `trellis-check` files:
+These platforms have first-class `trellis-research`, `trellis-implement`, and
+`trellis-check` surfaces:
 
 - Claude Code
-- Cursor
-- OpenCode
 - Codex
-- Kiro
-- Gemini CLI
-- Qoder
-- CodeBuddy
-- GitHub Copilot
-- Factory Droid
-- Pi Agent
 
-When changing implementation/check/research behavior, look for the corresponding platform agent files first.
+When changing implementation/check/research behavior, start from those files
+and keep `.trellis/workflow.md` synchronized.
 
-### Main-Session Workflow Platforms
+### Legacy Main-Session Workflows
 
-These platforms rely more on workflows/skills to guide the main session:
-
-- Kilo
-- Antigravity
-- Windsurf
-
-When changing behavior, inspect workflows and skills first. Do not assume Trellis sub-agents exist.
+Some older adapters relied on workflow or skill files instead of Trellis
+sub-agent files. Leave those references alone unless the task explicitly
+targets legacy migration.
 
 ### Shared `.agents/skills/`
 
-Codex writes the shared `.agents/skills/` layer. Some tools that support agentskills.io can also read this directory. If the user wants multiple compatible tools to share one skill, consider `.agents/skills/` first, but do not assume every platform reads it.
+Codex writes the shared `.agents/skills/` layer. Treat that layer as Codex's v3
+skill root unless a separate compatibility task proves another adapter should
+consume it.
 
 ## Decision Rules When Modifying Platform Files
 
-1. User specified a platform: modify only that platform directory unless shared workflow/spec files must also change.
-2. User says "all platforms should do this": synchronize equivalent entry points platform by platform; do not modify only one directory.
-3. User only says "my AI": inspect the configuration directories that actually exist in the project and infer the current AI platform.
+1. User specified Codex or Claude Code: modify only that platform directory unless shared workflow/spec files must also change.
+2. User says "all v3 platforms should do this": synchronize Codex and Claude Code only.
+3. User only says "my AI": inspect the configuration directories that actually exist in the project and infer the current first-class platform.
 4. User wants project rules: prefer `.trellis/spec/` or a project-local skill.
-5. User wants Trellis behavior: edit `.trellis/workflow.md` plus platform hooks/agents/skills/commands.
+5. User wants Trellis behavior: edit `.trellis/workflow.md` plus the relevant Codex/Claude hook, agent, skill, or command file.
 
 ## When Paths Differ
 
-Platform ecosystems change, and user projects may already be customized. If this table disagrees with local files, use the actual settings/config in the user project as authoritative:
-
-- Check the hook that settings registers.
-- Check the script that a command/prompt/workflow points to.
-- Judge behavior by the read rules currently written in the agent file.
-
-Do not delete a custom file just because it is not listed in this path table.
+Project-local files are authoritative. If a table disagrees with actual
+settings/config, follow the local files and report the mismatch. Do not delete
+custom or legacy files just because they are not part of the v3 support matrix.
