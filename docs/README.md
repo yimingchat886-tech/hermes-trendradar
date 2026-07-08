@@ -16,12 +16,10 @@ evidence, task execution state, and commit records stay in `.trellis/`.
 
 ## Runbooks
 
-- [Hermes skill invocation](runbooks/hermes-skill-invocation.md) - no-secret
-  CLI invocation contract for Hermes.
+- [Hermes agent deployer handoff](runbooks/hermes-agent-deployer-handoff.md) -
+  profile, transport, MCP, and SKILL.md contract for Hermes deployers.
 - [External runtime smoke](runbooks/external-runtime-smoke.md) - local external
   runtime boundary and smoke evidence rules.
-- [Production deployment handoff](runbooks/production-deployment-handoff.md) -
-  current handoff state and blockers.
 
 ## Reports
 
