@@ -5,7 +5,7 @@ status: active
 created: 2026-07-01
 updated: 2026-07-06
 owner: Jym
-last_closed_release: releases/PRD_v1.4_split_index.md
+last_closed_release: releases/archive/PRD_v1.4_split-index.md
 next_release: releases/PRD_v2.0.md
 ---
 
@@ -183,8 +183,8 @@ Codex 是开发期工程执行者，负责实现、修复、测试、重构、�
 
 | 版本 | 版本 PRD | 备注 |
 |---|---|---|
-| v1.3 | [releases/PRD_v1.3.md](releases/PRD_v1.3.md) | superseded |
-| v1.4 | [releases/PRD_v1.4_split_index.md](releases/PRD_v1.4_split_index.md) | 已关闭（partial）：工具层至 handoff 交付；child 8/9（limited-live 表 4、生产硬化）于 closeout 取消，需求由 v2.0 M3 条件承接。其中 `PRD_v1.4_Hermes_Runtime_and_Profiles.md` 的"Hermes 侧实现需求"形态已废弃（§9），仅作历史参考。 |
+| v1.3 | [releases/archive/PRD_v1.3.md](releases/archive/PRD_v1.3.md) | superseded；历史 PRD 已归档。 |
+| v1.4 | [releases/archive/PRD_v1.4_split-index.md](releases/archive/PRD_v1.4_split-index.md) | 已关闭（partial）：工具层至 handoff 交付；child 8/9（limited-live 表 4、生产硬化）于 closeout 取消，需求由 v2.0 M3 条件承接。其中 `PRD_v1.4_hermes-runtime-and-profiles.md` 的"Hermes 侧实现需求"形态已废弃（§9），仅作历史参考。历史 PRD 已归档。 |
 | v2.0 | [releases/PRD_v2.0.md](releases/PRD_v2.0.md) | scope 一句话：真实分析闭环（M0-M3），Douyin-only 延续，集成物为 Hermes skill + 最小 CLI 反馈子命令。 |
 | v2.1 | [trending-system.md](trending-system.md)（模块设计 PRD，draft） | scope 一句话：热点系统推特首发切片——账号订阅→采集→Hermes 判定→digest，表格只定原则；问答留档见 [_ledger/trending-twitter-source.md](_ledger/trending-twitter-source.md)。 |
 

@@ -18,7 +18,7 @@
 
 当前 repo 已具备 contracts、fixtures、MediaCrawler fixture import、transcript wrapper、decomposition shape、Feishu dry-run mapping、daily digest/alerts、external runtime smoke 等 proof 能力，但缺少可被 Hermes 稳定调用的生产 CLI、packaging、profile contract、真实账号配置、生产采集 runner、batch transcription、SQLite 持久化、幂等、受限 live Feishu apply backend 和部署验收。
 
-本文件只约束 Codex 需要实现的工具层能力。Hermes 调度、真实分析、Feishu mutation 授权和运行期 profiles 使用规则由 `PRD_v1.4_Hermes_Runtime_and_Profiles.md` 约束。
+本文件只约束 Codex 需要实现的工具层能力。Hermes 调度、真实分析、Feishu mutation 授权和运行期 profiles 使用规则由 `PRD_v1.4_hermes-runtime-and-profiles.md` 约束。
 
 ---
 

@@ -18,7 +18,7 @@
 
 v1.4 需要将 Hermes 对标账号追踪链路从 proof skeleton 推进到生产可运行闭环。Hermes 侧的核心任务不是实现采集或转录工具，而是将工具能力组织成稳定运行期流程：读取 profile、按配置调度、调用 CLI、接管真实分析、签发 Feishu live mutation 授权、审计运行结果并输出异常摘要。
 
-v1.4 拆分后，本文件只描述 Hermes Runtime 如何使用 CLI，以及 Hermes 需要维护哪些 profiles、授权和运行期状态。CLI 的内部实现由 `PRD_v1.4_Codex_CLI_Implementation.md` 约束。
+v1.4 拆分后，本文件只描述 Hermes Runtime 如何使用 CLI，以及 Hermes 需要维护哪些 profiles、授权和运行期状态。CLI 的内部实现由 `PRD_v1.4_codex-cli-implementation.md` 约束。
 
 ---
 
