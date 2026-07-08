@@ -47,6 +47,11 @@ file issue (`FileNotFoundError` in pytest capture). Re-running with
 - Explicit limits: none
 - Push allowed: no
 
+## Commit Evidence
+
+- Trellis harness docs commit: `8e4024e docs: import Trellis workflow docs`
+- Hermes stock work commit: `0e32722 docs: organize Hermes documentation`
+
 ## Protocol Gates
 
 Use `.trellis/spec/project/protocol-phrases.md` for completion, commit,

@@ -9,7 +9,6 @@ owner=jym
 | Task | Tier | Owner | Status | Updated | Blocked |
 |---|---|---|---|---|---|
 | 07-06-sync-trellis-harness | light | codex | in_progress | 2026-07-06 17:54 | no |
-| 07-08-docs-naming-archive-update-review | light | codex | planning | 2026-07-08 07:18 | no |
 
 ## Waiting For Acceptance
 
@@ -21,6 +20,7 @@ owner=jym
 
 ## Recent Archives (7d)
 
+- 07-08-docs-naming-archive-update-review (completed, 2026-07-08 08:08)
 - 07-06-runtime-test-files-profile-workspace (completed, 2026-07-07 21:31)
 - 07-05-trellis-workflow-migration-skill (completed, 2026-07-06 02:40)
 - 07-05-parent-v2-0-real-analysis-loop (completed, 2026-07-06 02:40)
@@ -40,4 +40,3 @@ owner=jym
 - 07-04-workflow-v2-m4-board (completed, 2026-07-06 02:40)
 - 07-04-workflow-v2-m3-pr-gates (completed, 2026-07-06 02:40)
 - 07-04-workflow-v2-m2-taskpy-gates (completed, 2026-07-06 02:40)
-- 07-02-mediacrawler-long-running-stability (completed, 2026-07-06 02:40)
