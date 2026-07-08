@@ -1,20 +1,22 @@
 {
-  "id": "sync-trellis-harness",
-  "name": "sync-trellis-harness",
-  "title": "sync trellis harness",
-  "description": "",
-  "status": "in_progress",
+  "id": "runtime-test-files-profile-workspace",
+  "name": "runtime-test-files-profile-workspace",
+  "title": "Codify runtime test files in Hermes profile workspace",
+  "description": "约定运行时测试产生的临时文件、证据和本地配置放在 Hermes profile 工作区，不直接递交到源码仓库。",
+  "status": "completed",
   "dev_type": null,
   "scope": null,
   "tier": "light",
   "owner": "codex",
-  "touches": [],
+  "touches": [
+    ".trellis/spec/project"
+  ],
   "package": null,
   "priority": "P2",
   "creator": "jym",
   "assignee": "jym",
   "createdAt": "2026-07-06",
-  "completedAt": null,
+  "completedAt": "2026-07-07",
   "branch": null,
   "base_branch": "codex/workflow-v2-m4-board",
   "worktree_path": null,
@@ -24,7 +26,7 @@
   "children": [],
   "parent": null,
   "relatedFiles": [],
-  "notes": "Paused per user on 2026-07-06; do not archive. Resume when real data is available.",
+  "notes": "",
   "meta": {
     "workflow_mode": "harness_state_machine"
   }

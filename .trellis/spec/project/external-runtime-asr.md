@@ -1,5 +1,13 @@
 # External Runtime ASR
 
+## Shared Runtime Test File Boundary
+
+- Runtime test files from local Hermes profile runs belong in the Hermes profile workspace, not in the source repo.
+- Existing run evidence may stay under `/home/jym/workspace/_external/hermes-stock-runs/`; do not move it into this repo.
+- Commit only reusable code, tests, sample profiles, redacted docs, tiny fixtures, or generators needed to reproduce a case.
+- Never commit login state, cookies, proxy or CDP endpoints, raw videos, runtime dumps, local SQLite run DBs, model caches, venvs, third-party checkouts, or unredacted smoke output.
+- If a runtime failure needs review, commit a minimal redacted fixture or reproduction note; keep the real profile workspace files and raw evidence outside git.
+
 ## Scenario: Local FunASR Transcription Runtime
 
 ### 1. Scope / Trigger

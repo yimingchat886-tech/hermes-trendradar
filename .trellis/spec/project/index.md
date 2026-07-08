@@ -16,6 +16,7 @@ Project specs cover repository-level development workflow rules that are broader
 - Read `merge-collision-protocol.md` before changing conflict checklist, merge protocol, or parallel child merge handling.
 - Read `rtm-guidelines.md` before updating requirement traceability.
 - Read `git-commit-push-policy.md` before reporting a staged task ready to commit or push.
+- Read `external-runtime-asr.md` before changing local runtime, profile, smoke evidence, or runtime-test file boundaries.
 
 ## Quality Check
 
