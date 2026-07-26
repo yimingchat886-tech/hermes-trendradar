@@ -18,6 +18,7 @@ from .account_registry import SOURCE_IDS
 from .contracts import BenchmarkContent
 from .external_runtime import redact_text, run_process
 from .profile import LoadedProfile
+from .runtime_cdp import artifact_ref
 from .state import record_error, record_transcript_state
 from .transcript_pipeline import transcribe_temporary_video
 
@@ -235,7 +236,7 @@ def _process_content(
             "transcript_id": transcript_id,
             "artifact_ref": artifact_ref,
             "artifact_hash": artifact_hash,
-            "temp_video_path": str(video_path),
+            "temp_video_path": _temp_video_ref(video_path),
             "temp_video_exists_after": exists_after,
             "redacted_command": list(process.get("redacted_command", [])),
             "exit_code": process.get("exit_code"),
@@ -322,7 +323,7 @@ def _write_transcript_artifact(
         "device": runtime["device"],
         "status": "done",
         "text": transcript.get("text", ""),
-        "segments_path": transcript.get("segments_path", ""),
+        "segments_path": _artifact_file_ref(runtime, transcript.get("segments_path", "")),
         "redacted_command": process.get("redacted_command", []),
         "exit_code": process.get("exit_code"),
     }
@@ -330,7 +331,7 @@ def _write_transcript_artifact(
         temp_path.write_text(json.dumps(payload, ensure_ascii=False, sort_keys=True, indent=2), encoding="utf-8")
         temp_path.replace(artifact_path)
         digest = "sha256:" + hashlib.sha256(artifact_path.read_bytes()).hexdigest()
-        return f"file:{artifact_path}", digest
+        return artifact_ref(Path(runtime["artifact_root"]), artifact_path), digest
     except Exception:
         temp_path.unlink(missing_ok=True)
         artifact_path.unlink(missing_ok=True)
@@ -362,7 +363,7 @@ def _fail_item(
         "transcript_id": transcript_id,
     }
     if temp_video_path is not None:
-        item["temp_video_path"] = str(temp_video_path)
+        item["temp_video_path"] = _temp_video_ref(temp_video_path)
         item["temp_video_exists_after"] = temp_video_path.exists() if temp_video_exists_after is None else temp_video_exists_after
     if process:
         item["redacted_command"] = list(process.get("redacted_command", []))
@@ -470,6 +471,22 @@ def _normalize_content(content: Mapping[str, Any]) -> BenchmarkContent:
 
 def _safe_name(value: str) -> str:
     return re.sub(r"[^A-Za-z0-9_.-]+", "_", value).strip("._") or "transcript"
+
+
+def _temp_video_ref(path: Path) -> str:
+    return f"temp:{path.name}" if path.name else "temp:<redacted>"
+
+
+def _artifact_file_ref(runtime: TranscriptRuntime, value: Any) -> str:
+    if not value:
+        return ""
+    text = str(value)
+    if text.startswith("file:"):
+        return text
+    path = Path(text)
+    if path.is_absolute():
+        return artifact_ref(Path(runtime["artifact_root"]), path)
+    return text
 
 
 def _get(row: Mapping[str, Any], key: str) -> Any:

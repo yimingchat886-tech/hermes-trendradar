@@ -301,6 +301,23 @@ def cleanup_run_temp(run_temp_root: Path, targets: Iterable[Path]) -> list[str]:
     return removed
 
 
+def public_process_result(process: Mapping[str, Any], *, run_root: Path | str | None = None) -> dict[str, Any]:
+    visible: dict[str, Any] = {
+        "name": process.get("name", ""),
+        "mode": process.get("mode", ""),
+        "command": list(process.get("redacted_command") or process.get("command") or []),
+        "exit_code": process.get("exit_code"),
+    }
+    if process.get("blocked_reason"):
+        visible["blocked_reason"] = process["blocked_reason"]
+    root = Path(run_root) if run_root is not None else None
+    for key, ref_key in (("stdout_path", "stdout_ref"), ("stderr_path", "stderr_ref")):
+        value = process.get(key)
+        if isinstance(value, str) and value:
+            visible[ref_key] = _public_path_ref(value, root)
+    return visible
+
+
 def build_manifest(
     *,
     mode: Mode,
@@ -311,6 +328,7 @@ def build_manifest(
     funasr: Mapping[str, Any],
     cleanup: Mapping[str, Any],
 ) -> dict[str, Any]:
+    run_root = Path(layout["run_root"])
     return {
         "run_id": RUN_ID,
         "observed_at": OBSERVED_AT,
@@ -318,15 +336,11 @@ def build_manifest(
         "account_id": account["id"],
         "source_id": account["source_id"],
         "platform": account["platform"],
-        "layout": {key: str(value) for key, value in layout.items()},
-        "mediacrawler": {
-            "mode": mediacrawler["mode"],
-            "command": mediacrawler["redacted_command"],
-            "exit_code": mediacrawler.get("exit_code"),
-        },
-        "import_proof": dict(import_proof),
-        "funasr": dict(funasr),
-        "cleanup": dict(cleanup),
+        "layout": _public_layout(layout),
+        "mediacrawler": public_process_result(mediacrawler, run_root=run_root),
+        "import_proof": _public_value(import_proof, run_root),
+        "funasr": _public_value(funasr, run_root),
+        "cleanup": _public_value(cleanup, run_root),
     }
 
 
@@ -346,9 +360,43 @@ def redact_command(command: Sequence[str], sensitive_values: Iterable[str] = ())
             redacted.append("<redacted>")
             redact_next = lower.lstrip("-") in SECRET_WORDS
         else:
-            redacted.append(item)
+            redacted.append(redact_text(item, values))
             redact_next = lower in {"--cookie", "--cookies", "--token", "--proxy"}
     return redacted
+
+
+def _public_layout(layout: Mapping[str, str]) -> dict[str, str]:
+    run_root = Path(layout["run_root"])
+    run_scoped = {"run_root", "run_temp_root", "log_dir", "transcript_dir"}
+    visible = {}
+    for key, value in layout.items():
+        visible[key] = _public_path_ref(value, run_root) if key in run_scoped else "<redacted-path>"
+    return visible
+
+
+def _public_value(value: Any, run_root: Path) -> Any:
+    if isinstance(value, Mapping):
+        return {str(key): _public_value(item, run_root) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_public_value(item, run_root) for item in value]
+    if isinstance(value, tuple):
+        return [_public_value(item, run_root) for item in value]
+    if isinstance(value, str) and Path(value).is_absolute():
+        return _public_path_ref(value, run_root)
+    return value
+
+
+def _public_path_ref(value: str | Path, run_root: Path | None = None) -> str:
+    path = Path(value)
+    if not path.is_absolute():
+        return str(value)
+    if run_root is not None:
+        try:
+            rel = path.resolve().relative_to(run_root.resolve())
+            return "file:." if str(rel) == "." else "file:" + str(rel)
+        except ValueError:
+            pass
+    return f"file:{path.name}" if path.name else "<redacted-path>"
 
 
 def redact_text(text: str, sensitive_values: Iterable[str] = ()) -> str:
