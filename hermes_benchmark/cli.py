@@ -63,6 +63,7 @@ from .state import (
 )
 
 VERSION = "0.1.0"
+CONTRACT_VERSION = "2.0"
 EXIT_OK = 0
 EXIT_CONTRACT_MISMATCH = 2
 EXIT_CONFIG_INVALID = 2
@@ -93,9 +94,11 @@ class CliContractError(Exception):
 def main(argv: Sequence[str] | None = None) -> int:
     args_list = list(sys.argv[1:] if argv is None else argv)
     parser = build_parser()
+    command_name = ""
 
     try:
         args = parser.parse_args(args_list)
+        command_name = str(getattr(args, "command", "") or "")
         payload = args.handler(args)
     except CliContractError as exc:
         payload = error_envelope(str(exc))
@@ -105,7 +108,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"error: {exc}", file=sys.stderr)
         return EXIT_CONTRACT_MISMATCH
     except ProfileError as exc:
-        payload = config_error_envelope(exc)
+        payload = config_error_envelope(exc, command_name or "validate-config")
         if wants_json(args_list):
             print_json(payload)
         else:
@@ -142,10 +145,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     subparsers = parser.add_subparsers(dest="command", required=True)
     add_command(subparsers, "validate-config", validate_config, profile=True)
-    add_command(subparsers, "healthcheck", healthcheck, profile=True)
+    add_command(subparsers, "healthcheck", healthcheck, profile=True, self_check=True)
     add_command(subparsers, "smoke-mediacrawler", smoke_mediacrawler, profile=True)
-    add_command(subparsers, "run-daily", run_daily, profile=True, daily=True)
-    add_command(subparsers, "apply-limited-live", apply_limited_live, profile=True)
+    add_command(subparsers, "run-daily", run_daily, profile=True, daily=True, self_check=True)
+    add_command(subparsers, "apply-limited-live", apply_limited_live, profile=True, self_check=True)
     analysis = subparsers.add_parser("record-analysis-result")
     analysis.add_argument("--profile", default="", help="Path to a local runtime profile.")
     analysis.add_argument("--config", default="", help="Compatibility alias for --profile.")
@@ -181,6 +184,7 @@ def add_command(
     *,
     profile: bool = False,
     daily: bool = False,
+    self_check: bool = False,
 ) -> None:
     command = subparsers.add_parser(name)
     if profile:
@@ -190,6 +194,8 @@ def add_command(
         command.add_argument("--date", default="", help="Run date supplied by Hermes runtime.")
         command.add_argument("--analysis-mode", default="mock", choices=("mock", "hermes-handoff"))
         command.add_argument("--feishu-mode", default="dry-run", choices=("dry-run", "limited-live"))
+    if self_check:
+        command.add_argument("--self-check", action="store_true", help="Run an explicit local contract self-check instead of a production path.")
     command.add_argument("--json", action="store_true", help="Print a JSON envelope.")
     command.set_defaults(handler=handler)
 
@@ -198,7 +204,7 @@ def validate_config(args: argparse.Namespace) -> dict[str, Any]:
     profile_path = profile_arg(args, required=True)
     profile = load_profile(profile_path)
     summary = validate_profile(profile)
-    summary["profile"] = profile_path
+    summary["profile_ref"] = "redacted"
     summary["validation"] = "ok"
     return success_envelope("validate-config", summary, mode="profile")
 
@@ -210,12 +216,21 @@ def healthcheck(args: argparse.Namespace) -> dict[str, Any]:
         data = build_runtime_health(profile)
         data["version"] = VERSION
         return success_envelope("healthcheck", data, mode="runtime")
-    return success_envelope(
+    if getattr(args, "self_check", False):
+        return success_envelope(
+            "healthcheck",
+            {
+                "version": VERSION,
+                "checks": [{"name": "cli_contract", "status": "ok"}],
+            },
+            mode="self-check",
+        )
+    return command_error_envelope(
         "healthcheck",
-        {
-            "version": VERSION,
-            "checks": [{"name": "cli_contract", "status": "ok"}],
-        },
+        "contract",
+        ERROR_CONTRACT_MISMATCH,
+        "healthcheck requires --profile or explicit --self-check",
+        EXIT_CONTRACT_MISMATCH,
     )
 
 
@@ -289,16 +304,25 @@ def run_daily(args: argparse.Namespace) -> dict[str, Any]:
     profile_path = profile_arg(args)
     if args.analysis_mode == "hermes-handoff":
         return _run_daily_handoff(args, profile_path)
+    if not getattr(args, "self_check", False):
+        return command_error_envelope(
+            "run-daily",
+            "contract",
+            ERROR_CONTRACT_MISMATCH,
+            "mock run-daily requires explicit --self-check",
+            EXIT_CONTRACT_MISMATCH,
+        )
     return success_envelope(
         "run-daily",
         {
-            "profile": profile_path,
+            "profile": "redacted" if profile_path else "",
             "date": args.date or "",
             "analysis_mode": args.analysis_mode,
             "feishu_mode": args.feishu_mode,
             "run_started": False,
             "reason": "stub_only",
         },
+        mode="self-check",
     )
 
 
@@ -326,7 +350,7 @@ def _run_daily_handoff(args: argparse.Namespace, profile_path: str) -> dict[str,
                 EXIT_RUN_LOCK_CONFLICT,
                 data={"schema_version": "1.4", "run_id": run_id, "analysis_mode": args.analysis_mode, "errors": ["run_lock_conflict"]},
             )
-        contents = contents_from_state(conn, account_display_names(profile))
+        contents = contents_from_state(conn, account_display_names(profile), run_id=run_id)
         package = build_handoff_package(run_id, config.profile_hash, contents)
         package_ref, package_hash = write_handoff_package(config.storage_dir, run_id, package)
         package_id = record_analysis_package_ref(
@@ -341,6 +365,7 @@ def _run_daily_handoff(args: argparse.Namespace, profile_path: str) -> dict[str,
         )
         if run_status != "noop":
             finish_run(conn, run_id, "succeeded")
+        package_status = "noop" if not package["contents"] else "succeeded"
         return success_envelope(
             "run-daily",
             {
@@ -349,7 +374,7 @@ def _run_daily_handoff(args: argparse.Namespace, profile_path: str) -> dict[str,
                 "date": run_date,
                 "profile_id": config.profile_id,
                 "profile_hash": config.profile_hash,
-                "status": "succeeded",
+                "status": package_status,
                 "analysis_mode": "hermes-handoff",
                 "feishu_mode": args.feishu_mode,
                 "account_summary": {"configured": 10, "enabled": 10, "processed": 0, "succeeded": 0, "partial_failed": 0, "failed": 0},
@@ -381,15 +406,24 @@ def _run_daily_handoff(args: argparse.Namespace, profile_path: str) -> dict[str,
 
 def apply_limited_live(args: argparse.Namespace) -> dict[str, Any]:
     profile_path = profile_arg(args)
+    if not getattr(args, "self_check", False):
+        return command_error_envelope(
+            "apply-limited-live",
+            "contract",
+            ERROR_CONTRACT_MISMATCH,
+            "limited live writes require an explicit approved path; use --self-check only for local contract checks",
+            EXIT_CONTRACT_MISMATCH,
+        )
     return success_envelope(
         "apply-limited-live",
         {
-            "profile": profile_path,
+            "profile": "redacted" if profile_path else "",
             "live_write_attempted": False,
             "allowed_tables": ["table_4"],
             "status_scope": "status_only",
             "reason": "stub_only",
         },
+        mode="self-check",
     )
 
 
@@ -399,22 +433,31 @@ def record_analysis_result(args: argparse.Namespace) -> dict[str, Any]:
     config = resolve_runtime_config(profile)
     handoff_package = load_handoff_package(args.package_ref, config.storage_dir)
     result, result_hash = load_analysis_result(Path(args.result))
-    normalized = validate_analysis_result(handoff_package, result, result_hash=result_hash)
+    normalized = validate_analysis_result(handoff_package, result, result_hash=result_hash, storage_dir=config.storage_dir)
 
     config.database_path.parent.mkdir(parents=True, exist_ok=True)
     conn = connect(config.database_path)
     try:
-        init_schema(conn)
-        result_id = record_analysis_result_ref(
-            conn,
-            run_id=normalized["run_id"],
-            package_id=normalized["package_id"],
-            content_id=normalized["content_id"],
-            transcript_artifact_ref=normalized["transcript_artifact_ref"],
-            result_ref=normalized["result_ref"],
-            result_hash=normalized["result_hash"],
-            status=normalized["status"],
-        )
+        try:
+            init_schema(conn)
+            result_id = record_analysis_result_ref(
+                conn,
+                run_id=normalized["run_id"],
+                package_id=normalized["package_id"],
+                content_id=normalized["content_id"],
+                transcript_artifact_ref=normalized["transcript_artifact_ref"],
+                result_ref=normalized["result_ref"],
+                result_hash=normalized["result_hash"],
+                status=normalized["status"],
+            )
+        except StateError as exc:
+            return command_error_envelope(
+                "record-analysis-result",
+                "runtime",
+                ERROR_ANALYSIS_RESULT_INVALID,
+                str(exc),
+                EXIT_ANALYSIS_RESULT_INVALID,
+            )
     finally:
         conn.close()
 
@@ -530,16 +573,20 @@ def profile_arg(args: argparse.Namespace, *, required: bool = False) -> str:
 
 def success_envelope(command: str, data: dict[str, Any], *, mode: str = "stub") -> dict[str, Any]:
     return {
+        "contract_version": CONTRACT_VERSION,
         "ok": True,
         "command": command,
         "mode": mode,
         "data": data,
         "error": None,
+        "exit_code": EXIT_OK,
+        "retryable": False,
     }
 
 
 def error_envelope(message: str) -> dict[str, Any]:
     return {
+        "contract_version": CONTRACT_VERSION,
         "ok": False,
         "command": None,
         "mode": "contract",
@@ -549,24 +596,28 @@ def error_envelope(message: str) -> dict[str, Any]:
             "message": message,
         },
         "exit_code": EXIT_CONTRACT_MISMATCH,
+        "retryable": False,
     }
 
 
-def config_error_envelope(error: ProfileError) -> dict[str, Any]:
+def config_error_envelope(error: ProfileError, command: str = "validate-config") -> dict[str, Any]:
+    errors = [redact_text(str(item)) for item in error.errors]
     return {
+        "contract_version": CONTRACT_VERSION,
         "ok": False,
-        "command": "validate-config",
+        "command": command,
         "mode": "profile",
         "data": {
             "ok": False,
-            "errors": error.errors,
+            "errors": errors,
         },
         "error": {
             "code": ERROR_CONFIG_INVALID,
             "message": "profile/config validation failed",
-            "errors": error.errors,
+            "errors": errors,
         },
         "exit_code": EXIT_CONFIG_INVALID,
+        "retryable": False,
     }
 
 
@@ -580,6 +631,7 @@ def command_error_envelope(
     data: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     return {
+        "contract_version": CONTRACT_VERSION,
         "ok": False,
         "command": command,
         "mode": mode,
@@ -589,6 +641,7 @@ def command_error_envelope(
             "message": message,
         },
         "exit_code": exit_code,
+        "retryable": exit_code in {EXIT_RUNTIME_UNAVAILABLE, EXIT_COLLECTION_FAILED, EXIT_RUN_LOCK_CONFLICT},
     }
 
 

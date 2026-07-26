@@ -41,9 +41,10 @@ Allowed skill inputs:
 
 - repo root ref, console script ref, profile ref, and run date;
 - environment variable names such as `HERMES_PROXY_URL`;
-- JSON fields from CLI output: `ok`, `mode`, `run_id`,
-  `analysis_package_ref`, `digest_payload_ref`, `delivery.status`,
-  `runtime_effective_status`, `run_eligible`, `error.code`, and `exit_code`.
+- JSON fields from CLI output: `contract_version`, `ok`, `command`, `mode`,
+  `exit_code`, `retryable`, `run_id`, `analysis_package_ref`,
+  `digest_payload_ref`, `delivery.status`, `runtime_effective_status`,
+  `run_eligible`, `result_ref`, `result_hash`, and `error.code`.
 
 Forbidden skill inputs or logs:
 
@@ -69,6 +70,19 @@ hermes-benchmark run-daily --profile <profile> --date YYYY-MM-DD --analysis-mode
 hermes-benchmark record-analysis-result --profile <profile> --package <package-ref> --result <result-json> --json
 hermes-benchmark build-internal-digest --profile <profile> --run-id <run-id> --json
 hermes-benchmark record-feedback --profile <profile> --run-id <run-id> --content-id <content-id> --analysis-result-id <id> --decision adopt --actor-ref <ref> --source-message-ref <ref> --json
+```
+
+Every JSON response uses the v2 envelope: `contract_version`, `command`, `ok`,
+`exit_code`, `retryable`, `data`, and `error`. Missing production arguments must
+fail closed with `contract_mismatch`; local mock/stub behavior is only valid when
+explicitly requested via `--self-check`.
+
+Explicit local contract checks:
+
+```bash
+hermes-benchmark healthcheck --self-check --json
+hermes-benchmark run-daily --analysis-mode mock --self-check --json
+hermes-benchmark apply-limited-live --self-check --json
 ```
 
 Hermes cron is usable for M0 only if it can run the same no-secret command,
@@ -187,12 +201,12 @@ message send and secret resolution.
 | Area | Current state |
 |---|---|
 | Packaging | `pyproject.toml` declares the zero-dependency `hermes-benchmark` console script. |
-| CLI contract | `hermes_benchmark/cli.py` provides JSON envelopes, command names, bounded exit codes, and profile aliases. |
+| CLI contract | `hermes_benchmark/cli.py` provides fail-closed v2 JSON envelopes, command names, bounded exit codes, retryability, and profile aliases. |
 | Profiles | `hermes_benchmark/profile.py` validates local runtime profile shape without logging secret values. |
 | Runtime health | `healthcheck` resolves CDP/runtime state and reports redacted status. |
 | Collection bridge | MediaCrawler output can be normalized into local ledger state; external runtime stays outside the repo. |
-| Handoff package | `run-daily --analysis-mode hermes-handoff` emits an analysis package ref for Hermes. |
-| Analysis result intake | `record-analysis-result` validates Hermes-owned result JSON and records traceable refs. |
+| Handoff package | `run-daily --analysis-mode hermes-handoff` emits a run-scoped analysis package ref for Hermes; empty runs are explicit no-op packages. |
+| Analysis result intake | `record-analysis-result` validates Hermes-owned result JSON, checks storage-scoped `result_ref` targets, hashes referenced result artifacts, and records immutable trace refs. |
 | Internal digest payload | `build-internal-digest` writes a digest payload ref; Hermes still sends the message. |
 | Feedback loop | `record-feedback` stores idempotent adopt/reject refs in SQLite without promotion or Feishu writes. |
 | Feishu | Dry-run and limited-live guard surfaces exist, but v2.0 keeps live Bitable write behind the M3 gate. |
@@ -204,6 +218,8 @@ message send and secret resolution.
 - The CLI can produce redacted JSON outputs suitable for logging by Hermes.
 - Local state can record runs, content ledger rows, analysis package refs,
   analysis result refs, digest payload refs, and feedback refs.
+- Analysis results are idempotent for exact repeats and conflict on changed
+  package/content result refs instead of silently overwriting.
 - The external runtime boundary keeps cookies, login state, raw media, model
   caches, and run artifacts outside this source repo.
 

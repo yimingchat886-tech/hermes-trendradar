@@ -55,6 +55,7 @@ def validate_analysis_result(
     result: Mapping[str, Any],
     *,
     result_hash: str | None = None,
+    storage_dir: Path | None = None,
 ) -> dict[str, str]:
     try:
         validate_handoff_package(handoff_package)
@@ -75,13 +76,17 @@ def validate_analysis_result(
     if normalized["status"] not in RESULT_STATUSES:
         raise AnalysisResultError(f"unsupported analysis result status: {normalized['status']}")
     _validate_file_ref(normalized["result_ref"], "analysis result_ref")
+    artifact_hash = _hash_file_ref(normalized["result_ref"], storage_dir) if storage_dir is not None else None
 
     content = _handoff_content(handoff_package, normalized["content_id"])
     if normalized["transcript_artifact_ref"] != str(content["transcript_artifact_ref"]):
         raise AnalysisResultError("analysis result transcript_artifact_ref must match handoff content")
 
-    trusted_hash = str(result.get("result_hash") or result_hash or "")
-    if result_hash and result.get("result_hash") and result["result_hash"] != result_hash:
+    declared_hash = str(result.get("result_hash") or "")
+    trusted_hash = artifact_hash or declared_hash or result_hash or ""
+    if artifact_hash and declared_hash and declared_hash != artifact_hash:
+        raise AnalysisResultError("analysis result_hash must match result_ref target")
+    if not artifact_hash and result_hash and declared_hash and declared_hash != result_hash:
         raise AnalysisResultError("analysis result_hash must match result file")
     if not trusted_hash.startswith("sha256:"):
         raise AnalysisResultError("analysis result_hash must be sha256")
@@ -135,3 +140,16 @@ def _validate_file_ref(value: str, label: str) -> None:
     rel = Path(value.removeprefix("file:"))
     if rel.is_absolute() or ".." in rel.parts:
         raise AnalysisResultError(f"{label} must be a relative file: ref")
+
+
+def _hash_file_ref(value: str, storage_dir: Path) -> str:
+    rel = Path(value.removeprefix("file:"))
+    root = storage_dir.resolve()
+    path = (root / rel).resolve()
+    if not path.is_relative_to(root):
+        raise AnalysisResultError("analysis result_ref must stay under storage")
+    try:
+        payload = path.read_bytes()
+    except OSError as exc:
+        raise AnalysisResultError("analysis result_ref target is not readable") from exc
+    return "sha256:" + hashlib.sha256(payload).hexdigest()

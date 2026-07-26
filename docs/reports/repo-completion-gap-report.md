@@ -32,10 +32,12 @@ Approximate completion against the current v2.0 target: **55-60%**.
 What improved since the 2026-07-01 snapshot:
 
 - `pyproject.toml` now exposes an installable `hermes-benchmark` console script.
-- The CLI has stable command names, JSON envelopes, profile validation, and
-  bounded exit codes.
-- `run-daily --analysis-mode hermes-handoff` can emit a handoff package ref.
-- `record-analysis-result` can validate and persist Hermes-owned result refs.
+- The CLI has stable command names, fail-closed v2 JSON envelopes, profile
+  validation, retryability, and bounded exit codes.
+- `run-daily --analysis-mode hermes-handoff` can emit a run-scoped handoff
+  package ref and marks empty runs as no-op instead of fake analysis success.
+- `record-analysis-result` can validate storage-scoped Hermes-owned result refs,
+  hash referenced result artifacts, and persist immutable result refs.
 - `build-internal-digest` can emit an internal digest payload ref without
   sending messages itself.
 - `record-feedback` can persist idempotent adopt/reject refs in SQLite.
@@ -55,10 +57,10 @@ What remains outside the repo or incomplete:
 
 | Capability | Current state | Production risk |
 |---|---|---|
-| CLI invocation | Implemented console script and JSON contract. | Low for repo-side M0; external Hermes invocation still unproven. |
+| CLI invocation | Implemented console script and fail-closed JSON contract. | Low for repo-side M0; external Hermes invocation still unproven. |
 | Profile/config safety | Local profile validation and redacted runtime status exist. | Medium; production profiles are local-only and must stay out of Git. |
 | Handoff package | Implemented for Hermes-owned analysis. | Medium; needs real Hermes consumer evidence. |
-| Analysis result intake | Implemented validation and SQLite refs. | Medium; depends on real Hermes result shape staying within contract. |
+| Analysis result intake | Implemented storage-scoped ref validation, artifact hashing, and immutable SQLite refs. | Medium; depends on real Hermes result shape staying within contract. |
 | Internal digest payload | Implemented payload artifact refs. | Medium; Hermes still owns message delivery. |
 | Human feedback | Implemented idempotent adopt/reject persistence. | Medium; needs live internal-group wiring. |
 | Collection/transcription | Proof surfaces exist; production multi-account run remains incomplete. | High. |

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -32,6 +33,9 @@ SECRET_WORDS = (
     "sword",
     "token",
 )
+LOCAL_URL_RE = re.compile(r"https?://(?:127\.0\.0\.1|localhost)(?::\d+)?[^\s\"']*")
+TEMP_PATH_RE = re.compile(r"(?<!\w)/(?:tmp|var/tmp)/[^\s\"']+")
+SENSITIVE_PHRASE_RE = re.compile(r"(?i)\b(cookie|cookies|credential|password|proxy|secret|session|token)\b(?:\s*[:=]?\s*[^\s\"']+)?")
 
 Mode = Literal["dry_run", "real"]
 FunasrStatus = Literal["done", "fallback_done", "blocked", "failed"]
@@ -211,9 +215,9 @@ def run_process(
         return {
             "name": name,
             "mode": mode,
-            "command": command_list,
+            "command": redacted,
             "redacted_command": redacted,
-            "cwd": str(cwd or ""),
+            "cwd": "<redacted>" if cwd else "",
             "exit_code": None,
             "blocked_reason": "dry_run_not_executed",
         }
@@ -237,9 +241,9 @@ def run_process(
     return {
         "name": name,
         "mode": mode,
-        "command": command_list,
+        "command": redacted,
         "redacted_command": redacted,
-        "cwd": str(cwd or ""),
+        "cwd": "<redacted>" if cwd else "",
         "exit_code": completed.returncode,
         "stdout_path": str(stdout_path),
         "stderr_path": str(stderr_path),
@@ -352,6 +356,9 @@ def redact_text(text: str, sensitive_values: Iterable[str] = ()) -> str:
     for value in sensitive_values:
         if value:
             redacted = redacted.replace(value, "<redacted>")
+    redacted = LOCAL_URL_RE.sub("<redacted>", redacted)
+    redacted = TEMP_PATH_RE.sub("<redacted-path>", redacted)
+    redacted = SENSITIVE_PHRASE_RE.sub("<redacted>", redacted)
     return redacted
 
 

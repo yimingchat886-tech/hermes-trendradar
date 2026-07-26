@@ -202,6 +202,55 @@ def test_artifact_and_operation_helpers_are_idempotent_refs_only() -> None:
     assert conn.execute("SELECT COUNT(*) FROM write_audit").fetchone()[0] == 1
 
 
+def test_analysis_result_ref_conflict_does_not_overwrite_existing_result() -> None:
+    conn = memory_db()
+    run = begin_run(conn, "2026-07-01", "sha256:profile")
+    content = upsert_content_ledger(conn, run["run_id"], content_item())
+    package_id = record_analysis_package_ref(conn, run["run_id"], "hermes-handoff", "ready", "file:artifacts/package.json")
+
+    result_id = record_analysis_result_ref(
+        conn,
+        run_id=run["run_id"],
+        package_id=package_id,
+        content_id=content["content_id"],
+        transcript_artifact_ref="file:artifacts/t.json",
+        result_ref="file:analysis/results/content-1.json",
+        result_hash="sha256:result",
+        status="succeeded",
+    )
+    repeat_id = record_analysis_result_ref(
+        conn,
+        run_id=run["run_id"],
+        package_id=package_id,
+        content_id=content["content_id"],
+        transcript_artifact_ref="file:artifacts/t.json",
+        result_ref="file:analysis/results/content-1.json",
+        result_hash="sha256:result",
+        status="succeeded",
+    )
+
+    assert repeat_id == result_id
+    try:
+        record_analysis_result_ref(
+            conn,
+            run_id=run["run_id"],
+            package_id=package_id,
+            content_id=content["content_id"],
+            transcript_artifact_ref="file:artifacts/t.json",
+            result_ref="file:analysis/results/content-1-v2.json",
+            result_hash="sha256:changed",
+            status="succeeded",
+        )
+    except StateError as exc:
+        assert "analysis result conflict" in str(exc)
+    else:
+        raise AssertionError("expected different analysis result to conflict")
+
+    row = conn.execute("SELECT * FROM analysis_results WHERE analysis_result_id = ?", (result_id,)).fetchone()
+    assert row["result_ref"] == "file:analysis/results/content-1.json"
+    assert row["result_hash"] == "sha256:result"
+
+
 def test_human_feedback_is_traceable_idempotent_and_conflict_safe() -> None:
     conn = memory_db()
     run = begin_run(conn, "2026-07-01", "sha256:profile")

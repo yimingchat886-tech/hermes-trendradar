@@ -314,7 +314,26 @@ def record_analysis_result_ref(
         raise StateError("analysis result_hash must be sha256")
     timestamp = now or _now()
     result_id = _stable_id("analysis_result", package_id, content_id)
+    incoming = {
+        "analysis_result_id": result_id,
+        "run_id": run_id,
+        "package_id": package_id,
+        "content_id": content_id,
+        "transcript_artifact_ref": transcript_artifact_ref,
+        "result_ref": result_ref,
+        "result_hash": result_hash,
+        "status": status,
+    }
     with _transaction(conn):
+        existing = conn.execute(
+            "SELECT * FROM analysis_results WHERE package_id = ? AND content_id = ?",
+            (package_id, content_id),
+        ).fetchone()
+        if existing is not None:
+            for field, value in incoming.items():
+                if existing[field] != value:
+                    raise StateError("analysis result conflict for package/content")
+            return existing["analysis_result_id"]
         conn.execute(
             """
             INSERT INTO analysis_results (
@@ -322,13 +341,6 @@ def record_analysis_result_ref(
               transcript_artifact_ref, result_ref, result_hash, status, updated_at
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(package_id, content_id) DO UPDATE SET
-              run_id = excluded.run_id,
-              transcript_artifact_ref = excluded.transcript_artifact_ref,
-              result_ref = excluded.result_ref,
-              result_hash = excluded.result_hash,
-              status = excluded.status,
-              updated_at = excluded.updated_at
             """,
             (result_id, run_id, package_id, content_id, transcript_artifact_ref, result_ref, result_hash, status, timestamp),
         )

@@ -29,20 +29,54 @@ def run_cli(*args: str) -> tuple[int, str, str]:
     return code, stdout.getvalue(), stderr.getvalue()
 
 
-def test_stub_json_contracts() -> None:
-    commands = [
-        ("healthcheck", "--json"),
-        ("run-daily", "--json"),
-        ("apply-limited-live", "--json"),
-    ]
-    for args in commands:
-        code, stdout, stderr = run_cli(*args)
-        assert code == EXIT_OK
-        assert stderr == ""
-        payload = json.loads(stdout)
-        assert payload["ok"] is True
-        assert payload["mode"] == "stub"
-        assert payload["error"] is None
+def test_json_envelopes_include_contract_metadata() -> None:
+    code, stdout, stderr = run_cli("healthcheck", "--self-check", "--json")
+    assert code == EXIT_OK
+    assert stderr == ""
+    payload = json.loads(stdout)
+    assert payload["contract_version"] == "2.0"
+    assert payload["ok"] is True
+    assert payload["command"] == "healthcheck"
+    assert payload["mode"] == "self-check"
+    assert payload["exit_code"] == EXIT_OK
+    assert payload["retryable"] is False
+    assert payload["error"] is None
+
+    code, stdout, stderr = run_cli("run-daily", "--json")
+    assert code == EXIT_CONTRACT_MISMATCH
+    assert stderr == ""
+    payload = json.loads(stdout)
+    assert payload["contract_version"] == "2.0"
+    assert payload["ok"] is False
+    assert payload["command"] == "run-daily"
+    assert payload["exit_code"] == EXIT_CONTRACT_MISMATCH
+    assert payload["retryable"] is False
+    assert payload["error"]["code"] == "contract_mismatch"
+
+
+def test_mock_and_self_check_paths_must_be_explicit() -> None:
+    code, stdout, stderr = run_cli("healthcheck", "--json")
+    assert code == EXIT_CONTRACT_MISMATCH
+    assert stderr == ""
+    assert json.loads(stdout)["ok"] is False
+
+    code, stdout, stderr = run_cli("run-daily", "--analysis-mode", "mock", "--json")
+    assert code == EXIT_CONTRACT_MISMATCH
+    assert stderr == ""
+    assert json.loads(stdout)["ok"] is False
+
+    code, stdout, stderr = run_cli("run-daily", "--analysis-mode", "mock", "--self-check", "--json")
+    assert code == EXIT_OK
+    assert stderr == ""
+    payload = json.loads(stdout)
+    assert payload["ok"] is True
+    assert payload["mode"] == "self-check"
+    assert payload["data"]["run_started"] is False
+
+    code, stdout, stderr = run_cli("apply-limited-live", "--json")
+    assert code == EXIT_CONTRACT_MISMATCH
+    assert stderr == ""
+    assert json.loads(stdout)["ok"] is False
 
 
 def test_validate_config_json_contract() -> None:
@@ -52,10 +86,43 @@ def test_validate_config_json_contract() -> None:
     payload = json.loads(stdout)
     assert payload["ok"] is True
     assert payload["mode"] == "profile"
+    assert payload["exit_code"] == EXIT_OK
+    assert payload["retryable"] is False
     assert payload["data"]["enabled_account_count"] == 10
     assert payload["data"]["required_enabled_accounts"] == 10
     assert payload["data"]["profile_hash"].startswith("sha256:")
     assert payload["data"]["errors"] == []
+    assert payload["data"]["profile_ref"] == "redacted"
+
+
+def test_sample_profile_healthcheck_does_not_fail_on_ref_shape() -> None:
+    validate_code, _stdout, _stderr = run_cli("validate-config", "--profile", str(SAMPLE_PROFILE), "--json")
+    code, stdout, stderr = run_cli("healthcheck", "--profile", str(SAMPLE_PROFILE), "--json")
+
+    assert validate_code == EXIT_OK
+    assert code == EXIT_OK
+    assert stderr == ""
+    payload = json.loads(stdout)
+    assert payload["ok"] is True
+    assert payload["mode"] == "runtime"
+    assert payload["data"]["schema_version"] == "1.4"
+    assert payload["error"] is None
+
+
+def test_profile_errors_keep_invoked_command_and_redact_temp_paths() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        missing_profile = Path(tmp) / "missing-profile.json"
+        code, stdout, stderr = run_cli("healthcheck", "--profile", str(missing_profile), "--json")
+
+    assert code == EXIT_CONFIG_INVALID
+    assert stderr == ""
+    payload = json.loads(stdout)
+    assert payload["ok"] is False
+    assert payload["command"] == "healthcheck"
+    assert payload["retryable"] is False
+    assert "profile file not found" in stdout
+    assert str(missing_profile) not in stdout
+    assert "/tmp/" not in stdout
 
 
 def test_validate_config_rejects_plaintext_sensitive_values() -> None:
@@ -209,6 +276,8 @@ def test_record_analysis_result_persists_refs_without_mock_or_raw_text() -> None
         package_ref = json.loads(stdout)["data"]["analysis_package_ref"]
         package = json.loads((config.storage_dir / package_ref.removeprefix("file:")).read_text(encoding="utf-8"))
         raw_body = "raw analysis body must not be persisted"
+        raw_body_hash = "sha256:0a7ac633c227c335d4b4d0da0487d336c72e403c5a7bfe91d7b447dd18296de2"
+        result_ref = write_result_artifact(config, raw_body)
         result_path = Path(tmp) / "analysis-result.json"
         result_path.write_text(
             json.dumps(
@@ -218,7 +287,7 @@ def test_record_analysis_result_persists_refs_without_mock_or_raw_text() -> None
                     "run_id": package["run_id"],
                     "content_id": "content-1",
                     "transcript_artifact_ref": "file:transcripts/1.json",
-                    "result_ref": "file:analysis/results/content-1.json",
+                    "result_ref": result_ref,
                     "status": "succeeded",
                     "raw_body": raw_body,
                 }
@@ -251,7 +320,7 @@ def test_record_analysis_result_persists_refs_without_mock_or_raw_text() -> None
     assert payload["data"]["package_id"] == package["package_id"]
     assert payload["data"]["content_id"] == "content-1"
     assert payload["data"]["result_ref"] == "file:analysis/results/content-1.json"
-    assert payload["data"]["result_hash"].startswith("sha256:")
+    assert payload["data"]["result_hash"] == raw_body_hash
     assert row["package_id"] == package["package_id"]
     assert row["result_ref"] == "file:analysis/results/content-1.json"
     assert raw_body not in stdout
@@ -310,6 +379,77 @@ def test_record_analysis_result_invalid_result_returns_exit_6() -> None:
     assert payload["exit_code"] == 6
 
 
+def test_record_analysis_result_conflict_returns_json_envelope_without_overwrite() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        profile_path = write_temp_profile(Path(tmp), free_port())
+        config = seed_handoff_state(profile_path, "2026-07-03")
+        code, stdout, _stderr = run_cli(
+            "run-daily",
+            "--profile",
+            str(profile_path),
+            "--date",
+            "2026-07-03",
+            "--analysis-mode",
+            "hermes-handoff",
+            "--json",
+        )
+        assert code == EXIT_OK
+        package_ref = json.loads(stdout)["data"]["analysis_package_ref"]
+        package = json.loads((config.storage_dir / package_ref.removeprefix("file:")).read_text(encoding="utf-8"))
+        first_ref = write_result_artifact(config, "first result", rel="analysis/results/content-1.json")
+        second_ref = write_result_artifact(config, "changed result", rel="analysis/results/content-1-v2.json")
+        first_result = Path(tmp) / "analysis-result-1.json"
+        second_result = Path(tmp) / "analysis-result-2.json"
+        base = {
+            "schema_version": "1.4",
+            "package_id": package["package_id"],
+            "run_id": package["run_id"],
+            "content_id": "content-1",
+            "transcript_artifact_ref": "file:transcripts/1.json",
+            "status": "succeeded",
+        }
+        first_result.write_text(json.dumps({**base, "result_ref": first_ref}), encoding="utf-8")
+        second_result.write_text(json.dumps({**base, "result_ref": second_ref}), encoding="utf-8")
+
+        first_code, _first_stdout, first_stderr = run_cli(
+            "record-analysis-result",
+            "--profile",
+            str(profile_path),
+            "--package",
+            package_ref,
+            "--result",
+            str(first_result),
+            "--json",
+        )
+        conflict_code, conflict_stdout, conflict_stderr = run_cli(
+            "record-analysis-result",
+            "--profile",
+            str(profile_path),
+            "--package",
+            package_ref,
+            "--result",
+            str(second_result),
+            "--json",
+        )
+        conn = connect(config.database_path)
+        try:
+            rows = conn.execute("SELECT * FROM analysis_results").fetchall()
+        finally:
+            conn.close()
+
+    assert first_code == EXIT_OK
+    assert first_stderr == ""
+    assert conflict_code == cli_module.EXIT_ANALYSIS_RESULT_INVALID
+    assert conflict_stderr == ""
+    payload = json.loads(conflict_stdout)
+    assert payload["ok"] is False
+    assert payload["command"] == "record-analysis-result"
+    assert payload["error"]["code"] == "analysis_result_invalid"
+    assert payload["retryable"] is False
+    assert len(rows) == 1
+    assert rows[0]["result_ref"] == "file:analysis/results/content-1.json"
+
+
 def test_build_internal_digest_writes_payload_without_table_write() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         profile_path = write_temp_profile(Path(tmp), free_port())
@@ -328,6 +468,8 @@ def test_build_internal_digest_writes_payload_without_table_write() -> None:
         package_ref = json.loads(stdout)["data"]["analysis_package_ref"]
         package = json.loads((config.storage_dir / package_ref.removeprefix("file:")).read_text(encoding="utf-8"))
         raw_body = "raw digest source must stay out"
+        raw_body_hash = "sha256:6e8b1c64a8fc5295e30ff3ef59b07ca8f53758a0e08b884fe5f26de803f99db5"
+        result_ref = write_result_artifact(config, raw_body)
         result_path = Path(tmp) / "analysis-result.json"
         result_path.write_text(
             json.dumps(
@@ -337,7 +479,7 @@ def test_build_internal_digest_writes_payload_without_table_write() -> None:
                     "run_id": package["run_id"],
                     "content_id": "content-1",
                     "transcript_artifact_ref": "file:transcripts/1.json",
-                    "result_ref": "file:analysis/results/content-1.json",
+                    "result_ref": result_ref,
                     "status": "succeeded",
                     "raw_body": raw_body,
                 }
@@ -389,6 +531,7 @@ def test_build_internal_digest_writes_payload_without_table_write() -> None:
     assert payload["data"]["digest_payload_hash"].startswith("sha256:")
     assert digest_payload["items"][0]["trace"]["package_id"] == package["package_id"]
     assert digest_payload["items"][0]["trace"]["result_ref"] == "file:analysis/results/content-1.json"
+    assert digest_payload["items"][0]["trace"]["result_hash"] == raw_body_hash
     assert digest_payload["degraded"][0]["error_code"] == "analysis_warning"
     assert before_operations == 0
     assert after_operations == 0
@@ -413,6 +556,7 @@ def test_record_feedback_persists_idempotent_refs_without_promotion_or_writes() 
         assert code == EXIT_OK
         package_ref = json.loads(stdout)["data"]["analysis_package_ref"]
         package = json.loads((config.storage_dir / package_ref.removeprefix("file:")).read_text(encoding="utf-8"))
+        result_ref = write_result_artifact(config, "feedback result")
         result_path = Path(tmp) / "analysis-result.json"
         result_path.write_text(
             json.dumps(
@@ -422,7 +566,7 @@ def test_record_feedback_persists_idempotent_refs_without_promotion_or_writes() 
                     "run_id": package["run_id"],
                     "content_id": "content-1",
                     "transcript_artifact_ref": "file:transcripts/1.json",
-                    "result_ref": "file:analysis/results/content-1.json",
+                    "result_ref": result_ref,
                     "status": "succeeded",
                 }
             ),
@@ -641,9 +785,19 @@ def seed_handoff_state(profile_path: Path, run_date: str):
     return config
 
 
+def write_result_artifact(config, text: str, *, rel: str = "analysis/results/content-1.json") -> str:
+    artifact_path = config.storage_dir / rel
+    artifact_path.parent.mkdir(parents=True, exist_ok=True)
+    artifact_path.write_text(text, encoding="utf-8")
+    return f"file:{rel}"
+
+
 if __name__ == "__main__":
-    test_stub_json_contracts()
+    test_json_envelopes_include_contract_metadata()
+    test_mock_and_self_check_paths_must_be_explicit()
     test_validate_config_json_contract()
+    test_sample_profile_healthcheck_does_not_fail_on_ref_shape()
+    test_profile_errors_keep_invoked_command_and_redact_temp_paths()
     test_validate_config_rejects_plaintext_sensitive_values()
     test_validate_config_scans_child_profiles_for_plaintext_sensitive_values()
     test_validate_config_rejects_enabled_non_douyin_accounts()
@@ -653,6 +807,7 @@ if __name__ == "__main__":
     test_run_daily_hermes_handoff_writes_schema_valid_package_ref()
     test_record_analysis_result_persists_refs_without_mock_or_raw_text()
     test_record_analysis_result_invalid_result_returns_exit_6()
+    test_record_analysis_result_conflict_returns_json_envelope_without_overwrite()
     test_build_internal_digest_writes_payload_without_table_write()
     test_record_feedback_persists_idempotent_refs_without_promotion_or_writes()
     test_run_daily_invalid_handoff_package_returns_exit_6()

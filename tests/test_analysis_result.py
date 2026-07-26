@@ -109,8 +109,40 @@ def test_analysis_result_load_computes_hash_and_rejects_invalid_json() -> None:
             raise AssertionError("expected invalid JSON to fail")
 
 
+def test_analysis_result_ref_must_exist_under_storage_and_hash_target() -> None:
+    package = build_handoff_package("run-1", "sha256:profile", [item()])
+    with tempfile.TemporaryDirectory() as tmp:
+        storage = Path(tmp)
+        artifact = storage / "analysis" / "results" / "content-1.json"
+        artifact.parent.mkdir(parents=True)
+        artifact.write_text("artifact body", encoding="utf-8")
+        expected_hash = "sha256:9938be87d35f2a7a2b80237e8dc71806b209aaea8252f12c1b12949f61d40476"
+
+        normalized = validate_analysis_result(
+            package,
+            result_for(package, result_hash=expected_hash),
+            storage_dir=storage,
+        )
+
+        assert normalized["result_hash"] == expected_hash
+
+        cases = [
+            {"result_ref": "file:analysis/results/missing.json"},
+            {"result_ref": "file:../outside.json"},
+            {"result_hash": "sha256:mismatch"},
+        ]
+        for overrides in cases:
+            try:
+                validate_analysis_result(package, result_for(package, **overrides), storage_dir=storage)
+            except AnalysisResultError:
+                pass
+            else:
+                raise AssertionError(f"expected storage-bound result_ref rejection for {overrides}")
+
+
 if __name__ == "__main__":
     test_analysis_result_validates_against_handoff_package()
     test_analysis_result_rejects_mismatched_trace_refs()
     test_analysis_result_loads_package_ref_under_storage()
     test_analysis_result_load_computes_hash_and_rejects_invalid_json()
+    test_analysis_result_ref_must_exist_under_storage_and_hash_target()

@@ -5,6 +5,7 @@ from __future__ import annotations
 import fcntl
 import hashlib
 import json
+import os
 import shutil
 import socket
 import subprocess
@@ -104,7 +105,7 @@ def resolve_runtime_config(profile: LoadedProfile) -> RuntimeCdpConfig:
     if not isinstance(runtime_profile, dict):
         raise ProfileError(["runtime profile is missing"])
 
-    cdp_host, cdp_port = _parse_runtime_endpoint(str(runtime_profile.get("cdp_endpoint_ref") or ""))
+    cdp_host, cdp_port = _resolve_runtime_endpoint_ref(str(runtime_profile.get("cdp_endpoint_ref") or ""))
     storage_dir = _resolve_file_ref(str(runtime_profile.get("storage_ref") or ""))
     database_path = _resolve_file_ref(str(runtime_profile.get("database_ref") or ""))
     user_data_dir = _resolve_file_ref(str(runtime_profile.get("login_state_ref") or ""))
@@ -313,7 +314,7 @@ def _wait_for_cdp(config: RuntimeCdpConfig, timeout_seconds: float) -> CdpCheck:
 
 
 def _probe_lock(path: Path) -> bool:
-    if not path.parent.exists():
+    if not path.exists():
         return True
     lock = RuntimeLock(path)
     try:
@@ -333,6 +334,16 @@ def _write_owner_marker(config: RuntimeCdpConfig, pid: int) -> None:
     marker = _owner_marker(config)
     marker.parent.mkdir(parents=True, exist_ok=True)
     marker.write_text(json.dumps({"owner": "hermes-benchmark", "pid": pid}, sort_keys=True), encoding="utf-8")
+
+
+def _resolve_runtime_endpoint_ref(ref: str) -> tuple[str, int]:
+    if ref.startswith("env:"):
+        env_name = ref.removeprefix("env:")
+        env_value = os.environ.get(env_name, "")
+        if not env_value:
+            return "127.0.0.1", 9222
+        ref = env_value
+    return _parse_runtime_endpoint(ref)
 
 
 def _parse_runtime_endpoint(ref: str) -> tuple[str, int]:
