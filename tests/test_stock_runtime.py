@@ -3,12 +3,17 @@ from __future__ import annotations
 import json
 import sys
 import tempfile
+import tomllib
 from collections.abc import Mapping, Sequence
+from importlib import resources
 from pathlib import Path
 
+from hermes_benchmark.collector_distribution.stock_runtime_plugin import _handler as stock_runtime_plugin_handler
 from hermes_benchmark.profile import load_profile
 from hermes_benchmark.runtime_cdp import resolve_runtime_config
 from hermes_benchmark.stock_runtime import (
+    STOCK_TOOL_SCHEMAS,
+    StockRuntimeError,
     StockRuntimeSettings,
     stock_read_analysis_package,
     stock_record_analysis_result,
@@ -100,9 +105,95 @@ def test_stock_runtime_fails_closed_on_invalid_json_exit_mismatch_oversize_and_s
         assert stock_validate_config(settings_with(json.dumps(mismatch).encode(), returncode=1))["error"]["code"] == "contract_mismatch"
         assert stock_validate_config(settings_with(b"{" + b"x" * 2000))["error"]["code"] == "output_too_large"
 
+        missing_contract = dict(mismatch)
+        missing_contract.pop("contract_version")
+        assert stock_validate_config(settings_with(json.dumps(missing_contract).encode()))["error"]["code"] == "contract_mismatch"
+
+        wrong_contract = dict(mismatch)
+        wrong_contract["contract_version"] = "1.0"
+        assert stock_validate_config(settings_with(json.dumps(wrong_contract).encode()))["error"]["code"] == "contract_mismatch"
+
         secret = dict(mismatch)
         secret["data"] = {"profile_id": "token=abcd1234", "schema_version": "1.4"}
         assert stock_validate_config(settings_with(json.dumps(secret).encode()))["error"]["code"] == "secret_like_output"
+
+        path_leak = dict(mismatch)
+        path_leak["data"] = {"profile_id": "/tmp/hermes-stock-profile.json", "schema_version": "1.4"}
+        assert stock_validate_config(settings_with(json.dumps(path_leak).encode()))["error"]["code"] == "secret_like_output"
+
+
+def test_stock_runtime_rejects_semantically_invalid_dates_before_runner() -> None:
+    calls = []
+
+    def runner(argv: Sequence[str], cwd: Path, env: Mapping[str, str], timeout: float) -> tuple[int, bytes, bytes]:
+        calls.append((argv, cwd, env, timeout))
+        raise AssertionError("runner should not be called for invalid dates")
+
+    with tempfile.TemporaryDirectory() as tmp:
+        settings = StockRuntimeSettings(
+            executable=("hermes-benchmark",),
+            cwd=Path(tmp),
+            profile_ref=Path(tmp) / "profile.json",
+            storage_root=Path(tmp) / "storage",
+            runner=runner,
+        )
+        result = stock_run_daily(settings, "2026-99-99")
+
+    assert result["ok"] is False
+    assert result["error"]["code"] == "invalid_date"
+    assert calls == []
+
+
+def test_stock_runtime_plugin_handler_compresses_config_and_unexpected_exceptions() -> None:
+    def stock_error(_args: dict[str, object]) -> dict[str, object]:
+        raise StockRuntimeError("stock_runtime_config_invalid", "/tmp/profile token=abcd1234")
+
+    stock_result = json.loads(stock_runtime_plugin_handler("stock_validate_config", stock_error)({}))
+    assert stock_result["ok"] is False
+    assert stock_result["tool"] == "stock_validate_config"
+    assert stock_result["error"] == {"code": "stock_runtime_config_invalid", "message": "stock_runtime failed closed"}
+    assert "/tmp/" not in json.dumps(stock_result, sort_keys=True)
+    assert "token" not in json.dumps(stock_result, sort_keys=True).lower()
+
+    def unexpected_error(_args: dict[str, object]) -> dict[str, object]:
+        raise ValueError("/home/jym/profile Cookie=secret")
+
+    unexpected_result = json.loads(stock_runtime_plugin_handler("stock_healthcheck", unexpected_error)({}))
+    assert unexpected_result["ok"] is False
+    assert unexpected_result["tool"] == "stock_healthcheck"
+    assert unexpected_result["error"] == {"code": "stock_runtime_handler_error", "message": "stock_runtime failed closed"}
+    encoded = json.dumps(unexpected_result, sort_keys=True)
+    assert "/home/" not in encoded
+    assert "cookie" not in encoded.lower()
+
+
+def test_collector_distribution_assets_pin_tool_allowlist_and_generic_denies() -> None:
+    dist_root = resources.files("hermes_benchmark.collector_distribution")
+    plugin_root = resources.files("hermes_benchmark.collector_distribution.stock_runtime_plugin")
+    readme = dist_root.joinpath("README.md").read_text(encoding="utf-8")
+    config = dist_root.joinpath("collector_config.template.yaml").read_text(encoding="utf-8")
+    plugin = plugin_root.joinpath("plugin.yaml").read_text(encoding="utf-8")
+    package_data = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["tool"]["setuptools"]["package-data"]
+
+    assert package_data["hermes_benchmark.collector_distribution"] == ["README.md", "collector_config.template.yaml"]
+    assert package_data["hermes_benchmark.collector_distribution.stock_runtime_plugin"] == ["plugin.yaml"]
+    assert "enabled_toolsets:\n    - stock_runtime\n" in config
+    for toolset in ("terminal", "file", "code_execution"):
+        assert f"    - {toolset}\n" in config
+    assert "plugins:\n  enabled:\n    - stock-runtime\n" in config
+    assert "profile_ref: /home/jym/workspace/Hermes stock/profiles/local/hermes.v1.4.douyin.local.json" in config
+    assert "cwd: /home/jym/workspace/Hermes stock" in config
+    assert "does not deploy it to `~/.hermes/profiles`" in readme
+
+    expected_tools = tuple(STOCK_TOOL_SCHEMAS)
+    assert plugin.count("  - stock_") == len(expected_tools)
+    for tool in expected_tools:
+        assert f"  - {tool}\n" in plugin
+        assert f"`{tool}`" in readme
+
+    combined = "\n".join((config, plugin)).lower()
+    for forbidden in ("token", "cookie", "proxy", "cdp", "127.0.0.1", "localhost", "/tmp/", "\\users\\"):
+        assert forbidden not in combined
 
 
 def test_stock_runtime_rejects_out_of_bounds_and_oversized_package_refs() -> None:

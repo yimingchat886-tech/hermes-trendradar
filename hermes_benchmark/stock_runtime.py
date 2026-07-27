@@ -15,6 +15,7 @@ import re
 import subprocess
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -25,6 +26,7 @@ from .runtime_cdp import resolve_runtime_config
 CliRunner = Callable[[Sequence[str], Path, Mapping[str, str], float], tuple[int, bytes, bytes]]
 
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+EXPECTED_CONTRACT_VERSION = "2.0"
 SAFE_ID_RE = re.compile(r"^[A-Za-z0-9._:-]{1,160}$")
 SAFE_LEAF_RE = re.compile(r"^[A-Za-z0-9._-]{1,96}$")
 RUN_ID_RE = re.compile(r"^run_[A-Za-z0-9._-]{8,80}$")
@@ -281,6 +283,10 @@ def stock_run_daily(settings: StockRuntimeSettings, run_date: str) -> dict[str, 
     def action() -> dict[str, Any]:
         if not DATE_RE.fullmatch(run_date):
             raise StockRuntimeError("invalid_date", "date must be YYYY-MM-DD")
+        try:
+            date.fromisoformat(run_date)
+        except ValueError as exc:
+            raise StockRuntimeError("invalid_date", "date must be a valid calendar date") from exc
         return _call_cli(settings, "run-daily", ("--date", run_date, "--analysis-mode", "hermes-handoff"))
 
     return _run_tool("stock_run_daily", action)
@@ -478,6 +484,8 @@ def _subprocess_runner(argv: Sequence[str], cwd: Path, env: Mapping[str, str], t
 
 
 def _validate_envelope(envelope: Mapping[str, Any], command: str, returncode: int) -> None:
+    if envelope.get("contract_version") != EXPECTED_CONTRACT_VERSION:
+        raise StockRuntimeError("contract_mismatch", "Hermes stock contract version did not match the adapter")
     if envelope.get("command") != command:
         raise StockRuntimeError("contract_mismatch", "Hermes stock envelope command did not match the requested command")
     if not isinstance(envelope.get("exit_code"), int) or envelope["exit_code"] != returncode:
