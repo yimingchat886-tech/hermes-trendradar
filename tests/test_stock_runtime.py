@@ -6,9 +6,6 @@ import tempfile
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
-
 from hermes_benchmark.profile import load_profile
 from hermes_benchmark.runtime_cdp import resolve_runtime_config
 from hermes_benchmark.stock_runtime import (
@@ -23,6 +20,8 @@ from hermes_benchmark.stock_runtime_self_check import (
     _write_fixture_profile,
     run_self_check,
 )
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_stock_runtime_uses_fixed_argv_and_minimal_env_without_raw_process_details() -> None:
