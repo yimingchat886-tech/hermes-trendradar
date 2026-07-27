@@ -1,0 +1,13 @@
+name: stock-runtime
+version: 0.1.0
+description: Collector-only Hermes stock runtime toolset. Wraps hermes-benchmark with fixed argv, storage refs, and fail-closed JSON contracts.
+provides_tools:
+  - stock_validate_config
+  - stock_healthcheck
+  - stock_run_daily
+  - stock_read_analysis_package
+  - stock_record_analysis_result
+  - stock_build_internal_digest
+  - stock_record_feedback
+provides_hooks: []
+kind: standalone

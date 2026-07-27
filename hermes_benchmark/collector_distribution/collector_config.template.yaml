@@ -1,0 +1,42 @@
+# Collector Hermes profile distribution template (source only; do not deploy live in Case 3).
+# Copy these settings into the future blank `collector` profile only after Case 3 review.
+
+plugins:
+  enabled:
+    - stock-runtime
+
+tools:
+  # The collector production session should expose only this profile-local toolset.
+  enabled_toolsets:
+    - stock_runtime
+  disabled_toolsets:
+    - terminal
+    - file
+    - code_execution
+    - web
+    - browser
+    - computer_use
+    - delegation
+    - memory
+    - session_search
+    - cronjob
+    - vision
+    - image_gen
+    - tts
+
+stock_runtime:
+  executable:
+    - hermes-benchmark
+  cwd: /home/jym/workspace/Hermes stock
+  profile_ref: /home/jym/workspace/Hermes stock/profiles/local/hermes.v1.4.douyin.local.json
+  # storage_root may be omitted; the plugin resolves it from the fixed profile.
+  # Keep it explicit in deployed collector if the operator wants an extra pin.
+  # storage_root: /home/jym/workspace/_external/hermes-stock-runs
+  timeout_seconds: 60
+  stdout_cap_bytes: 65536
+  stderr_cap_bytes: 16384
+  package_cap_bytes: 262144
+  result_cap_bytes: 65536
+  digest_cap_bytes: 262144
+  max_package_contents: 50
+  max_string_chars: 4000
