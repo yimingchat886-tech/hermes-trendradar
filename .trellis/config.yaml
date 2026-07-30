@@ -108,3 +108,15 @@ channel:
 #
 # codex:
 #   dispatch_mode: inline  # or "sub-agent" to dispatch trellis-* sub-agents
+
+qualification_layers:
+  admission_mode: installed_runtime
+  artifact_receipt: .trellis/spec/project/receipts/loop-v1/86413f2b2538056fb4c2676af41c6766d21ce707c287d01cefd6f3c1c8f205d9.json
+  artifact_receipt_digest: 86413f2b2538056fb4c2676af41c6766d21ce707c287d01cefd6f3c1c8f205d9
+  local_runtime_receipt: .trellis/spec/project/receipts/loop-v1/2b13bc0533608ce881e7084b9e12b505ffe3eda715055fed3d709d760eefc43d.json
+  local_runtime_receipt_digest: 2b13bc0533608ce881e7084b9e12b505ffe3eda715055fed3d709d760eefc43d
+
+loop_v1:
+  admission_enabled: true
+  parent_default: loop_v1
+  runtime_mode: downstream_project
