@@ -46,6 +46,17 @@ For v3 child tasks, soft archive means:
 3. Run `task.py soft-archive <child> --commit <hash>`.
 4. Keep the child task directory in place so the parent can aggregate evidence.
 
+RTM ownership used by soft archive must be exact:
+
+- A single-owner `Child` cell may use the exact task title or directory name.
+- A shared `Child` cell lists every exact child task directory name joined by
+  ` + `; aggregate labels such as `all children` are not ownership evidence.
+- Shared rows append each child stage-report path once and remain nonterminal
+  until every named Child Index row is `completed`, `done`, or `cancelled`.
+  Existing `removed` and `deferred` dispositions are preserved.
+- An unresolved, duplicated, or ambiguous owner fails before governance or
+  child lifecycle state is written.
+
 Do not call built-in `task.py archive` for a child soft archive.
 
 ## Parent Acceptance And Archive
@@ -62,3 +73,20 @@ user explicitly limits the signal:
 
 Parent archive is not child soft archive. Push still requires explicit user
 approval.
+
+Parent archive preserves both relationship endpoints and physically archives
+the exact terminal family: active children move first, the parent moves last,
+and every member lands in one month. A linked child cannot be hard-archived
+directly. Child validation checks active tasks first, then one exact archived
+parent, and still requires that parent to list the child. Replaying an archived
+parent sweeps any one-location legacy terminal child that remained active.
+When more than one already-archived parent retains active terminal children,
+`task.py archive-orphans` validates every affected family and moves all of
+those children in one transaction before generating BOARD. This avoids a
+cross-family fail-closed deadlock without weakening terminal-child validation.
+
+The move, generator-only BOARD refresh, exact Git staging, and optional local
+commit use one archive journal with task-tree, BOARD, HEAD, and index preimages.
+Failure rolls back; incomplete rollback becomes `recovery_required`, blocks new
+archives, and must use `task.py archive-recover <transaction-id>`. Standalone
+light-task archive behavior is unchanged.

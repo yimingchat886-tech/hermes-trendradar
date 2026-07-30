@@ -15,9 +15,10 @@
 
 ## Evidence Model
 
-- `task.json.meta.workflow_mode` is `harness_state_machine`.
+- `task.json.meta.workflow_mode` selects the parent lifecycle authority.
 - `governance.md` records child index, RTM, review, and boundary evidence.
-- `state-events.jsonl` records parent state transitions.
+- `state-events.jsonl` records parent state transitions only for
+  `harness_state_machine`; Loop v1 lifecycle evidence remains ledger-owned.
 - Do not add legacy staged metadata.
 
 ## Protocol Gates

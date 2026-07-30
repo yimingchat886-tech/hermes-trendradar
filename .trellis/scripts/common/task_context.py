@@ -25,10 +25,13 @@ from pathlib import Path
 from .io import read_json
 from .log import Colors, colored
 from .paths import FILE_TASK_JSON, get_repo_root, get_tasks_dir
-from .task_utils import find_task_by_name, resolve_task_dir
-from .done_gate import done_gate_errors
+from .task_activity import TaskStateInvalid, classify_task_activity
+from .task_utils import resolve_task_dir
+from .done_gate import _find_task_anywhere, cancellation_gate_errors, done_gate_errors
 
 V2_TIERS = {"parent", "child", "light"}
+HARNESS_MODE = "harness_state_machine"
+LOOP_V1_MODE = "loop_v1"
 
 
 # =============================================================================
@@ -201,6 +204,40 @@ def _meaningful(body: str) -> bool:
     return any(line not in placeholders for line in lines)
 
 
+def _loop_v1_validation_errors(
+    data: dict, repo_root: Path, task_dir: Path
+) -> list[str]:
+    """Validate the generic task record without taking over Loop authority."""
+    errors: list[str] = []
+    tier = data.get("tier")
+    meta = data.get("meta") or {}
+
+    if tier not in {"parent", "child"}:
+        errors.append("Loop v1 workflow_mode is only valid for parent or child tasks")
+    if isinstance(meta, dict) and "state_machine" in meta:
+        errors.append("Loop v1 task must not declare HSM state-machine metadata")
+
+    if data.get("status") == "cancelled":
+        from loop_v1.pre_admission import pre_admission_cancellation_errors
+
+        errors.extend(pre_admission_cancellation_errors(task_dir, data, repo_root))
+        return errors
+
+    if tier == "parent":
+        try:
+            from loop_v1.qualification import operation_qualification
+
+            qualification = operation_qualification(repo_root)
+        except Exception as exc:
+            errors.append(f"Loop v1 qualification check failed: {exc}")
+        else:
+            if not qualification.enforced or not qualification.valid:
+                detail = "; ".join(qualification.issues) or "qualification is unenforced"
+                errors.append(f"Loop v1 runtime is not qualified: {detail}")
+
+    return errors
+
+
 def _validate_v2_task(target_dir: Path, repo_root: Path) -> int:
     task_json = target_dir / FILE_TASK_JSON
     data = read_json(task_json)
@@ -211,9 +248,33 @@ def _validate_v2_task(target_dir: Path, repo_root: Path) -> int:
         return 0
 
     errors: list[str] = []
+    try:
+        classify_task_activity(target_dir, repo_root)
+    except TaskStateInvalid as exc:
+        errors.append(str(exc))
     meta = data.get("meta") or {}
-    if meta.get("workflow_mode") != "harness_state_machine":
-        errors.append("task.json meta.workflow_mode must be harness_state_machine")
+    workflow_mode = meta.get("workflow_mode") if isinstance(meta, dict) else None
+    if workflow_mode == LOOP_V1_MODE:
+        errors.extend(_loop_v1_validation_errors(data, repo_root, target_dir))
+    elif workflow_mode != HARNESS_MODE:
+        errors.append("task.json meta.workflow_mode must be harness_state_machine or loop_v1")
+
+    if data.get("status") == "cancelled":
+        if workflow_mode == HARNESS_MODE:
+            for error in cancellation_gate_errors(target_dir, data, repo_root):
+                if error not in errors:
+                    errors.append(error)
+        elif workflow_mode == LOOP_V1_MODE:
+            cancellation = data.get("cancellation")
+            if not isinstance(cancellation, dict) or cancellation.get("pre_admission") is not True:
+                errors.append("Loop v1 cancellation validation is controlled by loop_v1.orchestrator")
+        if errors:
+            print(f"  {colored('task metadata: ✗', Colors.RED)}")
+            for error in errors:
+                print(f"    - {error}")
+        else:
+            print(f"  {colored('task metadata: ✓', Colors.GREEN)}")
+        return len(errors)
 
     if tier == "parent":
         governance = target_dir / "governance.md"
@@ -240,7 +301,7 @@ def _validate_v2_task(target_dir: Path, repo_root: Path) -> int:
         if not (target_dir / "stage-report.md").is_file():
             errors.append("child stage-report.md missing")
         parent_name = data.get("parent")
-        parent_dir = find_task_by_name(parent_name, get_tasks_dir(repo_root)) if parent_name else None
+        parent_dir = _find_task_anywhere(parent_name, get_tasks_dir(repo_root)) if parent_name else None
         parent_json = parent_dir / FILE_TASK_JSON if parent_dir else None
         parent = read_json(parent_json) if parent_json and parent_json.is_file() else None
         if not parent or target_dir.name not in (parent.get("children") or []):
@@ -252,9 +313,10 @@ def _validate_v2_task(target_dir: Path, repo_root: Path) -> int:
             if not _meaningful(_section_body(prd, header)):
                 errors.append(f"light prd.md missing answer: {header}")
 
-    for error in done_gate_errors(target_dir, data, repo_root):
-        if error not in errors:
-            errors.append(error)
+    if workflow_mode == HARNESS_MODE:
+        for error in done_gate_errors(target_dir, data, repo_root):
+            if error not in errors:
+                errors.append(error)
 
     if errors:
         print(f"  {colored('task metadata: ✗', Colors.RED)}")

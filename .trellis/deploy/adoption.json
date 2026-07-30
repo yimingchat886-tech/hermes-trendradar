@@ -1,0 +1,16 @@
+{
+  "manifest_digest": "9189d881f7c0854efd18e91b90a688789833c9c775e2c2a189198e95d56e1f20",
+  "overlay_version": "loop-v1.0.9-local",
+  "plan_digest": "9bcb6975b54822851aa0eb9fb72d27a05edf7202582a767b7c6993d53dccb73f",
+  "schema_version": 1,
+  "source": {
+    "commit": "2c0f7622ecbb65f71a1e9841e925f87a5371289b",
+    "qualification_receipt_id": "sha256:6e760bf39271f2f194ba87bc61b39229b55f3dc2ed0d49b63341ccafa540e6fa"
+  },
+  "target": {
+    "base_head": "53d0d82d6d0b4096c5961416eff77d4aa971c250",
+    "branch": "codex/workflow-v2-m4-board",
+    "id": "Hermes stock",
+    "receipt_id": "sha256:64f9139cb7f1aaf44859e0740fdc4f4217cbe5e54d149a4f82d971446a84313a"
+  }
+}

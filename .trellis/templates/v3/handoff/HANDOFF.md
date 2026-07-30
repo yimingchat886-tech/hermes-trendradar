@@ -1,70 +1,37 @@
 # Trellis Harness Handoff
 
-This file is the downstream handoff index for the v3 Trellis harness. It tells
-humans and agents where to look, what may be copied, and which checks prove the
-handoff docs stayed inside their boundary.
+This is the Loop v1 compatibility and downstream handoff index. Local
+qualification is repository- and environment-specific, not transferable proof.
 
 ## Source Of Truth
 
 | Need | File |
 |---|---|
-| Portable AI project context | `AGENTS.md` |
-| Trellis workflow phases and routing | `.trellis/workflow.md` |
-| Stable project rules | `.trellis/spec/` |
-| v3 task templates | `.trellis/templates/v3/` |
-| Hermes handoff command contract | `docs/runbooks/hermes-skill-invocation.md` |
+| Portable AI context | `AGENTS.md` |
+| Trellis phases and routing | `.trellis/workflow.md` |
+| Loop v1 runtime contracts | `.trellis/spec/project/loop-v1-*.md` |
+| Qualification and rollback | `.trellis/spec/project/loop-v1-qualification.md` |
+| Overlay ownership | `.trellis/spec/project/loop-v1-overlay-manifest.json` |
 
-Do not copy workflow-state blocks, routing tables, or phase text into generated
-handoff docs. Link to `.trellis/workflow.md` instead.
+## Activation Gate
 
-## Downstream Apply Order
+Admission requires an enabled config, a matching hash-addressed receipt for the
+exact committed runtime, and no local rollback marker. Receipt or environment
+drift fails closed. Removing a rollback marker never resumes a paused parent.
 
-1. Run `trellis update --dry-run` in the downstream repo.
-2. Resolve official Trellis update decisions first.
-3. Run the future mother-repo overlay dry run.
-4. Apply only manifest-listed files whose expected hashes match.
+## Compatibility
 
-The overlay must not write into `.trellis/tasks/**`, `.trellis/workspace/**`,
-`.trellis/.runtime/**`, `.trellis/.template-hashes.json`, or the
-`TRELLIS:START` managed block in `AGENTS.md`.
+- `current_trellis` remains an explicit parent selector.
+- `loop_v4` remains historical and cannot admit new work.
+- Local correctness does not require a remote, CI, installed hooks, or network.
+- Unknown or prohibited effects stop before execution.
 
-## Handoff Files
+## Downstream Order
 
-Required:
+Resolve official Trellis changes first, then validate the separately versioned
+Loop overlay. Stop on unknown ownership, overlapping scopes, or fingerprint
+drift. Preserve project data, generated runtime state, official metadata, and
+the managed `TRELLIS:START` block.
 
-- `README.md`
-- `HANDOFF.md`
-- `docs/runbooks/hermes-skill-invocation.md`
-
-Conditional:
-
-- `.hermes.md`, only when the downstream target expects Hermes Agent to read
-  repo-local context directly.
-
-## Hermes Package Contract
-
-The production handoff contract is file-based. A downstream Hermes-capable
-runtime may expose:
-
-```bash
-run-daily --analysis-mode hermes-handoff --json
-```
-
-Successful output must include `analysis_package_ref`. Invalid package input is
-reported as `handoff_package_invalid`, with the production contract using exit
-code `6`.
-
-This harness does not invoke Hermes live. It documents the contract so a
-downstream project can wire its own skill, CLI, or validation path.
-
-## Verification
-
-Use the M11 task verification commands before accepting a handoff update:
-
-```bash
-test -f README.md
-test -f HANDOFF.md
-test -f docs/runbooks/hermes-skill-invocation.md
-rg -n "analysis_package_ref|handoff_package_invalid|run-daily --analysis-mode hermes-handoff --json" HANDOFF.md docs/runbooks/hermes-skill-invocation.md
-git diff --check
-```
+This template does not authorize a downstream apply, pilot, push, release, or
+deployment.

@@ -14,7 +14,8 @@
 
 - Child evidence lives in each child `stage-report.md`.
 - Parent evidence lives in this `governance.md` and parent `prd.md`.
-- `state-events.jsonl` records parent state transitions.
+- `state-events.jsonl` records parent state transitions only for
+  `harness_state_machine`; Loop v1 lifecycle evidence remains ledger-owned.
 - Do not add legacy staged metadata.
 
 ## Protocol Gates

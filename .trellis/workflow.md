@@ -92,8 +92,11 @@ built-in `task.py archive` for that child. Child commit approval includes soft
 archive unless the user explicitly limits it. Parent task acceptance includes
 committing parent evidence and archiving the parent with built-in
 `task.py archive`. After soft archive, the child is evidence only and is no
-longer the active implementation target. Push still requires an explicit user
-command.
+longer the active implementation target. Parent archive moves its exact
+terminal child family first and the parent last into one archive month; linked
+children cannot be hard-archived directly. An incomplete family move blocks
+new archive work until `task.py archive-recover <transaction-id>`. Push still
+requires an explicit user command.
 
 ### Workspace System
 
@@ -171,12 +174,15 @@ Phase 3: Finish  → distill lessons + wrap-up
 [workflow-state:no_task]
 No active task. **A Direct answer** — pure Q&A / explanation / lookup / chat; no file writes + one-line answer + repo reads ≤ 2 files → AI judges, no override needed.
 **B Create a task** — any implementation / code change / build / refactor work. Entry sequence: (1) `python3 ./.trellis/scripts/task.py create "<title>"` to create the task (status=planning, breadcrumb switches to [workflow-state:planning] for brainstorm + jsonl phase guidance) → (2) load `trellis-brainstorm` skill to discuss requirements with the user and iterate on prd.md → (3) once prd is done and jsonl is curated, run `task.py start <task-dir>` to enter [workflow-state:in_progress] for the implementation skeleton. **"It looks small" is NOT grounds for downgrading B to A or C**.
-For parent/child, T3/T4, or high-risk T2 work: create a normal Trellis task first and then apply `.trellis/spec/project/index.md`; do not invent custom statuses or new `meta.staged_delivery` writes.
+For T3/T4 or high-risk T2 work, create the parent directly with `task.py create "<title>" --tier parent`; do not create a throwaway light task first. Omit `--workflow-mode` so `loop_v1.parent_default` is authoritative. When exact-valid configured qualification makes `loop_v1` the default, proceed without asking the user to choose the workflow again. Use `--workflow-mode current_trellis` only when the user explicitly requests that override. If implicit Loop admission fails, report the gate and stop; never silently downgrade. Light tasks remain Current Trellis, children inherit their parent, and existing tasks are unchanged. Apply `.trellis/spec/project/index.md`; do not invent custom statuses or new `meta.staged_delivery` writes.
 **C Inline change** (per-turn only, escape hatch for B) — the user's CURRENT message MUST contain one of: "skip trellis" / "no task" / "just do it" / "don't create a task" / "跳过 trellis" / "别走流程" / "小修一下" / "直接改" / "先别建任务" → briefly acknowledge ("ok, skipping trellis flow this turn"), then inline. **Without seeing one of these phrases you must NOT inline on your own**; do not invent an override the user never said.
 [/workflow-state:no_task]
 
 ### Phase 1: Plan
-- 1.0 Create task `[required · once]` (just `task.py create`; status enters planning)
+- 1.0 Create task `[required · once]` (choose light or parent up front; by
+  default a parent omits `--workflow-mode` so the repository default is
+  authoritative, and only an explicit user request supplies
+  `current_trellis`; status enters planning)
 - 1.1 Requirement exploration `[required · repeatable]`
 - 1.2 Research `[optional · repeatable]`
 - 1.3 Configure context `[required · once]` — Claude Code, Codex

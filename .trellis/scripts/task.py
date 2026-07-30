@@ -4,7 +4,7 @@
 Task Management Script.
 
 Usage:
-    python3 task.py create "<title>" [--slug <name>] [--tier light|child|parent] [--owner cc|codex|jym] [--touches <glob>] [--parent <dir>] [--package <pkg>]
+    python3 task.py create "<title>" [--slug <name>] [--tier light|child|parent] [--owner cc|codex|jym] [--touches <glob>] [--parent <dir>] [--package <pkg>] [--workflow-mode <mode>]
     python3 task.py add-context <dir> <file> <path> [reason] # Add jsonl entry
     python3 task.py validate <dir>              # Validate jsonl files
     python3 task.py list-context <dir>          # List jsonl entries
@@ -14,7 +14,9 @@ Usage:
     python3 task.py set-branch <dir> <branch>   # Set git branch
     python3 task.py set-base-branch <dir> <branch>  # Set PR target branch
     python3 task.py set-scope <dir> <scope>     # Set scope for PR title
-    python3 task.py archive <task-dir>          # Archive completed task
+    python3 task.py cancel <task-dir> --reason <reason> --authorized-by <user>
+    python3 task.py archive <task-dir>          # Archive completed/cancelled task
+    python3 task.py archive-orphans             # Sweep orphaned terminal families
     python3 task.py soft-archive <task-dir> --commit <hash>  # Soft archive v3 child
     python3 task.py claim <task-dir> --owner codex  # Claim task ownership
     python3 task.py release <task-dir>          # Release task ownership to jym
@@ -54,7 +56,10 @@ from common.tasks import iter_active_tasks, children_progress
 # Import command handlers from split modules (also re-exports for plan.py compatibility)
 from common.task_store import (
     cmd_create,
+    cmd_cancel,
     cmd_archive,
+    cmd_archive_orphans,
+    cmd_archive_recover,
     cmd_soft_archive,
     cmd_claim,
     cmd_release,
@@ -72,7 +77,7 @@ from common.task_context import (
 
 
 def refresh_board_after(command: str, return_code: int) -> None:
-    if return_code != 0 or command not in {"create", "archive", "soft-archive", "claim", "release"}:
+    if return_code != 0 or command not in {"create", "cancel", "archive", "soft-archive", "claim", "release"}:
         return
     repo_root = get_repo_root()
     board = repo_root / DIR_WORKFLOW / DIR_SCRIPTS / "board.py"
@@ -347,7 +352,10 @@ Usage:
   python3 task.py set-branch <dir> <branch>          Set git branch
   python3 task.py set-base-branch <dir> <branch>     Set PR target branch
   python3 task.py set-scope <dir> <scope>            Set scope for PR title
-  python3 task.py archive <task-dir>                 Archive completed task
+  python3 task.py cancel <task-dir> --reason <reason> --authorized-by <user>
+                                                    Cancel task with audit evidence
+  python3 task.py archive <task-dir>                 Archive completed/cancelled task
+  python3 task.py archive-recover <transaction-id>  Recover an archive transaction
   python3 task.py soft-archive <task-dir> --commit <hash>  Soft archive v3 child
   python3 task.py claim <task-dir> --owner codex     Claim task ownership
   python3 task.py release <task-dir>                 Release task ownership to jym
@@ -361,7 +369,7 @@ Monorepo options:
 
 List options:
   --mine, -m           Show only tasks assigned to current developer
-  --status, -s <s>     Filter by status (planning, in_progress, review, completed)
+  --status, -s <s>     Filter by status (planning, in_progress, review, completed, cancelled)
 
 Examples:
   python3 task.py create "Add login feature" --slug add-login
@@ -372,6 +380,7 @@ Examples:
   python3 task.py start .trellis/tasks/01-21-add-login
   python3 task.py current --source
   python3 task.py finish
+  python3 task.py cancel add-login --reason "superseded" --authorized-by jym
   python3 task.py archive add-login
   python3 task.py add-subtask parent-task child-task  # Link existing tasks
   python3 task.py remove-subtask parent-task child-task
@@ -438,6 +447,8 @@ def main() -> int:
                           help="task owner")
     p_create.add_argument("--touches", action="append", default=[],
                           help="Expected touched path glob; repeat or comma-separate")
+    p_create.add_argument("--workflow-mode",
+                          help="Parent workflow selector: current_trellis or loop_v1")
 
     # add-context
     p_add = subparsers.add_parser("add-context", help="Add context entry")
@@ -487,6 +498,33 @@ def main() -> int:
     p_archive.add_argument("--no-commit", action="store_true", help="Skip auto git commit after archive")
     p_archive.add_argument("--force-archive", action="store_true", help="Bypass done gate with audit reason")
     p_archive.add_argument("--reason", default="", help="Required with --force-archive")
+
+    p_archive_recover = subparsers.add_parser(
+        "archive-recover",
+        help="Recover an incomplete archive transaction",
+    )
+    p_archive_recover.add_argument("transaction_id", help="Exact archive transaction ID")
+
+    p_archive_orphans = subparsers.add_parser(
+        "archive-orphans",
+        help="Atomically sweep terminal children whose Current Trellis parents are archived",
+    )
+    p_archive_orphans.add_argument(
+        "--no-commit",
+        action="store_true",
+        help="Skip auto git commit after archive",
+    )
+
+    # cancel
+    p_cancel = subparsers.add_parser("cancel", help="Record an authorized terminal cancellation")
+    p_cancel.add_argument("name", help="Task directory or name")
+    p_cancel.add_argument("--reason", required=True, help="Non-empty cancellation reason")
+    p_cancel.add_argument("--authorized-by", required=True, help="User who explicitly authorized cancellation")
+    p_cancel.add_argument("--superseded-by", help="Optional superseding task or product reference")
+    p_cancel.add_argument("--rtm-disposition", choices=["removed", "deferred"],
+                          help="Required for linked child cancellation")
+    p_cancel.add_argument("--rtm-id", action="append", default=[],
+                          help="Exact parent RTM requirement ID; repeat for multiple rows")
 
     # soft-archive
     p_soft = subparsers.add_parser("soft-archive", help="Soft archive v3 child task")
@@ -544,7 +582,10 @@ def main() -> int:
         "set-branch": cmd_set_branch,
         "set-base-branch": cmd_set_base_branch,
         "set-scope": cmd_set_scope,
+        "cancel": cmd_cancel,
         "archive": cmd_archive,
+        "archive-orphans": cmd_archive_orphans,
+        "archive-recover": cmd_archive_recover,
         "soft-archive": cmd_soft_archive,
         "claim": cmd_claim,
         "release": cmd_release,

@@ -32,6 +32,11 @@ ARCHIVED_STATES = {
     "child": "child_archived",
 }
 
+CANCELLED_STATES = {
+    "parent": "parent_cancelled",
+    "child": "child_cancelled",
+}
+
 TRANSITIONS = {
     "parent": {
         ("parent_prd_draft", "prd_drafted"): "parent_waiting_completion_signal",
@@ -48,7 +53,13 @@ TRANSITIONS = {
 }
 
 ALL_STATES = {
-    kind: {INIT_STATES[kind], BLOCKED_STATES[kind], ARCHIVED_STATES[kind], *mapping.values()}
+    kind: {
+        INIT_STATES[kind],
+        BLOCKED_STATES[kind],
+        ARCHIVED_STATES[kind],
+        CANCELLED_STATES[kind],
+        *mapping.values(),
+    }
     for kind, mapping in TRANSITIONS.items()
 }
 
@@ -120,6 +131,87 @@ def apply_event(task_dir: Path | str, event: str, *, by: str = "agent", note: st
     return {"changed": True, "state_machine": new_machine}
 
 
+def cancel_task(
+    task_dir: Path | str,
+    *,
+    by: str,
+    cancellation: dict[str, Any],
+) -> dict[str, Any]:
+    """Atomically record one terminal cancellation event and task snapshot."""
+
+    task_path, log_path, task = _load_harness_task(task_dir)
+    reason = str(cancellation.get("reason") or "").strip()
+    authorized_at = str(cancellation.get("authorized_at") or "").strip()
+    if not by.strip() or not reason or not authorized_at:
+        raise StateMachineError("cancellation actor, reason, and authorized_at are required")
+
+    tier = task.get("tier")
+    machine = _state(task)
+    previous_state: str | None = None
+    current_state = "cancelled"
+    new_task = dict(task)
+    if task.get("status") == "completed":
+        raise StateMachineError("cannot cancel a completed task")
+
+    if tier in CANCELLED_STATES:
+        if not machine or machine.get("kind") != tier:
+            raise StateMachineError(f"{tier} state machine is not initialized")
+        previous_state = machine.get("current_state")
+        if previous_state not in ALL_STATES[tier]:
+            raise StateMachineError(f"invalid current state: {previous_state}")
+        if previous_state == ARCHIVED_STATES[tier]:
+            raise StateMachineError("cannot cancel an archived task")
+        current_state = CANCELLED_STATES[tier]
+        if task.get("status") == "cancelled" and previous_state != current_state:
+            raise StateMachineError("top-level cancelled status lacks terminal cancellation state")
+        if previous_state == current_state:
+            if task.get("status") == "cancelled" and task.get("cancellation") == cancellation:
+                return {"changed": False, "state_machine": machine}
+            raise StateMachineError("cancelled task metadata conflicts with its terminal state")
+
+        new_machine = dict(machine)
+        new_machine.update(
+            {
+                "current_state": current_state,
+                "previous_state": previous_state,
+                "last_event": "task_cancelled",
+                "blocked_from_state": None,
+                "updated_at": authorized_at,
+            }
+        )
+        new_task = _with_state(new_task, new_machine)
+    elif tier == "light":
+        if task.get("status") == "cancelled":
+            if task.get("cancellation") == cancellation:
+                return {"changed": False, "state_machine": None}
+            raise StateMachineError("cancelled task metadata conflicts with the request")
+        new_machine = None
+    else:
+        raise StateMachineError(f"unsupported task tier: {tier}")
+
+    new_task["status"] = "cancelled"
+    new_task["completedAt"] = None
+    new_task["cancelledAt"] = authorized_at[:10]
+    new_task["cancellation"] = cancellation
+
+    entry = _event_entry(
+        "task_cancelled",
+        str(tier),
+        previous_state,
+        current_state,
+        by,
+        reason,
+        authorized_at,
+    )
+    entry["reason"] = reason
+    for field in ("authorized_by", "superseded_by", "rtm_disposition", "rtm_ids"):
+        value = cancellation.get(field)
+        if value not in (None, "", []):
+            entry[field] = value
+    _write_task_and_log(task_path, new_task, log_path, entry)
+    return {"changed": True, "state_machine": new_machine}
+
+
 def status(task_dir: Path | str) -> dict[str, Any]:
     """Return current state metadata without mutating files."""
 
@@ -141,7 +233,10 @@ def archive_transition_events(kind: str, current: str) -> list[str]:
     archived = ARCHIVED_STATES[kind]
     if current == archived:
         return []
-    if current not in ALL_STATES[kind] or current == BLOCKED_STATES[kind]:
+    if current not in ALL_STATES[kind] or current in {
+        BLOCKED_STATES[kind],
+        CANCELLED_STATES[kind],
+    }:
         raise StateMachineError(f"cannot archive {kind} from state: {current}")
 
     events: list[str] = []
@@ -195,11 +290,12 @@ def _with_state(task: dict[str, Any], machine: dict[str, Any]) -> dict[str, Any]
 
 def _next_state(kind: str, current: str, event: str, blocked_from: Any) -> tuple[str, str | None]:
     blocked_state = BLOCKED_STATES[kind]
+    cancelled_state = CANCELLED_STATES[kind]
     if event == "blocker_opened":
         if current == blocked_state:
             raise StateMachineError("blocker is already open")
-        if current == ARCHIVED_STATES[kind]:
-            raise StateMachineError("cannot open blocker from archived state")
+        if current in {ARCHIVED_STATES[kind], cancelled_state}:
+            raise StateMachineError("cannot open blocker from terminal state")
         return blocked_state, current
 
     if event == "blocker_resolved":
@@ -211,6 +307,8 @@ def _next_state(kind: str, current: str, event: str, blocked_from: Any) -> tuple
 
     if current == blocked_state:
         raise StateMachineError("only blocker_resolved is valid while blocked")
+    if current == cancelled_state:
+        raise StateMachineError("cancelled state is terminal")
 
     try:
         return TRANSITIONS[kind][(current, event)], None

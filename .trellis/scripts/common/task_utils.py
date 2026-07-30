@@ -99,6 +99,34 @@ def find_task_by_name(task_name: str, tasks_dir: Path) -> Path | None:
     return None
 
 
+def find_archived_task_by_name(
+    task_name: str,
+    tasks_dir: Path,
+    *,
+    require_unique: bool = False,
+) -> Path | None:
+    """Find an archived task by exact directory name."""
+    if not task_name or not tasks_dir or not tasks_dir.is_dir():
+        return None
+
+    normalized = task_name.replace("\\", "/")
+    if Path(normalized).name != normalized:
+        return None
+
+    archive_dir = tasks_dir / "archive"
+    if not archive_dir.is_dir():
+        return None
+
+    matches = [
+        month_dir / normalized
+        for month_dir in sorted(archive_dir.iterdir())
+        if month_dir.is_dir() and (month_dir / normalized).is_dir()
+    ]
+    if require_unique and len(matches) != 1:
+        return None
+    return matches[0] if matches else None
+
+
 # =============================================================================
 # Archive Operations
 # =============================================================================

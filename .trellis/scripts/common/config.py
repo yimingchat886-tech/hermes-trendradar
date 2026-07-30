@@ -18,6 +18,8 @@ from .trellis_config import parse_simple_yaml
 DEFAULT_SESSION_COMMIT_MESSAGE = "chore: record journal"
 DEFAULT_MAX_JOURNAL_LINES = 2000
 DEFAULT_SESSION_AUTO_COMMIT = True
+DEFAULT_LOOP_V1_ADMISSION_ENABLED = False
+DEFAULT_LOOP_V1_PARENT_DEFAULT = "current_trellis"
 
 CONFIG_FILE = "config.yaml"
 
@@ -92,6 +94,22 @@ def get_session_auto_commit(repo_root: Path | None = None) -> bool:
         file=sys.stderr,
     )
     return DEFAULT_SESSION_AUTO_COMMIT
+
+
+def get_loop_v1_admission(repo_root: Path | None = None) -> tuple[bool, str]:
+    """Return the Loop v1 admission flag and parent default selector."""
+    config = _load_config(repo_root)
+    loop_v1 = config.get("loop_v1")
+    if not isinstance(loop_v1, dict):
+        return DEFAULT_LOOP_V1_ADMISSION_ENABLED, DEFAULT_LOOP_V1_PARENT_DEFAULT
+
+    enabled = _is_true_config_value(
+        loop_v1.get("admission_enabled", DEFAULT_LOOP_V1_ADMISSION_ENABLED)
+    )
+    parent_default = str(
+        loop_v1.get("parent_default", DEFAULT_LOOP_V1_PARENT_DEFAULT)
+    ).strip()
+    return enabled, parent_default or DEFAULT_LOOP_V1_PARENT_DEFAULT
 
 
 def get_hooks(event: str, repo_root: Path | None = None) -> list[str]:
