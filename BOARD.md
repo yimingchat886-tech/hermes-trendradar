@@ -8,7 +8,7 @@ owner=jym
 
 | Task | Tier | Owner | Status | Updated | Blocked |
 |---|---|---|---|---|---|
-| 07-06-sync-trellis-harness | light | codex | in_progress | 2026-07-06 17:54 | no |
+| - | - | - | - | - | - |
 
 ## Waiting For Acceptance
 
@@ -20,23 +20,4 @@ owner=jym
 
 ## Recent Archives (7d)
 
-- 07-08-docs-naming-archive-update-review (completed, 2026-07-08 08:08)
-- 07-06-runtime-test-files-profile-workspace (completed, 2026-07-07 21:31)
-- 07-05-trellis-workflow-migration-skill (completed, 2026-07-06 02:40)
-- 07-05-parent-v2-0-real-analysis-loop (completed, 2026-07-06 02:40)
-- 07-05-child-5-v2-0-m3-write-table-gate (completed, 2026-07-06 02:40)
-- 07-05-child-4-v2-0-human-feedback-intake (completed, 2026-07-06 02:40)
-- 07-05-child-3-v2-0-internal-digest-message (completed, 2026-07-06 02:40)
-- 07-05-child-2-v2-0-real-analysis-handoff-consumer (completed, 2026-07-06 02:40)
-- 07-05-child-1-v2-0-hermes-skill-invocation (completed, 2026-07-06 02:40)
-- 07-05-child-0-v2-0-release-prd (completed, 2026-07-06 02:40)
-- 07-04-workflow-v2-m6-3-worktree-parallel-trial (completed, 2026-07-06 02:40)
-- 07-04-workflow-v2-m6-2-merge-collision-protocol (completed, 2026-07-06 02:40)
-- 07-04-workflow-v2-m6-1-claim-guard-block (completed, 2026-07-06 02:40)
-- 07-04-workflow-v2-m5-4-acceptance-automation (completed, 2026-07-06 02:40)
-- 07-04-workflow-v2-m5-3-staging-deploy-g6 (completed, 2026-07-06 02:40)
-- 07-04-workflow-v2-m5-2-ci (completed, 2026-07-06 02:40)
-- 07-04-workflow-v2-m5-1-remote-branch-protection (completed, 2026-07-06 02:40)
-- 07-04-workflow-v2-m4-board (completed, 2026-07-06 02:40)
-- 07-04-workflow-v2-m3-pr-gates (completed, 2026-07-06 02:40)
-- 07-04-workflow-v2-m2-taskpy-gates (completed, 2026-07-06 02:40)
+- 07-06-sync-trellis-harness (completed, 2026-07-30 12:14)
