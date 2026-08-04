@@ -137,6 +137,23 @@ _SAFE_EFFECTS = frozenset(
         "qualification_receipt_write",
     }
 )
+_MANAGED_CHILD_COMPLETION_PATHS = (
+    Path(".trellis/workflow.md"),
+    Path(".trellis/scripts"),
+    Path(".trellis/templates/v3"),
+    Path(".agents/skills"),
+    Path(".codex"),
+)
+_CHILD_COMPLETION_COMPATIBILITY_PATHS = frozenset(
+    {
+        Path(".trellis/scripts/common/task_store.py"),
+        Path(".trellis/scripts/loop_v1/qualification.py"),
+    }
+)
+_MANAGED_TASK_CLI_PATH = Path(".trellis/scripts/task.py")
+_MANAGED_TEXT_SUFFIXES = frozenset(
+    {".json", ".md", ".py", ".toml", ".txt", ".yaml", ".yml"}
+)
 
 
 class QualificationError(RuntimeError):
@@ -603,6 +620,7 @@ def check_overlay_conformance(
     manifest = load_overlay_manifest(manifest_file)
     entries = manifest["entries"]
     issues: list[str] = []
+    issues.extend(_managed_child_completion_issues(root))
     owner_evidence: dict[str, dict[str, str]] = {}
     metadata_root = installed if installed_root is not None else root
     try:
@@ -667,6 +685,48 @@ def check_overlay_conformance(
     }
     result["evidence_digest"] = digest_json(result)
     return result
+
+
+def _managed_child_completion_issues(repo_root: Path) -> list[str]:
+    """Reject deprecated commands from maintained forward-facing surfaces."""
+
+    issues: list[str] = []
+    for relative in _MANAGED_CHILD_COMPLETION_PATHS:
+        target = repo_root / relative
+        files = [target] if target.is_file() else (
+            sorted(path for path in target.rglob("*") if path.is_file())
+            if target.is_dir()
+            else []
+        )
+        for path in files:
+            path_relative = path.relative_to(repo_root)
+            if "tests" in path_relative.parts:
+                continue
+            if path.suffix.lower() not in _MANAGED_TEXT_SUFFIXES:
+                continue
+            try:
+                text = path.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError) as exc:
+                issues.append(
+                    f"managed child completion surface is unreadable: "
+                    f"{path_relative.as_posix()}: {exc}"
+                )
+                continue
+            if path_relative == _MANAGED_TASK_CLI_PATH:
+                if "complete-child" not in text:
+                    issues.append(
+                        "managed task CLI does not expose complete-child: "
+                        + path_relative.as_posix()
+                    )
+                continue
+            if path_relative in _CHILD_COMPLETION_COMPATIBILITY_PATHS:
+                continue
+            if "soft-archive" in text:
+                issues.append(
+                    "managed forward child completion caller uses soft-archive: "
+                    + path_relative.as_posix()
+                )
+    return issues
 
 
 def _copy_manifest_entries(

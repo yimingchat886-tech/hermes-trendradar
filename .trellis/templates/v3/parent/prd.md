@@ -13,6 +13,14 @@
 
 - TODO
 
+## Requirements
+
+- `TODO-REQ-001` [owner: TODO]: Replace with one canonical requirement.
+
+## Verification Commands
+
+- `TODO`
+
 ## Evidence Model
 
 - `task.json.meta.workflow_mode` selects the parent lifecycle authority.

@@ -99,7 +99,12 @@ def task_state(task: TaskInfo | object) -> str:
 
 
 def is_done_state(status: str) -> bool:
-    return status in {"completed", "done", "cancelled"} or status.endswith(("_archived", "_cancelled"))
+    return status in {
+        "completed",
+        "done",
+        "cancelled",
+        "child_completed",
+    } or status.endswith(("_archived", "_cancelled"))
 
 
 def children_progress(

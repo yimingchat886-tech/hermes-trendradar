@@ -2,17 +2,35 @@
 
 ## Scope
 
-This contract governs selection of a task workflow mode at `task.py create`.
-It introduces the Loop v1 boundary without admitting a Loop runtime during the
-current-Trellis bootstrap.
+This contract governs retained Loop v1 lifecycle admission and compatibility.
+When `taskrun_v1.new_code_tasks: true`, it is read-only for existing tasks and
+archives: new concurrent or unattended code work selects TaskRun strategy
+`loop`, not Loop lifecycle mode. The historical selector below remains active
+only in repositories that have not enabled TaskRun cutover.
 
-## Selector
+## TaskRun Cutover Precedence
+
+```text
+task.py create <title> [--strategy single|loop]
+task.py start <task> --taskrun-input <json>
+```
+
+- Omitted strategy means TaskRun `single`; explicit `loop` uses the same
+  TaskRun SQLite lifecycle authority.
+- Any `--workflow-mode` request fails before task, parent, active-pointer,
+  Board, ledger, or runtime mutation.
+- A new child cannot extend an existing HSM or Loop parent after cutover or
+  mutate an already-admitted TaskRun parent projection.
+- Existing Loop tasks, ledgers, archives, validation, recovery, and retirement
+  remain under their original authority and are not rewritten.
+
+## Legacy Selector
 
 ```text
 task.py create <title> --tier parent --workflow-mode current_trellis|loop_v1
 ```
 
-- `--workflow-mode` is the canonical explicit selector and is parent-only.
+- `--workflow-mode` is the retained pre-cutover selector and is parent-only.
 - `current_trellis` stores the existing internal mode `harness_state_machine`.
 - `loop_v1` is recognized but cannot be admitted until both configuration and
   runtime qualification gates pass.
@@ -115,6 +133,8 @@ A rejected request leaves all of those surfaces unchanged.
 
 ## Parent And Child Rules
 
+- With TaskRun cutover enabled, these creation rules are disabled; only
+  read-only compatibility and the existing lifecycle's own operations remain.
 - A parent without an explicit selector uses `loop_v1.parent_default`.
 - The bootstrap default creates the same `harness_state_machine` parent as
   current Trellis.
@@ -152,6 +172,10 @@ A rejected request leaves all of those surfaces unchanged.
   deploy, force-ref change, and destructive cleanup remain separate commands.
 
 ## Verification
+
+The cutover matrix must prove TaskRun `single` default, explicit TaskRun
+`loop`, rejected HSM/Loop admission with zero mutation, and byte-stable existing
+task/ledger/archive evidence.
 
 Focused tests must cover disabled admission, historical and unknown selectors,
 the missing-qualification gate, rejection of enabled admission with a Current

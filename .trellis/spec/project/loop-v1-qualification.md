@@ -4,6 +4,9 @@
 
 Use this contract when changing Loop v1 qualification, receipt identity,
 admission, operation-time receipt checks, rollback, or overlay ownership.
+When `taskrun_v1.new_code_tasks: true`, qualification remains valid evidence for
+existing Loop-owned work and distribution checks but cannot select a new Loop
+lifecycle; new concurrent or unattended work uses TaskRun strategy `loop`.
 Qualification is local-only. It must not mutate the canonical repository or any
 downstream repository by updating the official base, applying an overlay,
 starting a pilot, or synchronizing repositories. Qualification must exercise one local

@@ -144,20 +144,20 @@ Inputs:
 - `manifest_path` is a real source-owned path without symlink components.
 - `scratch_root` is an existing real directory disjoint from source and target.
 - `.trellis/config.yaml` remains target-local project data. Deployment never
-  copies source receipt/default settings into it. A target may declare Loop v1
-  open only after separate target-local qualification binds an exact-valid
-  receipt with `admission_enabled: true` and `parent_default: loop_v1`; new
-  parents then consume that default without another workflow-choice prompt.
+  copies source receipt/default settings or `taskrun_v1.new_code_tasks`
+  activation into it. New target tasks use TaskRun only after a separate
+  target-local change enables cutover against the verified installed payload.
+  Existing Loop tasks retain their original qualification and lifecycle.
 - A target configured as `downstream_project` uses
   `qualification_layers.admission_mode: installed_runtime` with exact
   repository-relative artifact/local-runtime receipt paths and digests.
   Admission verifies those target-local receipts and installed managed bytes
   without reading the source checkout; project Git and task state are excluded.
 - Source planning, apply, transaction verify, and receipt production retain
-  strict `source_release` qualification. Once install/update and target-local
-  activation complete, later `installed_runtime` Loop create, advance,
-  integration, recovery, and cancellation use only target-local runtime
-  identity and remain operable when the canonical source checkout is
+  strict `source_release` qualification. A pre-cutover target may separately
+  activate local Loop admission; after TaskRun cutover only already-recorded
+  Loop advance, integration, recovery, and cancellation use that target-local
+  runtime identity and remain operable when the canonical source checkout is
   unavailable.
 
 Manifest schema v2 adds:

@@ -98,10 +98,12 @@ from .task_archive import (
 )
 from .worker_commit import (
     DirtOverlapError,
+    GitStateError,
     ParentValidationError,
     commit_reviewed_candidate,
     create_child_worktree,
     record_precommit_review,
+    release_owned_worktree,
     scan_repository_dirt,
     validate_child_candidate,
 )
@@ -1724,6 +1726,74 @@ def _worktree_for_child(snapshot: Mapping[str, object], child_id: str) -> str:
     return _required_text(rows[0].get("worktree"), "worktree")
 
 
+def _release_child_scratch(
+    ledger: ParentLedger,
+    snapshot: Mapping[str, object],
+    child_id: str,
+    *,
+    require_quiescence: bool = False,
+) -> None:
+    commit_rows = [
+        row
+        for row in _table(snapshot, "git_operations")
+        if row.get("git_operation_id") == f"child-commit:{child_id}"
+    ]
+    if commit_rows:
+        if len(commit_rows) != 1:
+            raise GitStateError("child commit release authority is ambiguous")
+        release_owned_worktree(
+            ledger,
+            operation_id=str(commit_rows[0]["operation_id"]),
+            runtime_root=_worktree_root(ledger.repo_root, ledger.run_id),
+        )
+        return
+
+    result_rows = [
+        row
+        for row in _table(snapshot, "operations")
+        if row.get("kind") == "worker_result_observed"
+        and _json_field(row, "outcome_json").get("child_id") == child_id
+    ]
+    if len(result_rows) != 1:
+        raise GitStateError("worktree retained without one durable worker dirt identity")
+    if require_quiescence and not any(
+        child_id in _json_field(row, "outcome_json").get("child_ids", [])
+        for row in _table(snapshot, "operations")
+        if row.get("kind") == "worker_dispatch_quiesced"
+        and row.get("phase") == "authority_committed"
+    ):
+        raise GitStateError("worktree retained until its worker dispatch is quiescent")
+    release_owned_worktree(
+        ledger,
+        operation_id=str(result_rows[0]["operation_id"]),
+        runtime_root=_worktree_root(ledger.repo_root, ledger.run_id),
+    )
+
+
+def _release_candidate_scratch(
+    ledger: ParentLedger,
+    snapshot: Mapping[str, object],
+    child_id: str,
+) -> None:
+    rows = [
+        row
+        for row in _table(snapshot, "operations")
+        if row.get("kind") == "integration_candidate"
+        and _json_field(row, "outcome_json").get("child_id") == child_id
+        and _json_field(row, "outcome_json").get("status")
+        in {"candidate_failed", "integrated"}
+    ]
+    if not rows:
+        return
+    if len(rows) != 1:
+        raise GitStateError("candidate release authority is ambiguous")
+    release_owned_worktree(
+        ledger,
+        operation_id=str(rows[0]["operation_id"]),
+        runtime_root=_worktree_root(ledger.repo_root, ledger.run_id),
+    )
+
+
 def _node_for_child(
     snapshot: Mapping[str, object], child_id: str
 ) -> dict[str, Any]:
@@ -2293,6 +2363,73 @@ def _record_worker_dispatch_quiescence(
     return outcome
 
 
+def _record_worker_result_observation(
+    ledger: ParentLedger,
+    lease: WriterLease,
+    snapshot: Mapping[str, object],
+    result: Mapping[str, object],
+    payload_digest: str,
+) -> dict[str, object]:
+    child_id = _required_text(result.get("child_id"), "child_id")
+    result_id = _required_text(result.get("result_id"), "result_id")
+    worktrees = [
+        row
+        for row in _table(snapshot, "git_operations")
+        if row.get("git_operation_id") == f"child-worktree:{child_id}"
+    ]
+    if len(worktrees) != 1:
+        raise OrchestratorError("worker result lacks one child worktree authority")
+    worktree = worktrees[0]
+    if (
+        worktree.get("expected_old_ref") != result.get("base_head")
+        or worktree.get("tree_id") != result.get("base_tree_id")
+    ):
+        raise OrchestratorError("worker result base differs from worktree authority")
+    outcome = {
+        "actual_touches": sorted(str(item) for item in result["actual_touches"]),
+        "allowed_touches": sorted(
+            str(item) for item in _node_for_child(snapshot, child_id)["touches"]
+        ),
+        "base_head": str(result["base_head"]),
+        "base_tree_id": str(result["base_tree_id"]),
+        "branch": _required_text(worktree.get("branch"), "branch"),
+        "child_id": child_id,
+        "diff_identity": str(result["diff_identity"]),
+        "payload_digest": payload_digest,
+        "result_id": result_id,
+        "result_tree_id": str(result["result_tree_id"]),
+        "worktree": _required_text(worktree.get("worktree"), "worktree"),
+    }
+    operation_id = f"worker-result-observed:{result_id}"
+    with ledger._write_transaction(lease) as connection:
+        existing = connection.execute(
+            "SELECT * FROM operations WHERE operation_id = ?", (operation_id,)
+        ).fetchone()
+        if existing is not None:
+            if (
+                existing["kind"] != "worker_result_observed"
+                or existing["phase"] != "authority_committed"
+                or existing["input_fingerprint"] != payload_digest
+                or json.loads(existing["outcome_json"]) != outcome
+            ):
+                raise OperationConflict(
+                    "worker result observation identity was reused with new input"
+                )
+            return outcome
+        _insert_committed_operation(
+            connection,
+            ledger,
+            operation_id=operation_id,
+            kind="worker_result_observed",
+            epoch=lease.epoch,
+            input_fingerprint=payload_digest,
+            outcome=outcome,
+            event_type="worker_result_observed",
+            created_at=_now(),
+        )
+    return outcome
+
+
 def _replacement_guidance_binding(
     snapshot: Mapping[str, object],
     problem: Mapping[str, object],
@@ -2639,6 +2776,28 @@ def _prepare_recovery_replacement(
             child_id=child_id,
             reason=f"bounded replacement for {problem['problem_id']}",
         )
+    if problem.get("operation_phase") != "resume_stale":
+        try:
+            release_snapshot = ledger.authority_snapshot()
+            for child_id in replaced:
+                _release_child_scratch(
+                    ledger,
+                    release_snapshot,
+                    child_id,
+                    require_quiescence=problem.get("operation_phase")
+                    in {"worker_result", "worker_validation"},
+                )
+                _release_candidate_scratch(ledger, release_snapshot, child_id)
+        except GitStateError as exc:
+            return _pause_for_intervention(
+                state,
+                ledger,
+                lease,
+                details=f"superseded worktree retained: {exc}",
+                signals=_intervention_signals(
+                    "unknown_effect_data_loss_or_user_dirt"
+                ),
+            )
     if problem.get("operation_phase") in {
         "final_integration_checks",
         "final_review",
@@ -2998,6 +3157,18 @@ def _advance_once(
             author_name=_OPERATOR_AUTHOR_NAME,
             author_email=_OPERATOR_AUTHOR_EMAIL,
         )
+        try:
+            _release_child_scratch(ledger, ledger.authority_snapshot(), child_id)
+        except GitStateError as exc:
+            return _pause_for_intervention(
+                state,
+                ledger,
+                lease,
+                details=f"committed child worktree retained: {exc}",
+                signals=_intervention_signals(
+                    "unknown_effect_data_loss_or_user_dirt"
+                ),
+            )
         return None
 
     awaiting_review = sorted(
@@ -3022,6 +3193,23 @@ def _advance_once(
     ]
     if committed_selection:
         child_id = committed_selection[0]
+        try:
+            _release_child_scratch(ledger, snapshot, child_id)
+            for integrated_child_id, child_state in states.items():
+                if child_state == "integrated":
+                    _release_candidate_scratch(
+                        ledger, snapshot, integrated_child_id
+                    )
+        except GitStateError as exc:
+            return _pause_for_intervention(
+                state,
+                ledger,
+                lease,
+                details=f"integration scratch retained: {exc}",
+                signals=_intervention_signals(
+                    "unknown_effect_data_loss_or_user_dirt"
+                ),
+            )
         integration_id = f"operator-{child_id}"
         runtime_root = _worktree_root(ledger.repo_root, ledger.run_id)
         policy = _operator_policy(_current_envelope(snapshot))
@@ -3210,6 +3398,25 @@ def _advance_once(
                 ),
                 signals=_intervention_signals("ambiguous_product_semantics"),
             )
+        try:
+            release_snapshot = ledger.authority_snapshot()
+            for child_id, child_state in _active_child_states(
+                release_snapshot
+            ).items():
+                if child_state == "integrated":
+                    _release_candidate_scratch(
+                        ledger, release_snapshot, child_id
+                    )
+        except GitStateError as exc:
+            return _pause_for_intervention(
+                state,
+                ledger,
+                lease,
+                details=f"verified candidate worktree retained: {exc}",
+                signals=_intervention_signals(
+                    "unknown_effect_data_loss_or_user_dirt"
+                ),
+            )
         final_review = _latest_final_review(snapshot)
         if final_review is None:
             return _final_review_action(state, ledger)
@@ -3362,6 +3569,7 @@ def advance_operator(repo_root: Path, run_id: str) -> dict[str, object]:
             if _parent_row(ledger)["status"] in {
                 "cancelled",
                 "archived",
+                "paused",
                 "recovery_waiting",
                 "revoked",
             }:
@@ -3736,6 +3944,13 @@ def ingest_operator(
                 raise OrchestratorError("worker result is outside the pending dispatch")
             validation_error = None
             accepted = accept_child_result(ledger, lease, payload)
+            _record_worker_result_observation(
+                ledger,
+                lease,
+                ledger.authority_snapshot(),
+                accepted["result"],
+                str(accepted["payload_digest"]),
+            )
             if not accepted["accepted"]:
                 validation_error = (
                     "required test did not pass: "

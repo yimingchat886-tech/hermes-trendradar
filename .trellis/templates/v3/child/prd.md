@@ -4,15 +4,18 @@
 
 {description}
 
-## REQ-ID
+## Accepted PRD Binding
 
-- TODO-REQ-001: Replace with the accepted child requirement.
+- Git commit: `TODO`
+- PRD paths: `TODO`
+- REQ IDs: `TODO-REQ-001`
 
 ## Evidence Model
 
-- `task.json.meta.workflow_mode` is `harness_state_machine`.
-- `state-events.jsonl` records state transitions.
-- `stage-report.md` records acceptance, verification, commit, and soft-archive evidence.
+- `task.json.meta.workflow_mode` selects the lifecycle authority.
+- `state-events.jsonl` records transitions only for `harness_state_machine`;
+  TaskRun tasks do not create that stream.
+- `stage-report.md` records acceptance, verification, commit, and child-completion evidence.
 - Do not add legacy staged metadata.
 
 ## Verification Commands

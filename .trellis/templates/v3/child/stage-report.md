@@ -16,14 +16,14 @@ Do not copy the phrase table into this report.
 - Raw signal:
 - Received at:
 - Allows commit:
-- Allows soft archive:
+- Allows child completion:
 - Explicit limits:
 - Push allowed:
 
-## Commit / Soft Archive
+## Commit / Child Completion
 
 - Work commit:
-- Soft archive:
+- Child completion:
 
 ## CI Run / Staging Verification
 

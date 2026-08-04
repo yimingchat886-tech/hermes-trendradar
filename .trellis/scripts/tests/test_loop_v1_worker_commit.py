@@ -16,6 +16,7 @@ sys.path.insert(0, str(SCRIPT_DIR))
 from loop_v1 import (
     DirtOverlapError,
     FreshnessError,
+    GitStateError,
     ParentLedger,
     ParentValidationError,
     ReviewError,
@@ -32,7 +33,7 @@ from loop_v1 import (
     scan_repository_dirt,
     validate_child_candidate,
 )
-from loop_v1.worker_commit import _run_parent_check
+from loop_v1.worker_commit import _run_parent_check, release_owned_worktree
 
 
 def git(repo: Path, *args: str) -> str:
@@ -703,6 +704,77 @@ class LoopV1WorkerCommitTests(unittest.TestCase):
             )
             self.assertEqual(git(runtime["worktree"], "status", "--porcelain"), "")
             self.assertEqual(child_state(runtime), "committed")
+
+    def test_released_child_replays_from_git_authority_and_partial_state_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            runtime = setup_runtime(Path(tmp))
+            (runtime["worktree"] / "src/app.txt").write_text(
+                "candidate\n", encoding="utf-8"
+            )
+            validation = validate(runtime, accepted_result(runtime))
+            review = record_precommit_review(
+                runtime["ledger"],
+                runtime["lease"],
+                review_id="review-1",
+                validation_id=validation["validation_id"],
+                reviewer_identity="model:codex",
+                verdict="passed",
+                required_findings=[],
+                advisory_findings=[],
+                dispositions=[],
+            )
+            committed = commit_reviewed_candidate(
+                runtime["ledger"],
+                runtime["lease"],
+                operation_id="commit-1",
+                review_id=review["review_id"],
+                message="child candidate",
+                author_name="Loop Parent",
+                author_email="parent@example.test",
+            )
+
+            released = release_owned_worktree(
+                runtime["ledger"],
+                operation_id="commit-1",
+                runtime_root=Path(tmp) / "worktrees",
+            )
+            self.assertTrue(released["removed"])
+            self.assertFalse(runtime["worktree"].exists())
+            replay = commit_reviewed_candidate(
+                runtime["ledger"],
+                runtime["lease"],
+                operation_id="commit-1",
+                review_id=review["review_id"],
+                message="child candidate",
+                author_name="Loop Parent",
+                author_email="parent@example.test",
+            )
+            self.assertEqual(replay, committed)
+            self.assertEqual(
+                create_child_worktree(
+                    runtime["ledger"],
+                    runtime["lease"],
+                    operation_id="worktree-create-1",
+                    child_id="child-a",
+                    packet_id="packet-1",
+                    worktree=runtime["worktree"],
+                    branch="loop-v1/child-a",
+                    integration_worktree=Path(tmp) / "integration",
+                ),
+                runtime["worktree_result"],
+            )
+
+            runtime["worktree"].mkdir(parents=True)
+            with self.assertRaisesRegex(GitStateError, "partial path/registration"):
+                commit_reviewed_candidate(
+                    runtime["ledger"],
+                    runtime["lease"],
+                    operation_id="commit-1",
+                    review_id=review["review_id"],
+                    message="child candidate",
+                    author_name="Loop Parent",
+                    author_email="parent@example.test",
+                )
 
 
 if __name__ == "__main__":

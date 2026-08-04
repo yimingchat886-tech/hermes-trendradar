@@ -42,12 +42,15 @@ python3 ./.trellis/scripts/get_context.py --mode packages   # list packages / la
 Every task has its own directory under `.trellis/tasks/{MM-DD-name}/` holding `prd.md`, `implement.jsonl`, `check.jsonl`, `task.json`, optional `research/`, `info.md`.
 
 ```bash
-# Task lifecycle
-python3 ./.trellis/scripts/task.py create "<title>" [--slug <name>] [--parent <dir>]
-python3 ./.trellis/scripts/task.py start <name>          # set active task (session-scoped when available)
+# Task lifecycle when taskrun_v2.new_code_tasks is true
+python3 ./.trellis/scripts/task.py create "<title>" [--slug <name>] [--parent <dir>] [--strategy single|loop]
+python3 ./.trellis/scripts/task.py start <name> --taskrun-input <json>
+
+# A task whose stored workflow_mode is neither taskrun_v1 nor taskrun_v2 keeps its legacy start
+python3 ./.trellis/scripts/task.py start <name>
 python3 ./.trellis/scripts/task.py current --source      # show active task and source
-python3 ./.trellis/scripts/task.py finish                # clear active task (triggers after_finish hooks)
-python3 ./.trellis/scripts/task.py archive <name>        # move to archive/{year-month}/
+python3 ./.trellis/scripts/task.py finish                # clear active task (legacy modes trigger after_finish hooks)
+python3 ./.trellis/scripts/task.py archive <name>        # eligible legacy tasks only
 python3 ./.trellis/scripts/task.py list [--mine] [--status <s>]
 python3 ./.trellis/scripts/task.py list-archive
 
@@ -73,25 +76,25 @@ python3 ./.trellis/scripts/task.py create-pr [name] [--dry-run]
 
 > Run `python3 ./.trellis/scripts/task.py --help` to see the authoritative, up-to-date list.
 
-**Current-task mechanism**: `task.py create` creates the task directory and (when session identity is available) auto-sets the per-session active-task pointer so the planning breadcrumb fires immediately. `task.py start` writes the same pointer (idempotent if already set) and flips `task.json.status` from `planning` to `in_progress`. State is stored under `.trellis/.runtime/sessions/`. If no context key is available from hook input, `TRELLIS_CONTEXT_ID`, or a platform-native session environment variable, there is no active task and `task.py start` fails with a session identity hint. `task.py finish` deletes the current session file (status unchanged). `task.py archive <task>` writes `status=completed`, moves the directory to `archive/`, and deletes any runtime session files that still point at the archived task.
+**Current-task mechanism**: with `taskrun_v2.new_code_tasks: true`, `task.py create` marks the task as `taskrun_v2`, defaults to `single`, and (when session identity is available) auto-sets the per-session active-task pointer so the planning breadcrumb fires immediately. When the v2 key is absent, a retained downstream `taskrun_v1.new_code_tasks: true` key enables the same v2 creation path without rewriting target configuration; existing v1 tasks keep v1. `task.py start --taskrun-input <json>` admits or exactly reopens that task's one TaskRun and projects `status=running`; the input contract is defined in [`.trellis/spec/project/taskrun-runtime.md`](spec/project/taskrun-runtime.md). State is stored under `.trellis/.runtime/sessions/`. A missing session identity prevents only the non-authoritative active pointer, not TaskRun admission. `task.py finish` deletes the current session file (status unchanged). Repositories with cutover disabled and tasks whose stored mode is not TaskRun keep the historical create/start/lifecycle behavior.
 
 ### Legacy Staged Delivery Overlay
 
 Do not create new `staged_overlay` / `meta.staged_delivery` tasks or templates.
 Those fields are legacy read-compatibility inputs only.
 
-New v3 parent/child work uses `task.json.meta.workflow_mode =
-"harness_state_machine"`, `meta.state_machine`, `state-events.jsonl`, and
-evidence files. Keep `task.json.status` on the normal `planning ->
-in_progress -> completed` lifecycle; do not add custom task statuses.
+Existing v3 parent/child work keeps `task.json.meta.workflow_mode =
+"harness_state_machine"`, `meta.state_machine.schema_version = 2`,
+`state-events.jsonl`, and evidence files. Do not extend that authority with new
+children after TaskRun cutover.
 
-Harness child tasks use `task.py soft-archive` after the user completion or
+Existing Harness child tasks use `task.py complete-child` after the user completion or
 commit-approval signal: commit the approved child scope, record the commit in
 `stage-report.md`, keep the child task directory in place, and do not call
-built-in `task.py archive` for that child. Child commit approval includes soft
-archive unless the user explicitly limits it. Parent task acceptance includes
+built-in `task.py archive` for that child. Child commit approval includes child
+completion unless the user explicitly limits it. Parent task acceptance includes
 committing parent evidence and archiving the parent with built-in
-`task.py archive`. After soft archive, the child is evidence only and is no
+`task.py archive`. After child completion, the child is evidence only and is no
 longer the active implementation target. Parent archive moves its exact
 terminal child family first and the parent last into one archive month; linked
 children cannot be hard-archived directly. An incomplete family move blocks
@@ -143,14 +146,12 @@ python3 ./.trellis/scripts/get_context.py --mode phase --step <X.Y>  # detailed 
     [workflow-state:no_task]      → no active task; before Phase 1
     [workflow-state:planning]     → all of Phase 1 (status='planning')
     [workflow-state:in_progress]  → Phase 2 + Phase 3.1-3.4
-                                    (status stays 'in_progress' from
-                                    task.py start until task.py archive)
-    [workflow-state:completed]    → currently DEAD: cmd_archive flips
-                                    status and moves the dir in the same
-                                    call, so the resolver loses the
-                                    pointer (block kept for a future
-                                    explicit in_progress→completed
-                                    transition)
+                                    (TaskRun status='running'; legacy status
+                                    stays 'in_progress' until legacy close)
+    [workflow-state:completed]    → TaskRun completed/cancelled terminal
+                                    projection; status-only close leaves the
+                                    task in place until task.py finish clears
+                                    the session pointer
 
   Editing checklist:
     - When you change a [workflow-state:STATUS] block, also check the
@@ -173,29 +174,29 @@ Phase 3: Finish  → distill lessons + wrap-up
 
 [workflow-state:no_task]
 No active task. **A Direct answer** — pure Q&A / explanation / lookup / chat; no file writes + one-line answer + repo reads ≤ 2 files → AI judges, no override needed.
-**B Create a task** — any implementation / code change / build / refactor work. Entry sequence: (1) `python3 ./.trellis/scripts/task.py create "<title>"` to create the task (status=planning, breadcrumb switches to [workflow-state:planning] for brainstorm + jsonl phase guidance) → (2) load `trellis-brainstorm` skill to discuss requirements with the user and iterate on prd.md → (3) once prd is done and jsonl is curated, run `task.py start <task-dir>` to enter [workflow-state:in_progress] for the implementation skeleton. **"It looks small" is NOT grounds for downgrading B to A or C**.
-For T3/T4 or high-risk T2 work, create the parent directly with `task.py create "<title>" --tier parent`; do not create a throwaway light task first. Omit `--workflow-mode` so `loop_v1.parent_default` is authoritative. When exact-valid configured qualification makes `loop_v1` the default, proceed without asking the user to choose the workflow again. Use `--workflow-mode current_trellis` only when the user explicitly requests that override. If implicit Loop admission fails, report the gate and stop; never silently downgrade. Light tasks remain Current Trellis, children inherit their parent, and existing tasks are unchanged. Apply `.trellis/spec/project/index.md`; do not invent custom statuses or new `meta.staged_delivery` writes.
+**B Create a task** — any implementation / code change / build / refactor work. First read `.trellis/config.yaml`. With `taskrun_v2.new_code_tasks: true` (or the retained downstream v1 activation key): (1) `task.py create "<title>"` creates a `taskrun_v2` `single` (`--strategy loop` is explicit concurrent/unattended work) → (2) load `trellis-brainstorm` and, for PRD work, `.trellis/spec/project/prd-governance.md` → (3) after an accepted commit/path/REQ binding exists and the user explicitly authorizes start, run `task.py start <task-dir> --taskrun-input <json>` using the exact accepted execution binding from [`.trellis/spec/project/taskrun-runtime.md`](spec/project/taskrun-runtime.md). With cutover disabled or absent, follow the retained selector/start contract in [`.trellis/spec/project/loop-v1-admission.md`](spec/project/loop-v1-admission.md). **"It looks small" is NOT grounds for downgrading B to A or C**.
+For T3/T4 or high-risk T2 work, create the parent directly with `--tier parent`; do not create a throwaway light task first. Under TaskRun cutover, do not supply `--workflow-mode`: new HSM and independent Loop lifecycle admission are disabled. Otherwise omit `--workflow-mode` so the configured default remains authoritative, use `current_trellis` only as an explicit override, and stop rather than silently downgrade if implicit Loop admission fails. Recorded tasks remain under their original authority. Apply `.trellis/spec/project/index.md`; do not invent custom statuses or new `meta.staged_delivery` writes.
 **C Inline change** (per-turn only, escape hatch for B) — the user's CURRENT message MUST contain one of: "skip trellis" / "no task" / "just do it" / "don't create a task" / "跳过 trellis" / "别走流程" / "小修一下" / "直接改" / "先别建任务" → briefly acknowledge ("ok, skipping trellis flow this turn"), then inline. **Without seeing one of these phrases you must NOT inline on your own**; do not invent an override the user never said.
 [/workflow-state:no_task]
 
 ### Phase 1: Plan
-- 1.0 Create task `[required · once]` (choose light or parent up front; by
-  default a parent omits `--workflow-mode` so the repository default is
-  authoritative, and only an explicit user request supplies
-  `current_trellis`; status enters planning)
+- 1.0 Create task `[required · once]` (choose light or parent up front; when
+  cutover is enabled TaskRun `single` is default and `--strategy loop` is
+  explicit; status enters planning)
 - 1.1 Requirement exploration `[required · repeatable]`
 - 1.2 Research `[optional · repeatable]`
 - 1.3 Configure context `[required · once]` — Claude Code, Codex
-- 1.4 Activate task `[required · once]` (run `task.py start`; status → in_progress)
+- 1.4 Activate task `[required · once]` (dispatch start from the stored mode;
+  TaskRun uses `--taskrun-input` and projects running)
 - 1.5 Completion criteria
 
 <!-- Per-turn breadcrumb: shown throughout Phase 1 (status='planning') -->
 
 [workflow-state:planning]
-Load the `trellis-brainstorm` skill and iterate on prd.md with the user.
-If `task.json.meta.workflow_mode = "harness_state_machine"`, also read `.trellis/spec/project/index.md`, create the required parent/child planning artifacts, and keep fine-grained workflow facts in `meta.state_machine`, `state-events.jsonl`, and evidence files rather than changing `task.json.status`.
+Load `trellis-brainstorm`; for PRD work also read `.trellis/spec/project/prd-governance.md`. Iterate on prd.md with the user and do not start without an accepted commit/path/REQ binding plus explicit start authority.
+If this is an existing `harness_state_machine` task, also read `.trellis/spec/project/index.md`, follow its recorded legacy contract and existing parent/child planning artifacts, and keep fine-grained workflow facts in `meta.state_machine`, `state-events.jsonl`, and evidence files rather than creating another HSM child or changing `task.json.status`.
 Phase 1.3 (required, once): before `task.py start`, you MUST curate `implement.jsonl` and `check.jsonl` — list the spec / research files sub-agents need so they get the right context injected. You may skip only if the jsonl already has agent-curated entries (the seed `_example` row alone doesn't count).
-Then run `task.py start <task-dir>` to flip status to in_progress.
+Then inspect `task.json.meta.workflow_mode`: TaskRun requires `task.py start <task-dir> --taskrun-input <json>` with the exact accepted execution binding; a stored legacy mode retains `task.py start <task-dir>`.
 [/workflow-state:planning]
 
 <!-- Per-turn breadcrumb: shown throughout Phase 1 when codex.dispatch_mode=inline.
@@ -205,10 +206,10 @@ Then run `task.py start <task-dir>` to flip status to in_progress.
      into a sub-agent. -->
 
 [workflow-state:planning-inline]
-Load the `trellis-brainstorm` skill and iterate on prd.md with the user.
-If `task.json.meta.workflow_mode = "harness_state_machine"`, also read `.trellis/spec/project/index.md`, create the required parent/child planning artifacts, and keep fine-grained workflow facts in `meta.state_machine`, `state-events.jsonl`, and evidence files rather than changing `task.json.status`.
+Load `trellis-brainstorm`; for PRD work also read `.trellis/spec/project/prd-governance.md`. Iterate on prd.md with the user and do not start without an accepted commit/path/REQ binding plus explicit start authority.
+If this is an existing `harness_state_machine` task, also read `.trellis/spec/project/index.md`, follow its recorded legacy contract and existing parent/child planning artifacts, and keep fine-grained workflow facts in `meta.state_machine`, `state-events.jsonl`, and evidence files rather than creating another HSM child or changing `task.json.status`.
 Phase 1.3 jsonl curation is **skipped** in inline dispatch mode — the main session loads `trellis-before-dev` directly in Phase 2 and reads spec context itself, so there is no sub-agent to inject jsonl into.
-Then run `task.py start <task-dir>` to flip status to in_progress.
+Then inspect `task.json.meta.workflow_mode`: TaskRun requires `task.py start <task-dir> --taskrun-input <json>` with the exact accepted execution binding; a stored legacy mode retains `task.py start <task-dir>`.
 [/workflow-state:planning-inline]
 
 ### Phase 2: Execute
@@ -216,17 +217,16 @@ Then run `task.py start <task-dir>` to flip status to in_progress.
 - 2.2 Quality check `[required · repeatable]`
 - 2.3 Rollback `[on demand]`
 
-<!-- Per-turn breadcrumb: shown while status='in_progress'.
-     Scope: all of Phase 2 + Phase 3.1-3.4 (status stays 'in_progress' from
-     task.py start until task.py archive; only archive flips it). The body
+<!-- Per-turn breadcrumb: shown while TaskRun status='running' or legacy
+     status='in_progress'. Scope: all of Phase 2 + Phase 3.1-3.4. The body
      therefore must cover every required step from implementation through
      commit, including Phase 3.3 spec update and Phase 3.4 commit. -->
 
 [workflow-state:in_progress]
 **Tools**: `trellis-implement` / `trellis-research` are sub-agent types only (Task/Agent tool, NOT Skill — there is no skill by these names). `trellis-update-spec` is a skill. `trellis-check` exists as both; prefer the Agent form when verifying after code changes.
-**Flow**: trellis-implement → trellis-check → trellis-update-spec → commit (Phase 3.4) → `/trellis:finish-work`.
-If `task.json.meta.workflow_mode = "harness_state_machine"`, follow `.trellis/spec/project/index.md`: PLAN confirmation is not commit approval; child task completion or commit approval means commit plus `task.py soft-archive` unless explicitly limited; parent acceptance means commit plus built-in archive; and push still needs an explicit user command. If the state machine is archived, treat the task as evidence-only, not an active implementation target.
-**Main-session default (no override)**: dispatch the `trellis-implement` / `trellis-check` sub-agents — the main agent does NOT edit code by default. Phase 3.4 commit (required, once): after trellis-update-spec, or whenever implementation is verifiably complete, the main agent **drives the commit** — state the commit plan in user-facing text, then run `git commit` — BEFORE suggesting `/trellis:finish-work`. `/finish-work` refuses to run on a dirty working tree (paths outside `.trellis/workspace/` and `.trellis/tasks/`).
+**Flow**: trellis-implement → trellis-check → trellis-update-spec → separately authorized commit (Phase 3.4) → `/trellis:finish-work`.
+For TaskRun tasks, SQLite is the admitted lifecycle authority. Generic `complete-child` is unavailable; cancel is limited to explicit pre-admission cancellation, close is status-only, and archive is a later explicit gate limited to verified cancelled planning tasks or terminal closed runs. Commit, push, release, deploy, migration, network, cancellation, and destructive effects remain separate explicit gates. Existing `harness_state_machine` tasks keep their recorded legacy rules; if terminal, treat them as evidence-only.
+**Main-session default (no override)**: dispatch the `trellis-implement` / `trellis-check` sub-agents — the main agent does NOT edit code by default. Phase 3.4 commit (required once before closeout, but separately gated): implementation completion and TaskRun state never authorize Git. After a direct user commit signal, state the scoped commit plan and run `git commit` before suggesting `/trellis:finish-work`; otherwise stop at verified commit-ready state.
 **Sub-agent self-exemption**: if you are already running as `trellis-implement`, implement directly from the loaded task context and do NOT spawn another `trellis-implement`; if you are already running as `trellis-check`, review/fix directly and do NOT spawn another `trellis-check`. The default dispatch rule applies to the main session only.
 **Sub-agent dispatch protocol (Codex / Claude Code)**: When you spawn `trellis-implement` / `trellis-check` / `trellis-research`, your dispatch prompt **MUST** start with one line: `Active task: <task path from \`task.py current\`>`. No exceptions. Codex sub-agents depend on this line because they pull task context after startup. For Claude Code it is a required fallback when hook context is absent or stale. For `trellis-research`, the line tells the sub-agent which `{task_dir}/research/` to write into.
 **Inline override** (per-turn only, escape hatch for sub-agent dispatch): the user's CURRENT message MUST explicitly contain one of: "do it inline" / "no sub-agent" / "你直接改" / "别派 sub-agent" / "main session 写就行" / "不用 sub-agent". **Without seeing one of these phrases you must NOT inline on your own**; do not invent an override the user never said.
@@ -238,10 +238,10 @@ If `task.json.meta.workflow_mode = "harness_state_machine"`, follow `.trellis/sp
      instead of dispatching sub-agents. -->
 
 [workflow-state:in_progress-inline]
-**Flow** (inline mode): main session loads `trellis-before-dev` → main session edits code → main session loads `trellis-check` → run lint / type-check / tests → fix → `trellis-update-spec` → commit (Phase 3.4) → `/trellis:finish-work`.
-If `task.json.meta.workflow_mode = "harness_state_machine"`, follow `.trellis/spec/project/index.md`: PLAN confirmation is not commit approval; child task completion or commit approval means commit plus `task.py soft-archive` unless explicitly limited; parent acceptance means commit plus built-in archive; and push still needs an explicit user command. If the state machine is archived, treat the task as evidence-only, not an active implementation target.
+**Flow** (inline mode): main session loads `trellis-before-dev` → main session edits code → main session loads `trellis-check` → run lint / type-check / tests → fix → `trellis-update-spec` → separately authorized commit (Phase 3.4) → `/trellis:finish-work`.
+For TaskRun tasks, SQLite is the admitted lifecycle authority. Generic `complete-child` is unavailable; cancel is limited to explicit pre-admission cancellation, close is status-only, and archive is a later explicit gate limited to verified cancelled planning tasks or terminal closed runs. Commit, push, release, deploy, migration, network, cancellation, and destructive effects remain separate explicit gates. Existing `harness_state_machine` tasks keep their recorded legacy rules; if terminal, treat them as evidence-only.
 **Main-session default (inline dispatch_mode)**: the main agent edits code directly. Do NOT dispatch `trellis-implement` / `trellis-check` sub-agents. Load the `trellis-before-dev` skill before writing code; load the `trellis-check` skill before reporting completion.
-Phase 3.4 commit (required, once): after `trellis-update-spec`, or whenever implementation is verifiably complete, the main agent **drives the commit** — state the commit plan in user-facing text, then run `git commit` — BEFORE suggesting `/trellis:finish-work`. `/finish-work` refuses to run on a dirty working tree (paths outside `.trellis/workspace/` and `.trellis/tasks/`).
+Phase 3.4 commit is required once before closeout but separately gated: implementation completion and TaskRun state never authorize Git. After a direct user commit signal, state the scoped commit plan and run `git commit` before suggesting `/trellis:finish-work`; otherwise stop at verified commit-ready state.
 [/workflow-state:in_progress-inline]
 
 ### Phase 3: Finish
@@ -251,18 +251,11 @@ Phase 3.4 commit (required, once): after `trellis-update-spec`, or whenever impl
 - 3.4 Commit changes `[required · once]`
 - 3.5 Wrap-up reminder
 
-<!-- Per-turn breadcrumb: shown while status='completed'.
-     Currently DEAD in normal flow: cmd_archive writes status='completed' in
-     the same call that moves the task dir to archive/, so the active-task
-     resolver loses the pointer and the hook never fires on archived tasks.
-     Block preserved for a future status-transition redesign (e.g. an
-     explicit in_progress→completed command). Edit through the same spec
-     channel as the live blocks. -->
+<!-- Per-turn breadcrumb: shown for a TaskRun completed/cancelled terminal
+     projection. Legacy archive usually moves the task before this can fire. -->
 
 [workflow-state:completed]
-Code committed via Phase 3.4; run `/trellis:finish-work` to wrap up (archive the task + record session).
-If you reach this state with uncommitted code, return to Phase 3.4 first — `/finish-work` refuses to run on a dirty working tree.
-`task.py archive` deletes any runtime session files that still point at the archived task.
+TaskRun terminal disposition does not imply close, commit, or archive. Confirm the status-only close projected `meta.task_run.state=closed`; if authorized code remains uncommitted, return to Phase 3.4 first. Then run `/trellis:finish-work`; for TaskRun it clears only the active pointer and records the session. Run `task.py archive <task>` only after separate archive authority; it requires a verified pre-admission cancellation or terminal closed authority, and an admitted run rejects `--no-commit` before mutation.
 [/workflow-state:completed]
 
 ### Rules
@@ -280,7 +273,7 @@ When a user request matches one of these intents, load the corresponding skill (
 
 | User intent | Route |
 |---|---|
-| Wants a new feature / requirement unclear | `trellis-brainstorm` |
+| Wants a new feature, PRD, or requirement clarification | `trellis-brainstorm`; PRD work also reads `.trellis/spec/project/prd-governance.md` |
 | About to write code / start implementing | Dispatch the `trellis-implement` sub-agent per Phase 2.1 |
 | Finished writing / want to verify | Dispatch the `trellis-check` sub-agent per Phase 2.2 |
 | Stuck / fixed same bug several times | `trellis-break-loop` |
@@ -294,7 +287,7 @@ When a user request matches one of these intents, load the corresponding skill (
 
 | User intent | Skill |
 |---|---|
-| Wants a new feature / requirement unclear | `trellis-brainstorm` |
+| Wants a new feature, PRD, or requirement clarification | `trellis-brainstorm`; PRD work also reads `.trellis/spec/project/prd-governance.md` |
 | About to write code / start implementing | `trellis-before-dev` (then implement directly in the main session) |
 | Finished writing / want to verify | `trellis-check` |
 | Stuck / fixed same bug several times | `trellis-break-loop` |
@@ -353,13 +346,14 @@ python3 ./.trellis/scripts/task.py create "<task title>" --slug <name>
 
 After this command succeeds, the per-turn breadcrumb auto-switches to `[workflow-state:planning]`, telling the AI to enter the brainstorm + jsonl curation phase.
 
-⚠️ **Run only `create` here — do not also run `start`**. `start` flips status to `in_progress`, which switches the breadcrumb to the implementation phase before brainstorm + jsonl are done — the AI will silently skip them. Save `start` for step 1.4, after jsonl curation is complete.
+⚠️ **Run only `create` here — do not also run `start`**. Starting switches the breadcrumb to the implementation phase before brainstorm + context are done. Save the mode-appropriate start for step 1.4.
 
 Skip when `python3 ./.trellis/scripts/task.py current --source` already points to a task.
 
 #### 1.1 Requirement exploration `[required · repeatable]`
 
-Load the `trellis-brainstorm` skill and explore requirements interactively with the user per the skill's guidance.
+Load the `trellis-brainstorm` skill. For product or task PRD work, also read
+`.trellis/spec/project/prd-governance.md` before changing the PRD.
 
 The brainstorm skill will guide you to:
 - Ask one question at a time
@@ -451,15 +445,19 @@ Skip this step. Context is loaded directly by the `trellis-before-dev` skill in 
 
 #### 1.4 Activate task `[required · once]`
 
-Once prd.md is complete and 1.3 jsonl curation is done, flip the task status to `in_progress`:
+Once the PRD has an accepted commit/path/REQ binding, the user explicitly
+authorizes start, and 1.3 jsonl curation is done, inspect
+`task.json.meta.workflow_mode`. For TaskRun, admit or exactly reopen one run:
 
 ```bash
-python3 ./.trellis/scripts/task.py start <task-dir>
+python3 ./.trellis/scripts/task.py start <task-dir> --taskrun-input <json>
 ```
 
-After this command succeeds, the breadcrumb auto-switches to `[workflow-state:in_progress]`, and the rest of Phase 2 / 3 follows.
+The input is the exact accepted execution binding described in [`.trellis/spec/project/taskrun-runtime.md`](spec/project/taskrun-runtime.md). After admission projects `status=running`, the breadcrumb auto-switches to `[workflow-state:in_progress]`. For a stored non-TaskRun mode, run `task.py start <task-dir>` and retain its historical status transition.
 
-If `task.py start` errors with a session-identity message (no context key from hook input, `TRELLIS_CONTEXT_ID`, or platform-native session env), follow the hint in the error to set up session identity, then retry.
+If session identity is unavailable, TaskRun admission still succeeds but the
+non-authoritative active-task pointer is not persisted. Stored legacy tasks
+retain their session-identity requirement.
 
 #### 1.5 Completion criteria
 
@@ -467,7 +465,8 @@ If `task.py start` errors with a session-identity message (no context key from h
 |------|:---:|
 | `prd.md` exists | ✅ |
 | User confirms requirements | ✅ |
-| `task.py start` has been run (status = in_progress) | ✅ |
+| Accepted Git commit + PRD path(s) + REQ IDs are recorded | ✅ |
+| The stored mode's start command has run (TaskRun status = running) | ✅ |
 | `research/` has artifacts (complex tasks) | recommended |
 | `info.md` technical design (complex tasks) | optional |
 
@@ -661,7 +660,7 @@ All 4 tag blocks live in the `## Phase Index` section above, immediately after e
 | No active task (before Phase 1) | `[workflow-state:no_task]` (after the Phase Index ASCII art) |
 | All of Phase 1 (task created → ready for implementation) | `[workflow-state:planning]` (after Phase 1 summary) |
 | Phase 2 + Phase 3.1–3.4 (implementation + check + wrap-up) | `[workflow-state:in_progress]` (after Phase 2 summary) |
-| After Phase 3.5 (archived) | `[workflow-state:completed]` (after Phase 3 summary; **currently DEAD**) |
+| After TaskRun close or legacy Phase 3.5 archive | `[workflow-state:completed]` (after Phase 3 summary) |
 
 ### Changing the per-turn prompt text
 
@@ -679,10 +678,10 @@ your per-turn prompt text
 
 Constraints:
 - STATUS charset: `[A-Za-z0-9_-]+` (underscores and hyphens allowed, e.g. `in-review`, `blocked-by-team`)
-- A lifecycle hook must write `task.json.status` to your custom value, otherwise the tag is never read
-- Lifecycle hooks live in `task.json.hooks.after_*` and bind to one of `after_create / after_start / after_finish / after_archive`
+- For a legacy workflow, a lifecycle hook must write `task.json.status` to your custom value, otherwise the tag is never read
+- Legacy lifecycle hooks live in `task.json.hooks.after_*` and bind to one of `after_create / after_start / after_finish / after_archive`; TaskRun create, start, and finish do not invoke them
 
-### Adding a lifecycle hook
+### Adding a legacy lifecycle hook
 
 Add a `hooks` field to your `task.json`:
 
@@ -696,7 +695,10 @@ Add a `hooks` field to your `task.json`:
 }
 ```
 
-Supported events: `after_create / after_start / after_finish / after_archive`. Note that `after_finish` ≠ a status change (it only clears the active-task pointer); use `after_archive` for "task is done" notifications.
+Legacy events are `after_create / after_start / after_finish / after_archive`.
+For those workflows, `after_finish` ≠ a status change (it only clears the
+active-task pointer); use `after_archive` for "task is done" notifications.
+TaskRun does not invoke these configurable hooks.
 
 ### Full contract
 

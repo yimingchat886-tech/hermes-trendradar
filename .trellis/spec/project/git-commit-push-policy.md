@@ -2,7 +2,9 @@
 
 ## PLAN Confirmation
 
-User approval of a PLAN means the agent may implement the current task. It does not authorize:
+User approval of a PLAN approves its scope. For PRD-governed work,
+implementation still requires the accepted binding and explicit start gates in
+`prd-governance.md`. PLAN approval does not authorize:
 
 - `git commit`
 - `git push`
@@ -12,14 +14,14 @@ User approval of a PLAN means the agent may implement the current task. It does 
 
 ## Completion Signal
 
-For v3 parent/child tasks, report work, verification, missed/extra scope, commit plan, soft archive plan, and `Pushed: no`, then wait for a completion signal.
+For v3 parent/child tasks, report work, verification, missed/extra scope, commit plan, child completion plan, and `Pushed: no`, then wait for a completion signal.
 
 Use `.trellis/spec/project/protocol-phrases.md` for the canonical completion,
 commit, archive, limit, and push phrase table. Limit phrases override positive
 phrases in the same user message.
 
-For v3 child tasks, commit approval also allows soft archive by default. A
-commit-approval phrase means commit the approved child scope and soft archive
+For v3 child tasks, commit approval also allows child completion by default. A
+commit-approval phrase means commit the approved child scope and complete
 the child in the same close-out, unless the user explicitly excludes either
 action.
 
@@ -31,7 +33,7 @@ Record the signal in the stage report:
 - Raw signal:
 - Received at:
 - Allows commit: yes/no
-- Allows soft archive: yes for child unless explicitly limited
+- Allows child completion: yes for child unless explicitly limited
 - Explicit limits:
 - Push allowed: no, unless explicitly requested
 ```
@@ -40,7 +42,7 @@ Record the signal in the stage report:
 
 After completion signal, commit only approved current-task files. Exclude unrelated dirty files.
 
-For v3 child tasks, record the commit hash and complete the soft archive
+For v3 child tasks, record the commit hash and complete the child lifecycle
 metadata immediately after the approved commit. Do not ask for a second archive
 approval unless the user limited the original signal.
 

@@ -8,13 +8,21 @@ TBD
 
 TBD
 
+## Requirements
+
+- `TODO-REQ-001` [owner: TODO]: Replace with one canonical requirement.
+
 ## How will it be verified?
 
 TBD
 
+## Verification Commands
+
+- `TODO`
+
 ## Evidence Model
 
-- `task.json.meta.workflow_mode` is `harness_state_machine`.
+- `task.json.meta.workflow_mode` selects the lifecycle authority.
 - `prd.md` records scope and verification.
 - `stage-report.md` records acceptance and verification evidence.
 - Do not add legacy staged metadata.

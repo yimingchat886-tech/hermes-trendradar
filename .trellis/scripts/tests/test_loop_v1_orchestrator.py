@@ -67,6 +67,14 @@ RECEIPT_ID = f"sha256:{'a' * 64}"
 RUN_ID = "pilot-run"
 
 
+def registered_worktrees(repo: Path) -> list[Path]:
+    return [
+        Path(line.removeprefix("worktree ")).resolve()
+        for line in git(repo, "worktree", "list", "--porcelain").splitlines()
+        if line.startswith("worktree ")
+    ]
+
+
 @contextmanager
 def qualified_runtime():
     status = QualificationStatus(True, True, RECEIPT_ID, ())
@@ -861,6 +869,10 @@ class LoopV1OrchestratorTests(unittest.TestCase):
 
             final_review = advance_operator(repo, RUN_ID)["next_action"]
             self.assertEqual(final_review["action_type"], "final_review")
+            self.assertEqual(registered_worktrees(repo), [repo.resolve()])
+            self.assertTrue(
+                all(not Path(item["worktree"]).exists() for item in entries.values())
+            )
             ingest_operator(
                 repo,
                 RUN_ID,
@@ -1162,6 +1174,8 @@ class LoopV1OrchestratorTests(unittest.TestCase):
             self.assertEqual(repair["packet"]["attempt"], 2)
             self.assertEqual(repair["packet"]["round"], 2)
             self.assertEqual(replacement["child_states"]["child-a"], "invalidated")
+            self.assertFalse(Path(entry["worktree"]).exists())
+            self.assertEqual(len(registered_worktrees(repo)), 2)
 
     def test_worker_reported_test_failure_dispatches_bounded_replacement(self) -> None:
         with tempfile.TemporaryDirectory() as tmp, qualified_runtime():
@@ -1202,6 +1216,39 @@ class LoopV1OrchestratorTests(unittest.TestCase):
             self.assertEqual(recovery_context["repair_round"], 1)
             self.assertEqual(recovery_context["required_findings"], [])
             self.assertEqual(replacement["child_states"]["child-a"], "invalidated")
+            self.assertFalse(Path(entry["worktree"]).exists())
+            self.assertEqual(len(registered_worktrees(repo)), 2)
+
+    def test_unclassified_or_secret_worker_dirt_is_retained_and_pauses(self) -> None:
+        cases = (("src/app.txt", "src/extra.txt"), ("src/secret.pem", None))
+        for relative, extra in cases:
+            with (
+                self.subTest(relative=relative),
+                tempfile.TemporaryDirectory() as tmp,
+                qualified_runtime(),
+            ):
+                _, repo, dispatch = initialize_single_child(Path(tmp))
+                entry = dispatch["payload"]["children"][0]
+                payload = worker_result(entry, relative, "worker failed\n")
+                payload["commands"][0]["status"] = "skipped"
+                if extra is not None:
+                    (Path(entry["worktree"]) / extra).write_text(
+                        "unclassified\n", encoding="utf-8"
+                    )
+                ingest_operator(
+                    repo,
+                    RUN_ID,
+                    ingest_message(dispatch, "worker_result", payload),
+                )
+
+                retained = advance_operator(repo, RUN_ID)
+
+                self.assertEqual(retained["parent_status"], "paused")
+                self.assertEqual(
+                    retained["next_action"]["action_type"], "human_intervention"
+                )
+                self.assertTrue(Path(entry["worktree"]).exists())
+                self.assertEqual(len(registered_worktrees(repo)), 2)
 
     def test_guided_replacement_reopens_exact_path_closed_prerequisite_slice(
         self,
@@ -2656,13 +2703,7 @@ class LoopV1OrchestratorTests(unittest.TestCase):
             )
 
             fresh_final = advance_operator(repo, RUN_ID)["next_action"]
-            repair_commit = git(
-                Path(repair_entry["worktree"]), "rev-parse", "HEAD"
-            )
-            self.assertEqual(
-                git(Path(repair_entry["worktree"]), "rev-parse", f"{repair_commit}^"),
-                repair_entry["packet"]["execution_base"]["head"],
-            )
+            self.assertFalse(Path(repair_entry["worktree"]).exists())
 
             self.assertEqual(fresh_final["action_type"], "final_review")
             self.assertNotEqual(fresh_final["action_id"], final_review["action_id"])

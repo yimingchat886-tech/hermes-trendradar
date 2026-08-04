@@ -9,7 +9,9 @@ This contract governs the bootstrap SQLite authority in
 `LV1-CTX-001` through `LV1-CTX-005`, and `LV1-SCH-001` through `LV1-SCH-006`
 plus `LV1-INT-001` through `LV1-INT-009`, `LV1-REC-001` through `LV1-REC-007`,
 and `LV1-REV-001` through `LV1-REV-005` plus `LV1-EVI-001` through
-`LV1-EVI-006` while Loop admission remains disabled.
+`LV1-EVI-006`. When `taskrun_v1.new_code_tasks: true`, these APIs remain the
+authority for existing Loop-owned runs only; new loop execution uses TaskRun
+and never initializes this ledger.
 The directly invoked bootstrap APIs may create isolated worktrees, validate a
 returned candidate, create its reviewed local child commit, integrate that
 commit through an isolated no-ff candidate, and reconcile local crash windows.
@@ -380,9 +382,14 @@ Declared parent checks execute in the child worktree through `/bin/sh`, have a
   validated paths, requires the staged tree to equal the reviewed tree, creates
   a commit whose parent is the validated base, and advances only the child ref.
   Canonical `main` remains unchanged. The exact commit/tree/ref outcome and
-  child `committed` state are recorded in the existing ledger/Git tables.
+  child `committed` state are recorded in the existing ledger/Git tables. The
+  operator then removes the clean child checkout while retaining its branch,
+  commit, tree, and ledger authority.
 - Stable worktree, validation, review, and commit identities replay only when
-  durable authority and current Git state still match. An observed-but-not-
+  durable authority and current Git state still match. After the child commit
+  boundary, replay accepts the checkout only when it is live and exact or when
+  both its path and registration are absent and the canonical branch/commit/tree
+  still match. Partial path/registration state fails closed. An observed-but-not-
   authoritative Git operation is left intact for B5 reconciliation, never
   guessed, repeated, cleaned, or rolled back.
 
@@ -397,6 +404,7 @@ Declared parent checks execute in the child worktree through `/bin/sh`, have a
 | Reviewer surface is unapproved, dispositions are incomplete, or tree changed | `ReviewError` |
 | Stable operation ID is reused with different input/outcome | `OperationConflict` |
 | Git effect is unresolved or no longer matches durable authority | `GitStateError` and later B5 reconciliation |
+| Scratch is foreign, partially registered, drifted, secret-like, or has unclassified dirt | Retain it and pause for intervention |
 
 No validation failure stages, commits, stashes, cleans, reverts, moves, deletes,
 or rewrites canonical user dirt.
@@ -426,8 +434,8 @@ or rewrites canonical user dirt.
   blocking, and one disposition per advisory finding.
 - Assert post-review edits block commit; a green commit stages exact paths,
   equals the reviewed tree, has the validated base parent, leaves canonical
-  `main` unchanged, records durable Git authority, cleans the child worktree,
-  and replays without a second commit.
+  `main` unchanged, records durable Git authority, releases the child worktree,
+  and replays from canonical Git authority without a second commit or checkout.
 - Re-run B1-B3 focused tests and the complete current-Trellis suite while Loop
   admission remains disabled.
 
@@ -507,7 +515,10 @@ effects use direct local Git CLI calls and the existing SQLite authority.
 - Acknowledgement proves the actual ref, ancestry, candidate tree, and durable
   intent before recording one integrated Git authority row, changing only the
   committed child to `integrated`, releasing its resource claims, marking its
-  requirements covered in canonical context, and rebuilding projection.
+  requirements covered in canonical context, and rebuilding projection. An
+  acknowledged candidate remains only while final checks still need that exact
+  checkout; otherwise it is removed before another candidate is created, and
+  the final candidate is removed after its checks are durably recorded.
 - Removing an integrated child commit from current integration history retains
   the old Git evidence but marks that child and graph dependents `invalidated`,
   returns their requirements to `uncovered`, and records the observed ref/tree.
@@ -517,6 +528,19 @@ effects use direct local Git CLI calls and the existing SQLite authority.
 - Pause blocks new dispatch, result acceptance, review/commit, candidate, and ref
   work while preserving refs, branches, worktrees, candidates, ledger rows, and
   the exact unresolved-operation list. It performs no cleanup or rollback.
+- Routine bounded replacement records the problem and decision, consumes the
+  worker dispatch/resources, and then removes the superseded checkout before a
+  replacement checkout is issued. Forced removal is limited to a current-run
+  worker result whose complete re-observed paths, diff, tree, branch, HEAD, and
+  approved touches equal durable evidence and contain no staged or secret-like
+  path. A failed parent-only candidate merge may run exact `git merge --abort`
+  only when `MERGE_HEAD`, base HEAD/tree, child commit, and failed outcome all
+  match, then uses ordinary worktree removal. Unknown dirt or cleanup ambiguity
+  pauses and retains the checkout.
+- Cleanup never deletes a branch/ref or uses broad prune. It is idempotent only
+  when both path and registration are absent and canonical Git objects still
+  match. No cleanup table, manifest, background process, or retirement lifecycle
+  exists.
 - Resume validates direct authority when required, receipt, approved resources,
   and overlapping canonical user dirt before any writer rotation. Overlapping
   committed main drift remains blocked except at a closeout-safe point where
@@ -676,7 +700,8 @@ effects use direct local Git CLI calls and the existing SQLite authority.
 - Assert stable 0+3 problem budget, `recovery_waiting` preservation, same-run
   generation continuation/replay rejection, pause/resume gates, history
   invalidation, human-only cancellation, unfinished child disposition,
-  integrated evidence retention, and no cleanup/fake completion.
+  integrated evidence retention, bounded routine worktree registrations, and no
+  cleanup during exceptional control states or fake completion.
 - Re-run B1-B4 focused tests and the complete current-Trellis suite while Loop
   admission remains disabled.
 

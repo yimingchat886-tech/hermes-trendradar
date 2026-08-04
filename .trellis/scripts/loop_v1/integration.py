@@ -46,6 +46,7 @@ from .worker_commit import (
     _git,
     _git_text,
     _main_state,
+    _registered_worktrees,
     observe_worker_candidate,
     _repository_path,
     _run_parent_check,
@@ -822,8 +823,7 @@ def verify_final_integration_checks(
         raise IntegrationStateError("final integration checks require final-ready coverage")
 
     canonical = ledger.repo_root.resolve()
-    target = _repository_path(Path(worktree), "final integration")
-    _assert_same_repository(canonical, target)
+    target = Path(worktree).resolve()
     _assert_ref_unattached(canonical, integration_ref)
 
     connection = ledger._connect(read_only=True)
@@ -859,14 +859,6 @@ def verify_final_integration_checks(
         raise RecoveryError(
             "canonical context and integration ref differ at final verification"
         )
-    if _git_text(target, "rev-parse", "HEAD") != integration_head:
-        raise RecoveryError("final integration worktree HEAD differs from authority")
-    if (
-        _git_text(target, "rev-parse", f"{integration_head}^{{tree}}")
-        != integration_tree
-    ):
-        raise RecoveryError("final integration worktree tree differs from authority")
-
     operation_id = f"final-integration-checks:{verification_id}"
     intent = {
         "checks": commands,
@@ -880,6 +872,31 @@ def verify_final_integration_checks(
         "verification_id": verification_id,
         "worktree": str(target),
     }
+    existing = ledger.get_operation(operation_id)
+    if existing is not None and existing["phase"] == "authority_committed":
+        operation = ledger.prepare_operation(
+            lease,
+            operation_id=operation_id,
+            kind=_FINAL_INTEGRATION_KIND,
+            input_fingerprint=_digest_json(intent),
+            intent=intent,
+        )
+        _assert_final_worktree_replay(
+            ledger, target, integration_head, integration_tree
+        )
+        return operation["outcome"]
+
+    _restore_final_worktree(ledger, target, integration_head, integration_tree)
+    target = _repository_path(target, "final integration")
+    _assert_same_repository(canonical, target)
+    if _git_text(target, "rev-parse", "HEAD") != integration_head:
+        raise RecoveryError("final integration worktree HEAD differs from authority")
+    if (
+        _git_text(target, "rev-parse", f"{integration_head}^{{tree}}")
+        != integration_tree
+    ):
+        raise RecoveryError("final integration worktree tree differs from authority")
+
     operation = ledger.prepare_operation(
         lease,
         operation_id=operation_id,
@@ -887,9 +904,6 @@ def verify_final_integration_checks(
         input_fingerprint=_digest_json(intent),
         intent=intent,
     )
-    if operation["phase"] == "authority_committed":
-        return operation["outcome"]
-
     if operation["phase"] == "prepared":
         results = []
         for command in commands:
@@ -3741,12 +3755,83 @@ def _integration_ref(value: str) -> str:
     return ref
 
 
-def _registered_worktrees(repo: Path) -> list[Path]:
-    return [
-        Path(line.removeprefix("worktree ")).resolve()
-        for line in _git_text(repo, "worktree", "list", "--porcelain").splitlines()
-        if line.startswith("worktree ")
-    ]
+def _assert_final_worktree_replay(
+    ledger: ParentLedger, target: Path, expected_head: str, expected_tree: str
+) -> None:
+    canonical = ledger.repo_root.resolve()
+    authority = _final_worktree_authority(
+        ledger, target, expected_head, expected_tree
+    )
+    branch = _required_text(authority["branch"], "candidate branch")
+    if (
+        _git_text(canonical, "rev-parse", "--verify", f"refs/heads/{branch}")
+        != expected_head
+    ):
+        raise RecoveryError("final integration candidate branch changed")
+    registered = target in set(_registered_worktrees(canonical))
+    exists = target.exists()
+    if exists != registered:
+        raise RecoveryError("final integration replay found partial worktree state")
+    if not exists:
+        return
+    _assert_same_repository(canonical, target)
+    if (
+        _git_text(target, "rev-parse", "HEAD") != expected_head
+        or _git_text(target, "symbolic-ref", "--short", "HEAD") != branch
+        or _git_text(target, "rev-parse", f"{expected_head}^{{tree}}")
+        != expected_tree
+    ):
+        raise RecoveryError("final integration replay worktree differs from authority")
+
+
+def _restore_final_worktree(
+    ledger: ParentLedger, target: Path, expected_head: str, expected_tree: str
+) -> None:
+    canonical = ledger.repo_root.resolve()
+    registered = target in set(_registered_worktrees(canonical))
+    exists = target.exists()
+    if exists != registered:
+        raise RecoveryError("final integration restore found partial worktree state")
+    if exists:
+        return
+    authority = _final_worktree_authority(
+        ledger, target, expected_head, expected_tree
+    )
+    branch = _required_text(authority["branch"], "candidate branch")
+    if (
+        _git_text(canonical, "rev-parse", "--verify", f"refs/heads/{branch}")
+        != expected_head
+    ):
+        raise RecoveryError("final integration candidate branch changed before restore")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    _git(canonical, "worktree", "add", str(target), branch)
+
+
+def _final_worktree_authority(
+    ledger: ParentLedger, target: Path, expected_head: str, expected_tree: str
+) -> sqlite3.Row:
+    connection = ledger._connect(read_only=True)
+    try:
+        rows = connection.execute(
+            """
+            SELECT g.*, o.phase AS operation_phase,
+                   o.outcome_json AS operation_outcome_json
+            FROM git_operations AS g
+            JOIN operations AS o ON o.operation_id = g.operation_id
+            WHERE g.worktree = ? AND g.commit_id = ? AND g.tree_id = ?
+              AND g.phase = 'integrated'
+            """,
+            (str(target), expected_head, expected_tree),
+        ).fetchall()
+    finally:
+        connection.close()
+    if (
+        len(rows) != 1
+        or rows[0]["operation_phase"] != "authority_committed"
+        or rows[0]["operation_outcome_json"] != rows[0]["outcome_json"]
+    ):
+        raise RecoveryError("final integration worktree lacks exact durable authority")
+    return rows[0]
 
 
 def _assert_ref_unattached(repo: Path, ref_name: str) -> None:

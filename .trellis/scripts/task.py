@@ -4,20 +4,23 @@
 Task Management Script.
 
 Usage:
-    python3 task.py create "<title>" [--slug <name>] [--tier light|child|parent] [--owner cc|codex|jym] [--touches <glob>] [--parent <dir>] [--package <pkg>] [--workflow-mode <mode>]
+    python3 task.py create "<title>" [--slug <name>] [--tier light|child|parent] [--owner cc|codex|jym] [--touches <glob>] [--parent <dir>] [--package <pkg>] [--strategy single|loop]
     python3 task.py add-context <dir> <file> <path> [reason] # Add jsonl entry
     python3 task.py validate <dir>              # Validate jsonl files
     python3 task.py list-context <dir>          # List jsonl entries
-    python3 task.py start <dir>                 # Set active task
+    python3 task.py start <dir> [--taskrun-input <json>] # Admit TaskRun or activate legacy task
     python3 task.py current [--source]          # Show active task
     python3 task.py finish                      # Clear active task
     python3 task.py set-branch <dir> <branch>   # Set git branch
     python3 task.py set-base-branch <dir> <branch>  # Set PR target branch
     python3 task.py set-scope <dir> <scope>     # Set scope for PR title
+    python3 task.py authorize-replacement <child> ...  # Bind one exact successor attempt
+    python3 task.py reconcile-historical-replacement <child> ...  # Settle pre-implementation evidence
     python3 task.py cancel <task-dir> --reason <reason> --authorized-by <user>
     python3 task.py archive <task-dir>          # Archive completed/cancelled task
-    python3 task.py archive-orphans             # Sweep orphaned terminal families
-    python3 task.py soft-archive <task-dir> --commit <hash>  # Soft archive v3 child
+    python3 task.py archive-orphans [--check]   # Check or sweep orphaned terminal families
+    python3 task.py complete-child <task-dir> --commit <hash>  # Complete Current Trellis child
+    python3 task.py soft-archive <task-dir> --commit <hash>  # Legacy compatibility alias
     python3 task.py claim <task-dir> --owner codex  # Claim task ownership
     python3 task.py release <task-dir>          # Release task ownership to jym
     python3 task.py list                        # List active tasks
@@ -29,8 +32,10 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
 import subprocess
 import sys
+from pathlib import Path
 
 from common.log import Colors, colored
 from common.paths import (
@@ -56,10 +61,13 @@ from common.tasks import iter_active_tasks, children_progress
 # Import command handlers from split modules (also re-exports for plan.py compatibility)
 from common.task_store import (
     cmd_create,
+    cmd_authorize_replacement,
+    cmd_reconcile_historical_replacement,
     cmd_cancel,
     cmd_archive,
     cmd_archive_orphans,
     cmd_archive_recover,
+    cmd_complete_child,
     cmd_soft_archive,
     cmd_claim,
     cmd_release,
@@ -76,8 +84,45 @@ from common.task_context import (
 )
 
 
+TASKRUN_MODE = "taskrun_v2"
+TASKRUN_MODES = {"taskrun_v1", TASKRUN_MODE}
+_TASKRUN_SINGLE_REQUIRED = {
+    "actor",
+    "authorization_ref",
+    "reviewer_id",
+    "worker_id",
+}
+_TASKRUN_SINGLE_OPTIONAL = {
+    "action_risk",
+    "attempts",
+    "low_risk_mode",
+    "provider_id",
+}
+_TASKRUN_LOOP_REQUIRED = {
+    "actions",
+    "actor",
+    "authorization_ref",
+    "reviewer_id",
+    "worker_ids",
+}
+_TASKRUN_LOOP_OPTIONAL = _TASKRUN_SINGLE_OPTIONAL | {
+    "candidate_commit_authorization_ref",
+    "candidate_commit_ref",
+    "concurrency",
+}
+
+
 def refresh_board_after(command: str, return_code: int) -> None:
-    if return_code != 0 or command not in {"create", "cancel", "archive", "soft-archive", "claim", "release"}:
+    if return_code != 0 or command not in {
+        "create",
+        "start",
+        "cancel",
+        "archive",
+        "complete-child",
+        "soft-archive",
+        "claim",
+        "release",
+    }:
         return
     repo_root = get_repo_root()
     board = repo_root / DIR_WORKFLOW / DIR_SCRIPTS / "board.py"
@@ -101,6 +146,109 @@ def refresh_board_after(command: str, return_code: int) -> None:
 # =============================================================================
 # Command: start / finish
 # =============================================================================
+
+def _read_taskrun_start_input(path_value: object, strategy: str) -> dict[str, object]:
+    if not isinstance(path_value, str) or not path_value.strip():
+        raise ValueError("TaskRun start requires --taskrun-input")
+    path = Path(path_value)
+    if path.is_symlink() or not path.is_file():
+        raise ValueError("TaskRun start input must be one regular JSON file")
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ValueError("TaskRun start input must be valid UTF-8 JSON") from exc
+    if not isinstance(value, dict):
+        raise ValueError("TaskRun start input must contain one object")
+    required, optional = {
+        "single": (_TASKRUN_SINGLE_REQUIRED, _TASKRUN_SINGLE_OPTIONAL),
+        "loop": (_TASKRUN_LOOP_REQUIRED, _TASKRUN_LOOP_OPTIONAL),
+    }.get(strategy, (set(), set()))
+    if not required:
+        raise ValueError("task.json TaskRun strategy must be single or loop")
+    missing = sorted(required - set(value))
+    extra = sorted(set(value) - required - optional)
+    if missing or extra:
+        details = []
+        if missing:
+            details.append(f"missing fields: {', '.join(missing)}")
+        if extra:
+            details.append(f"unknown fields: {', '.join(extra)}")
+        raise ValueError("TaskRun start input schema mismatch: " + "; ".join(details))
+    return value
+
+
+def _start_taskrun(
+    args: argparse.Namespace,
+    repo_root: Path,
+    full_path: Path,
+    task_dir: str,
+    task: dict,
+) -> int:
+    strategy = (task.get("meta") or {}).get("taskrun_strategy")
+    from taskrun import TaskRunError, TaskRunOperator
+
+    try:
+        direct_task_dir = get_tasks_dir(repo_root).resolve() / full_path.name
+        if full_path.is_symlink() or full_path.resolve() != direct_task_dir:
+            raise ValueError("TaskRun start requires one direct active task directory")
+        request = _read_taskrun_start_input(
+            getattr(args, "taskrun_input", None), str(strategy or "")
+        )
+        common = {
+            "actor": request["actor"],
+            "authorization_ref": request["authorization_ref"],
+            "reviewer_id": request["reviewer_id"],
+            "provider_id": request.get("provider_id", "local"),
+            "action_risk": request.get("action_risk", "low"),
+            "low_risk_mode": request.get("low_risk_mode", "aggregate"),
+            "attempts": request.get("attempts", 4),
+        }
+        if strategy == "single":
+            operator = TaskRunOperator.admit_single(
+                repo_root,
+                full_path.name,
+                worker_id=request["worker_id"],
+                **common,
+            )
+        else:
+            operator = TaskRunOperator.admit_loop(
+                repo_root,
+                full_path.name,
+                actions=request["actions"],
+                worker_ids=request["worker_ids"],
+                concurrency=request.get("concurrency", 2),
+                candidate_commit_ref=request.get("candidate_commit_ref"),
+                candidate_commit_authorization_ref=request.get(
+                    "candidate_commit_authorization_ref"
+                ),
+                **common,
+            )
+    except (OSError, TypeError, ValueError, TaskRunError) as exc:
+        print(colored(f"Error: TaskRun start rejected: {exc}", Colors.RED))
+        return 1
+
+    if resolve_context_key():
+        active = set_active_task(task_dir, repo_root)
+        if active:
+            print(colored(f"✓ Current task set to: {task_dir}", Colors.GREEN))
+            print(f"Source: {active.source}")
+        else:
+            print(
+                colored(
+                    "Warning: TaskRun admitted but the active-task pointer was not persisted",
+                    Colors.YELLOW,
+                )
+            )
+    else:
+        print(
+            colored(
+                "ℹ Session identity not available; active-task pointer not persisted",
+                Colors.YELLOW,
+            )
+        )
+    print(colored(f"✓ TaskRun admitted: {operator.task_run_id} ({strategy})", Colors.GREEN))
+    return 0
+
 
 def cmd_start(args: argparse.Namespace) -> int:
     """Set active task."""
@@ -126,6 +274,13 @@ def cmd_start(args: argparse.Namespace) -> int:
         task_dir = str(full_path)
 
     task_json_path = full_path / FILE_TASK_JSON
+    task = read_json(task_json_path) if task_json_path.is_file() else None
+    workflow_mode = (task.get("meta") or {}).get("workflow_mode") if task else None
+    if workflow_mode in TASKRUN_MODES:
+        return _start_taskrun(args, repo_root, full_path, task_dir, task)
+    if getattr(args, "taskrun_input", None):
+        print(colored("Error: --taskrun-input is only valid for TaskRun tasks", Colors.RED))
+        return 1
 
     if not resolve_context_key():
         # Degraded mode: no session identity available.
@@ -191,7 +346,9 @@ def cmd_finish(args: argparse.Namespace) -> int:
     print(colored(f"✓ Cleared current task (was: {current})", Colors.GREEN))
     print(f"Source: {active.source}")
 
-    if task_json_path.is_file():
+    task = read_json(task_json_path) if task_json_path.is_file() else None
+    workflow_mode = (task.get("meta") or {}).get("workflow_mode") if task else None
+    if task_json_path.is_file() and workflow_mode not in TASKRUN_MODES:
         run_task_hooks("after_finish", task_json_path, repo_root)
     return 0
 
@@ -346,7 +503,7 @@ Usage:
   python3 task.py add-context <dir> <jsonl> <path> [reason]  Add entry to jsonl
   python3 task.py validate <dir>                     Validate jsonl files
   python3 task.py list-context <dir>                 List jsonl entries
-  python3 task.py start <dir>                        Set active task
+  python3 task.py start <dir> [--taskrun-input <json>]  Admit TaskRun or activate legacy task
   python3 task.py current [--source]                 Show active task
   python3 task.py finish                             Clear active task
   python3 task.py set-branch <dir> <branch>          Set git branch
@@ -355,8 +512,10 @@ Usage:
   python3 task.py cancel <task-dir> --reason <reason> --authorized-by <user>
                                                     Cancel task with audit evidence
   python3 task.py archive <task-dir>                 Archive completed/cancelled task
+  python3 task.py archive-orphans --check            Read-only orphan family plan
   python3 task.py archive-recover <transaction-id>  Recover an archive transaction
-  python3 task.py soft-archive <task-dir> --commit <hash>  Soft archive v3 child
+  python3 task.py complete-child <task-dir> --commit <hash>  Complete Current Trellis child
+  python3 task.py soft-archive <task-dir> --commit <hash>  Legacy compatibility alias
   python3 task.py claim <task-dir> --owner codex     Claim task ownership
   python3 task.py release <task-dir>                 Release task ownership to jym
   python3 task.py add-subtask <parent> <child>       Link child task to parent
@@ -369,15 +528,16 @@ Monorepo options:
 
 List options:
   --mine, -m           Show only tasks assigned to current developer
-  --status, -s <s>     Filter by status (planning, in_progress, review, completed, cancelled)
+  --status, -s <s>     Filter by status (planning, running, in_progress, review, completed, cancelled)
 
 Examples:
   python3 task.py create "Add login feature" --slug add-login
+  python3 task.py create "Parallel repair" --slug parallel-repair --strategy loop
   python3 task.py create "Add login feature" --slug add-login --package cli
   python3 task.py create "Child task" --slug child --parent .trellis/tasks/01-21-parent
   python3 task.py add-context <dir> implement .trellis/spec/cli/backend/auth.md "Auth guidelines"
   python3 task.py set-branch <dir> task/add-login
-  python3 task.py start .trellis/tasks/01-21-add-login
+  python3 task.py start .trellis/tasks/01-21-add-login --taskrun-input /tmp/start.json
   python3 task.py current --source
   python3 task.py finish
   python3 task.py cancel add-login --reason "superseded" --authorized-by jym
@@ -448,7 +608,9 @@ def main() -> int:
     p_create.add_argument("--touches", action="append", default=[],
                           help="Expected touched path glob; repeat or comma-separate")
     p_create.add_argument("--workflow-mode",
-                          help="Parent workflow selector: current_trellis or loop_v1")
+                          help="Legacy parent selector; rejected after TaskRun cutover")
+    p_create.add_argument("--strategy", choices=["single", "loop"],
+                          help="TaskRun execution strategy (default: single)")
 
     # add-context
     p_add = subparsers.add_parser("add-context", help="Add context entry")
@@ -468,6 +630,8 @@ def main() -> int:
     # start
     p_start = subparsers.add_parser("start", help="Set active task")
     p_start.add_argument("dir", help="Task directory")
+    p_start.add_argument("--taskrun-input",
+                         help="Exact JSON start request for a TaskRun task")
 
     # current
     p_current = subparsers.add_parser("current", help="Show active task")
@@ -510,12 +674,56 @@ def main() -> int:
         help="Atomically sweep terminal children whose Current Trellis parents are archived",
     )
     p_archive_orphans.add_argument(
+        "--check",
+        action="store_true",
+        help="Report eligible families, moves, and blockers without mutation",
+    )
+    p_archive_orphans.add_argument(
         "--no-commit",
         action="store_true",
         help="Skip auto git commit after archive",
     )
 
-    # cancel
+    # authorize-replacement / cancel
+    p_replacement = subparsers.add_parser(
+        "authorize-replacement",
+        help="Authorize one exact Current Trellis child replacement",
+    )
+    p_replacement.add_argument("name", help="Predecessor child directory or name")
+    p_replacement.add_argument("--reason", required=True, help="Attributable replacement reason")
+    p_replacement.add_argument("--authorized-by", required=True, help="User who authorized replacement")
+    p_replacement.add_argument("--authorization-ref", required=True, help="Exact direct authorization reference")
+    p_replacement.add_argument("--delivery-slot", required=True, help="Frozen parent delivery slot")
+    p_replacement.add_argument("--superseded-by", required=True, help="Exact successor child")
+    p_replacement.add_argument("--rtm-id", action="append", default=[], required=True,
+                               help="Exact parent RTM requirement ID; repeat for multiple rows")
+    p_replacement.add_argument("--evidence-commit", required=True,
+                               help="Full reachable predecessor evidence commit")
+    p_replacement.add_argument("--evidence-digest", required=True,
+                               help="SHA-256 digest of the predecessor task tree at the evidence commit")
+
+    p_historical = subparsers.add_parser(
+        "reconcile-historical-replacement",
+        help="Record one post-hoc pre-implementation replacement settlement",
+    )
+    p_historical.add_argument("name", help="Historical predecessor child")
+    p_historical.add_argument("--parent", required=True, help="Exact promotion parent")
+    p_historical.add_argument("--successor", required=True, help="Exact completed successor")
+    p_historical.add_argument("--rtm-id", action="append", default=[], required=True,
+                              help="Exact parent RTM requirement ID")
+    p_historical.add_argument("--evidence-commit", required=True,
+                              help="Full reachable predecessor evidence commit")
+    p_historical.add_argument("--bundle-digest", required=True,
+                              help="Immutable closeout bundle SHA-256")
+    p_historical.add_argument("--settlement-implementation", required=True,
+                              help="Accepted generic settlement implementation commit")
+    p_historical.add_argument("--reason", required=True,
+                              help="Attributable historical terminal reason")
+    p_historical.add_argument("--authorized-by", required=True,
+                              help="Direct user authorizing reconciliation")
+    p_historical.add_argument("--authorization-ref", required=True,
+                              help="Exact post-hoc direct authorization reference")
+
     p_cancel = subparsers.add_parser("cancel", help="Record an authorized terminal cancellation")
     p_cancel.add_argument("name", help="Task directory or name")
     p_cancel.add_argument("--reason", required=True, help="Non-empty cancellation reason")
@@ -525,9 +733,27 @@ def main() -> int:
                           help="Required for linked child cancellation")
     p_cancel.add_argument("--rtm-id", action="append", default=[],
                           help="Exact parent RTM requirement ID; repeat for multiple rows")
+    p_cancel.add_argument("--rtm-fulfilled-by", help="Exact completed successor fulfilling the RTM rows")
+    p_cancel.add_argument("--delivery-slot", help="Frozen delivery slot from replacement authorization")
+    p_cancel.add_argument("--replacement-id", help="Stable replacement authorization identity")
+    p_cancel.add_argument("--evidence-commit", help="Full predecessor evidence commit")
+    p_cancel.add_argument("--evidence-digest", help="Bound predecessor evidence digest")
+    p_cancel.add_argument("--authorization-ref", help="Original replacement authorization reference")
 
-    # soft-archive
-    p_soft = subparsers.add_parser("soft-archive", help="Soft archive v3 child task")
+    # complete-child / legacy soft-archive alias
+    p_complete = subparsers.add_parser(
+        "complete-child",
+        help="Complete a Current Trellis child task",
+    )
+    p_complete.add_argument("name", help="Task directory or name")
+    p_complete.add_argument("--commit", required=True, help="Commit hash to record")
+    p_complete.add_argument("--force-archive", action="store_true", help="Bypass done gate with audit reason")
+    p_complete.add_argument("--reason", default="", help="Required with --force-archive")
+
+    p_soft = subparsers.add_parser(
+        "soft-archive",
+        help="Compatibility alias for historical child tasks",
+    )
     p_soft.add_argument("name", help="Task directory or name")
     p_soft.add_argument("--commit", required=True, help="Commit hash to record")
     p_soft.add_argument("--force-archive", action="store_true", help="Bypass done gate with audit reason")
@@ -582,10 +808,13 @@ def main() -> int:
         "set-branch": cmd_set_branch,
         "set-base-branch": cmd_set_base_branch,
         "set-scope": cmd_set_scope,
+        "authorize-replacement": cmd_authorize_replacement,
+        "reconcile-historical-replacement": cmd_reconcile_historical_replacement,
         "cancel": cmd_cancel,
         "archive": cmd_archive,
         "archive-orphans": cmd_archive_orphans,
         "archive-recover": cmd_archive_recover,
+        "complete-child": cmd_complete_child,
         "soft-archive": cmd_soft_archive,
         "claim": cmd_claim,
         "release": cmd_release,

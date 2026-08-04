@@ -27,20 +27,20 @@ Shows the Phase Index (Plan / Execute / Finish) with routing + skill mapping.
 
 ## Step 3: Decide Where You Are
 
-`get_context.py` shows the active task's `status` field. Route by `status` + artifact presence:
+`get_context.py` shows the active task status and current workflow guidance.
+Follow that guidance instead of maintaining another routing table here.
 
-- `status=planning` + no `prd.md` → **1.1** (load `trellis-brainstorm`)
-- `status=planning` + `prd.md` exists + `implement.jsonl` not curated (only the seed `_example` row) → **1.3**
-- `status=planning` + `prd.md` + curated `implement.jsonl` → **1.4** (run `task.py start` to enter Phase 2)
-- `status=in_progress` + implementation not started → **2.1**
-- `status=in_progress` + implementation done, not yet checked → **2.2**
-- `status=in_progress` + check passed → **3.1**
-- `status=completed` (rare; usually archived immediately) → archive flow
+- `planning`: remain in Phase 1, load missing planning artifacts, and use
+  `prd-governance.md` for PRD acceptance/binding. File presence alone never
+  authorizes `task.py start`.
+- `in_progress`: continue from the next incomplete Execute/Finish step.
+- `completed`: follow the archive guidance in `.trellis/workflow.md`.
 
 Phase rules (full detail in `.trellis/workflow.md`):
 
 1. Run steps **in order** within a phase — `[required]` steps must not be skipped
-2. `[once]` steps are already done if the output exists (e.g., `prd.md` for 1.1; `implement.jsonl` with curated entries for 1.3) — skip them
+2. `[once]` steps are done only when their workflow output and authority gates
+   are satisfied; file presence alone is insufficient
 3. You may go back to an earlier phase if discoveries require it
 
 ## Step 4: Load the Specific Step

@@ -39,14 +39,16 @@ cat .trellis/spec/<package>/<layer>/index.md   # for each relevant layer
 Index files list the specific guideline docs to read when you actually start coding.
 
 ## Step 4: Decide next action
-From Step 1 you know the current task. Check the task directory:
+From Step 1, route by the active task status using `.trellis/workflow.md`:
 
-- **Active task + `prd.md` exists** → Phase 2 step 2.1. Load the step detail:
-  ```bash
-  python3 ./.trellis/scripts/get_context.py --mode phase --step 2.1 --platform codex
-  ```
-- **Active task + no `prd.md`** → Phase 1.1. Load the `trellis-brainstorm` skill.
-- **No active task** → when the user describes multi-step work, load the `trellis-brainstorm` skill to clarify requirements, then create a task via `task.py create`. For simple one-off questions or trivial edits, skip this and just answer directly — no task needed.
+- **Active `planning` task**: remain in Phase 1. Read the current step detail;
+  for PRD work, also read `prd-governance.md`. Do not infer Phase 2 from the
+  presence of `prd.md`.
+- **Active `in_progress` task**: continue from the next incomplete Phase 2/3
+  step.
+- **No active task**: when the user describes multi-step work, load
+  `trellis-brainstorm` and create a task. Pure Q&A and trivial read-only work do
+  not need a task.
 
 ---
 
@@ -54,7 +56,7 @@ From Step 1 you know the current task. Check the task directory:
 
 | User intent | Skill |
 |---|---|
-| New feature / unclear requirements | `trellis-brainstorm` |
+| New feature, PRD, or unclear requirements | `trellis-brainstorm` |
 | About to write code | `trellis-before-dev` |
 | Done coding / quality check | `trellis-check` |
 | Stuck / fixed same bug multiple times | `trellis-break-loop` |

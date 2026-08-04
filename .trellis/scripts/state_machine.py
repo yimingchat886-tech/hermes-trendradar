@@ -16,6 +16,8 @@ HARNESS_MODE = "harness_state_machine"
 DEFAULT_MODE = "default_trellis"
 TASK_JSON = "task.json"
 EVENT_LOG = "state-events.jsonl"
+LEGACY_SCHEMA_VERSION = 1
+CURRENT_SCHEMA_VERSION = 2
 
 INIT_STATES = {
     "parent": "parent_prd_draft",
@@ -52,6 +54,16 @@ TRANSITIONS = {
     },
 }
 
+V2_TRANSITIONS = {
+    "parent": TRANSITIONS["parent"],
+    "child": {
+        ("child_plan_draft", "plan_drafted"): "child_waiting_completion_signal",
+        ("child_waiting_completion_signal", "completion_signal_received"): "child_commit_ready",
+        ("child_commit_ready", "commit_created"): "child_archive_ready",
+        ("child_archive_ready", "child_completed"): "child_completed",
+    },
+}
+
 ALL_STATES = {
     kind: {
         INIT_STATES[kind],
@@ -59,6 +71,7 @@ ALL_STATES = {
         ARCHIVED_STATES[kind],
         CANCELLED_STATES[kind],
         *mapping.values(),
+        *V2_TRANSITIONS[kind].values(),
     }
     for kind, mapping in TRANSITIONS.items()
 }
@@ -68,7 +81,14 @@ class StateMachineError(Exception):
     """Raised when a state operation is rejected."""
 
 
-def init_task(task_dir: Path | str, kind: str, *, by: str = "agent", note: str = "") -> dict[str, Any]:
+def init_task(
+    task_dir: Path | str,
+    kind: str,
+    *,
+    by: str = "agent",
+    note: str = "",
+    schema_version: int = CURRENT_SCHEMA_VERSION,
+) -> dict[str, Any]:
     """Initialize an opt-in harness state machine."""
 
     if kind not in INIT_STATES:
@@ -79,8 +99,10 @@ def init_task(task_dir: Path | str, kind: str, *, by: str = "agent", note: str =
     if existing:
         existing_kind = existing.get("kind")
         if existing_kind == kind:
+            state_schema_version(existing)
             return {"changed": False, "state_machine": existing}
         raise StateMachineError(f"state machine already initialized as {existing_kind}")
+    _validate_schema_version(schema_version)
 
     now = _now()
     machine = {
@@ -91,6 +113,8 @@ def init_task(task_dir: Path | str, kind: str, *, by: str = "agent", note: str =
         "blocked_from_state": None,
         "updated_at": now,
     }
+    if schema_version == CURRENT_SCHEMA_VERSION:
+        machine["schema_version"] = CURRENT_SCHEMA_VERSION
     new_task = _with_state(task, machine)
     entry = _event_entry("init", kind, None, machine["current_state"], by, note, now)
     _write_task_and_log(task_path, new_task, log_path, entry)
@@ -109,11 +133,18 @@ def apply_event(task_dir: Path | str, event: str, *, by: str = "agent", note: st
     if kind not in TRANSITIONS:
         raise StateMachineError(f"invalid state machine kind: {kind}")
 
+    schema_version = state_schema_version(machine)
     current = machine.get("current_state")
-    if current not in ALL_STATES[kind]:
+    if current not in valid_states(kind, schema_version):
         raise StateMachineError(f"invalid current state: {current}")
 
-    next_state, blocked_from = _next_state(kind, current, event, machine.get("blocked_from_state"))
+    next_state, blocked_from = _next_state(
+        kind,
+        current,
+        event,
+        machine.get("blocked_from_state"),
+        schema_version,
+    )
     now = _now()
     new_machine = dict(machine)
     new_machine.update(
@@ -156,11 +187,12 @@ def cancel_task(
     if tier in CANCELLED_STATES:
         if not machine or machine.get("kind") != tier:
             raise StateMachineError(f"{tier} state machine is not initialized")
+        schema_version = state_schema_version(machine)
         previous_state = machine.get("current_state")
-        if previous_state not in ALL_STATES[tier]:
+        if previous_state not in valid_states(tier, schema_version):
             raise StateMachineError(f"invalid current state: {previous_state}")
-        if previous_state == ARCHIVED_STATES[tier]:
-            raise StateMachineError("cannot cancel an archived task")
+        if previous_state == terminal_state(tier, schema_version):
+            raise StateMachineError("cannot cancel a completed task")
         current_state = CANCELLED_STATES[tier]
         if task.get("status") == "cancelled" and previous_state != current_state:
             raise StateMachineError("top-level cancelled status lacks terminal cancellation state")
@@ -225,15 +257,22 @@ def status(task_dir: Path | str) -> dict[str, Any]:
     return {"state_machine": machine, "event_count": event_count}
 
 
-def archive_transition_events(kind: str, current: str) -> list[str]:
+def archive_transition_events(
+    kind: str,
+    current: str,
+    *,
+    schema_version: int = LEGACY_SCHEMA_VERSION,
+) -> list[str]:
     """Return the canonical events needed to reach the archived state."""
 
     if kind not in TRANSITIONS:
         raise StateMachineError(f"invalid state machine kind: {kind}")
-    archived = ARCHIVED_STATES[kind]
-    if current == archived:
+    _validate_schema_version(schema_version)
+    terminal = terminal_state(kind, schema_version)
+    transitions = transition_map(kind, schema_version)
+    if current == terminal:
         return []
-    if current not in ALL_STATES[kind] or current in {
+    if current not in valid_states(kind, schema_version) or current in {
         BLOCKED_STATES[kind],
         CANCELLED_STATES[kind],
     }:
@@ -241,22 +280,65 @@ def archive_transition_events(kind: str, current: str) -> list[str]:
 
     events: list[str] = []
     seen: set[str] = set()
-    while current != archived:
+    while current != terminal:
         if current in seen:
             raise StateMachineError(f"archive transition cycle from state: {current}")
         seen.add(current)
         candidates = [
             (event, next_state)
-            for (state, event), next_state in TRANSITIONS[kind].items()
+            for (state, event), next_state in transitions.items()
             if state == current
         ]
         if len(candidates) != 1:
             raise StateMachineError(f"cannot archive {kind} from state: {current}")
         event, current = candidates[0]
         events.append(event)
-        if current not in ALL_STATES[kind]:
+        if current not in valid_states(kind, schema_version):
             raise StateMachineError(f"archive transition reaches invalid state: {current}")
     return events
+
+
+def state_schema_version(machine: dict[str, Any]) -> int:
+    """Return v1 for unmarked historical state machines."""
+
+    value = machine.get("schema_version")
+    if value is None:
+        return LEGACY_SCHEMA_VERSION
+    _validate_schema_version(value)
+    return value
+
+
+def transition_map(kind: str, schema_version: int) -> dict[tuple[str, str], str]:
+    _validate_schema_version(schema_version)
+    if kind == "parent" or schema_version == LEGACY_SCHEMA_VERSION:
+        return TRANSITIONS[kind]
+    return V2_TRANSITIONS[kind]
+
+
+def terminal_state(kind: str, schema_version: int) -> str:
+    _validate_schema_version(schema_version)
+    if kind == "child" and schema_version == CURRENT_SCHEMA_VERSION:
+        return "child_completed"
+    return ARCHIVED_STATES[kind]
+
+
+def valid_states(kind: str, schema_version: int) -> set[str]:
+    transitions = transition_map(kind, schema_version)
+    return {
+        INIT_STATES[kind],
+        BLOCKED_STATES[kind],
+        CANCELLED_STATES[kind],
+        terminal_state(kind, schema_version),
+        *transitions.values(),
+    }
+
+
+def _validate_schema_version(schema_version: object) -> None:
+    if type(schema_version) is not int or schema_version not in {
+        LEGACY_SCHEMA_VERSION,
+        CURRENT_SCHEMA_VERSION,
+    }:
+        raise StateMachineError(f"unsupported state machine schema version: {schema_version}")
 
 
 def _load_harness_task(task_dir: Path | str) -> tuple[Path, Path, dict[str, Any]]:
@@ -288,20 +370,30 @@ def _with_state(task: dict[str, Any], machine: dict[str, Any]) -> dict[str, Any]
     return new_task
 
 
-def _next_state(kind: str, current: str, event: str, blocked_from: Any) -> tuple[str, str | None]:
+def _next_state(
+    kind: str,
+    current: str,
+    event: str,
+    blocked_from: Any,
+    schema_version: int,
+) -> tuple[str, str | None]:
     blocked_state = BLOCKED_STATES[kind]
     cancelled_state = CANCELLED_STATES[kind]
     if event == "blocker_opened":
         if current == blocked_state:
             raise StateMachineError("blocker is already open")
-        if current in {ARCHIVED_STATES[kind], cancelled_state}:
+        if current in {terminal_state(kind, schema_version), cancelled_state}:
             raise StateMachineError("cannot open blocker from terminal state")
         return blocked_state, current
 
     if event == "blocker_resolved":
         if current != blocked_state:
             raise StateMachineError("no blocker is open")
-        if not isinstance(blocked_from, str) or blocked_from not in ALL_STATES[kind] or blocked_from == blocked_state:
+        if (
+            not isinstance(blocked_from, str)
+            or blocked_from not in valid_states(kind, schema_version)
+            or blocked_from == blocked_state
+        ):
             raise StateMachineError("blocked_from_state is missing or invalid")
         return blocked_from, None
 
@@ -311,7 +403,7 @@ def _next_state(kind: str, current: str, event: str, blocked_from: Any) -> tuple
         raise StateMachineError("cancelled state is terminal")
 
     try:
-        return TRANSITIONS[kind][(current, event)], None
+        return transition_map(kind, schema_version)[(current, event)], None
     except KeyError as exc:
         raise StateMachineError(f"invalid transition: {current} + {event}") from exc
 

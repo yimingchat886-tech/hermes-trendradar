@@ -38,6 +38,7 @@ def create_args(
     tier: str = "light",
     parent: str | None = None,
     workflow_mode: str | None = None,
+    strategy: str | None = None,
 ) -> argparse.Namespace:
     return argparse.Namespace(
         title=slug.replace("-", " "),
@@ -51,6 +52,7 @@ def create_args(
         owner="codex",
         touches=[],
         workflow_mode=workflow_mode,
+        strategy=strategy,
     )
 
 
@@ -69,6 +71,17 @@ def write_config(
         f"  admission_enabled: {'true' if enabled else 'false'}\n"
         f"  parent_default: {parent_default}\n"
         f"{role_line}",
+        encoding="utf-8",
+    )
+
+
+def enable_taskrun_cutover(repo: Path) -> None:
+    trellis = repo / ".trellis"
+    trellis.mkdir(parents=True, exist_ok=True)
+    config = trellis / "config.yaml"
+    current = config.read_text(encoding="utf-8") if config.is_file() else ""
+    config.write_text(
+        current + "taskrun_v1:\n  new_code_tasks: true\n",
         encoding="utf-8",
     )
 
@@ -217,6 +230,7 @@ class LoopV1AdmissionTests(unittest.TestCase):
         args: argparse.Namespace,
         *,
         mock_state_initialization: bool = True,
+        hook: mock.Mock | None = None,
     ) -> tuple[int, str]:
         stderr = io.StringIO()
         with ExitStack() as stack:
@@ -227,7 +241,9 @@ class LoopV1AdmissionTests(unittest.TestCase):
             if mock_state_initialization:
                 stack.enter_context(mock.patch("common.task_store._init_state_if_supported"))
             stack.enter_context(mock.patch("common.task_store._has_subagent_platform", return_value=False))
-            stack.enter_context(mock.patch("common.task_store.run_task_hooks"))
+            stack.enter_context(
+                mock.patch("common.task_store.run_task_hooks", new=hook or mock.Mock())
+            )
             stack.enter_context(mock.patch("common.active_task.resolve_context_key", return_value=None))
             with redirect_stderr(stderr):
                 result = cmd_create(args)
@@ -244,6 +260,136 @@ class LoopV1AdmissionTests(unittest.TestCase):
                 self.assertEqual(result, 0)
                 task = read_json(repo / ".trellis" / "tasks" / f"07-13-plain-{tier}" / "task.json")
                 self.assertEqual(task["meta"]["workflow_mode"], "harness_state_machine")
+
+    def test_taskrun_cutover_defaults_new_tasks_to_single(self) -> None:
+        for tier in ("light", "parent"):
+            with self.subTest(tier=tier), tempfile.TemporaryDirectory() as tmp:
+                repo = Path(tmp)
+                enable_taskrun_cutover(repo)
+                hook = mock.Mock()
+
+                result, stderr = self.run_create(
+                    repo,
+                    create_args(slug=f"taskrun-{tier}", tier=tier),
+                    mock_state_initialization=False,
+                    hook=hook,
+                )
+
+                self.assertEqual(result, 0, stderr)
+                hook.assert_not_called()
+                task_dir = repo / ".trellis/tasks" / f"07-13-taskrun-{tier}"
+                task = read_json(task_dir / "task.json")
+                self.assertEqual(
+                    task["meta"],
+                    {"taskrun_strategy": "single", "workflow_mode": "taskrun_v2"},
+                )
+                self.assertFalse((task_dir / "state-events.jsonl").exists())
+
+    def test_taskrun_cutover_accepts_explicit_loop_strategy(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            enable_taskrun_cutover(repo)
+
+            result, stderr = self.run_create(
+                repo,
+                create_args(slug="taskrun-loop", strategy="loop"),
+            )
+
+            self.assertEqual(result, 0, stderr)
+            task = read_json(
+                repo / ".trellis/tasks/07-13-taskrun-loop/task.json"
+            )
+            self.assertEqual(task["meta"]["workflow_mode"], "taskrun_v2")
+            self.assertEqual(task["meta"]["taskrun_strategy"], "loop")
+
+    def test_taskrun_cutover_rejects_competing_workflow_before_mutation(self) -> None:
+        for workflow_mode in ("current_trellis", "loop_v1", "loop_v4"):
+            with self.subTest(workflow_mode=workflow_mode), tempfile.TemporaryDirectory() as tmp:
+                repo = Path(tmp)
+                enable_taskrun_cutover(repo)
+                board = repo / "BOARD.md"
+                board.write_bytes(b"unchanged-board\n")
+                sessions = repo / ".trellis/.runtime/sessions"
+                sessions.mkdir(parents=True)
+                pointer = sessions / "existing.json"
+                pointer.write_bytes(b"unchanged-pointer\n")
+                ledger = repo / ".trellis/.runtime/loop-v1/existing.sqlite3"
+                ledger.parent.mkdir(parents=True)
+                ledger.write_bytes(b"unchanged-ledger\n")
+                before = {
+                    "board": board.read_bytes(),
+                    "pointer": pointer.read_bytes(),
+                    "ledger": ledger.read_bytes(),
+                }
+
+                result, stderr = self.run_create(
+                    repo,
+                    create_args(
+                        slug=f"rejected-{workflow_mode}",
+                        tier="parent",
+                        workflow_mode=workflow_mode,
+                    ),
+                )
+
+                self.assertEqual(result, 1)
+                self.assertIn("cannot admit new lifecycle authority", stderr)
+                self.assertFalse(
+                    (repo / ".trellis/tasks" / f"07-13-rejected-{workflow_mode}").exists()
+                )
+                self.assertEqual(board.read_bytes(), before["board"])
+                self.assertEqual(pointer.read_bytes(), before["pointer"])
+                self.assertEqual(ledger.read_bytes(), before["ledger"])
+
+    def test_taskrun_cutover_cannot_extend_legacy_parent(self) -> None:
+        for workflow_mode in ("harness_state_machine", "loop_v1"):
+            with self.subTest(workflow_mode=workflow_mode), tempfile.TemporaryDirectory() as tmp:
+                repo = Path(tmp)
+                parent = write_parent(repo, workflow_mode=workflow_mode)
+                before = (parent / "task.json").read_bytes()
+                enable_taskrun_cutover(repo)
+
+                result, stderr = self.run_create(
+                    repo,
+                    create_args(slug="legacy-child", parent=str(parent)),
+                )
+
+                self.assertEqual(result, 1)
+                self.assertIn("cannot extend legacy", stderr)
+                self.assertFalse(
+                    (repo / ".trellis/tasks/07-13-legacy-child").exists()
+                )
+                self.assertEqual((parent / "task.json").read_bytes(), before)
+
+    def test_taskrun_cutover_cannot_mutate_admitted_parent_projection(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            parent = write_parent(repo, workflow_mode="taskrun_v1")
+            task = read_json(parent / "task.json")
+            task["meta"].update(
+                {
+                    "taskrun_strategy": "single",
+                    "task_run": {
+                        "authority": "sqlite",
+                        "id": "tr-example",
+                        "projection": True,
+                    },
+                }
+            )
+            (parent / "task.json").write_text(
+                json.dumps(task, indent=2) + "\n", encoding="utf-8"
+            )
+            before = (parent / "task.json").read_bytes()
+            enable_taskrun_cutover(repo)
+
+            result, stderr = self.run_create(
+                repo,
+                create_args(slug="late-child", parent=str(parent)),
+            )
+
+            self.assertEqual(result, 1)
+            self.assertIn("cannot extend legacy", stderr)
+            self.assertFalse((repo / ".trellis/tasks/07-13-late-child").exists())
+            self.assertEqual((parent / "task.json").read_bytes(), before)
 
     def test_explicit_current_trellis_selector_preserves_internal_mode(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -487,6 +633,28 @@ class LoopV1AdmissionTests(unittest.TestCase):
             task = read_json(repo / ".trellis" / "tasks" / "07-13-current-hsm" / "task.json")
             self.assertEqual(task["meta"]["workflow_mode"], "harness_state_machine")
             self.assertEqual(task["meta"]["state_machine"]["kind"], "parent")
+            self.assertEqual(task["meta"]["state_machine"]["schema_version"], 2)
+
+    def test_new_current_trellis_child_records_schema_v2(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            parent = write_parent(
+                repo,
+                workflow_mode="harness_state_machine",
+            )
+
+            result, stderr = self.run_create(
+                repo,
+                create_args(slug="current-child", parent=str(parent)),
+                mock_state_initialization=False,
+            )
+
+            self.assertEqual(result, 0, stderr)
+            child = read_json(
+                repo / ".trellis" / "tasks" / "07-13-current-child" / "task.json"
+            )
+            self.assertEqual(child["meta"]["state_machine"]["kind"], "child")
+            self.assertEqual(child["meta"]["state_machine"]["schema_version"], 2)
 
     def test_loop_v1_validation_checks_mode_without_hsm_done_gate(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -528,7 +696,10 @@ class LoopV1AdmissionTests(unittest.TestCase):
             with redirect_stdout(output):
                 errors = _validate_v2_task(parent, repo)
             self.assertEqual(errors, 1)
-            self.assertIn("must be harness_state_machine or loop_v1", output.getvalue())
+            self.assertIn(
+                "must be harness_state_machine, loop_v1, taskrun_v1, or taskrun_v2",
+                output.getvalue(),
+            )
 
     def test_loop_v1_validation_rejects_invalid_qualification(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -880,7 +1051,7 @@ class LoopV1AdmissionTests(unittest.TestCase):
                 )
             )
 
-    def test_create_help_exposes_canonical_selector(self) -> None:
+    def test_create_help_exposes_taskrun_strategy_and_legacy_selector(self) -> None:
         result = subprocess.run(
             [sys.executable, str(SCRIPT_DIR / "task.py"), "create", "--help"],
             capture_output=True,
@@ -891,7 +1062,8 @@ class LoopV1AdmissionTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("--workflow-mode WORKFLOW_MODE", result.stdout)
-        self.assertIn("current_trellis or loop_v1", result.stdout)
+        self.assertIn("Legacy parent selector", result.stdout)
+        self.assertIn("--strategy {single,loop}", result.stdout)
 
 
 if __name__ == "__main__":

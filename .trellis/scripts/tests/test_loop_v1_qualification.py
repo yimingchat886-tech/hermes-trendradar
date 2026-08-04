@@ -371,6 +371,64 @@ def parent_status(ledger: ParentLedger) -> str:
 
 
 class LoopV1QualificationFixtureTests(unittest.TestCase):
+    def test_managed_forward_bundle_rejects_soft_archive_caller(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            workflow = root / ".trellis" / "workflow.md"
+            workflow.parent.mkdir(parents=True)
+            workflow.write_text(
+                "Run `task.py complete-child <child> --commit <hash>`.\n",
+                encoding="utf-8",
+            )
+            self.assertEqual(
+                qualification_module._managed_child_completion_issues(root),
+                [],
+            )
+
+            script = root / ".trellis" / "scripts" / "forward.py"
+            script.parent.mkdir(parents=True)
+            script.write_text(
+                "command = 'task.py soft-archive child --commit deadbeef'\n",
+                encoding="utf-8",
+            )
+            self.assertEqual(
+                qualification_module._managed_child_completion_issues(root),
+                [
+                    "managed forward child completion caller uses soft-archive: "
+                    ".trellis/scripts/forward.py"
+                ],
+            )
+            script.unlink()
+
+            task_cli = root / ".trellis" / "scripts" / "task.py"
+            task_cli.write_text(
+                "# compatibility command: soft-archive\n",
+                encoding="utf-8",
+            )
+            self.assertEqual(
+                qualification_module._managed_child_completion_issues(root),
+                [
+                    "managed task CLI does not expose complete-child: "
+                    ".trellis/scripts/task.py"
+                ],
+            )
+            task_cli.write_text(
+                "# canonical command: complete-child\n",
+                encoding="utf-8",
+            )
+
+            workflow.write_text(
+                "Run `task.py soft-archive <child> --commit <hash>`.\n",
+                encoding="utf-8",
+            )
+            self.assertEqual(
+                qualification_module._managed_child_completion_issues(root),
+                [
+                    "managed forward child completion caller uses soft-archive: "
+                    ".trellis/workflow.md"
+                ],
+            )
+
     def test_valid_receipt_allows_ledger_write(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -741,6 +799,34 @@ class LoopV1QualificationFixtureTests(unittest.TestCase):
 
 
 class LoopV1QualificationTests(unittest.TestCase):
+    def test_overlay_manifest_owns_prd_governance_surface_exactly_once(self) -> None:
+        manifest = qualification_module.load_overlay_manifest(
+            REPO_ROOT / qualification_module.MANIFEST_PATH
+        )
+        expected = {
+            ".trellis/workflow.md": "file",
+            ".agents/skills/trellis-brainstorm": "tree",
+            ".agents/skills/trellis-continue": "tree",
+            ".agents/skills/trellis-meta": "tree",
+            ".agents/skills/trellis-start": "tree",
+            ".trellis/scripts/prd.py": "file",
+            ".trellis/scripts/tests/test_prd_governance.py": "file",
+            ".trellis/spec/project/git-commit-push-policy.md": "file",
+            ".trellis/spec/project/index.md": "file",
+            ".trellis/spec/project/prd-governance.md": "file",
+            ".trellis/spec/project/staged-delivery-overlay.md": "file",
+            ".trellis/templates/v3": "tree",
+        }
+
+        for path, scope in expected.items():
+            with self.subTest(path=path):
+                self.assertTrue((REPO_ROOT / path).exists())
+                self.assertEqual(
+                    [entry for entry in manifest["entries"] if entry["path"] == path],
+                    [{"owner": "overlay", "path": path, "scope": scope}],
+                )
+        self.assertEqual(manifest["overlay_version"], "loop-v1.0.10-local")
+
     def test_overlay_manifest_owns_every_loop_payload_exactly_once(self) -> None:
         manifest = qualification_module.load_overlay_manifest(
             REPO_ROOT / qualification_module.MANIFEST_PATH

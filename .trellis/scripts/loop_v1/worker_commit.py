@@ -323,6 +323,133 @@ def create_child_worktree(
     return outcome
 
 
+def release_owned_worktree(
+    ledger: ParentLedger,
+    *,
+    operation_id: str,
+    runtime_root: Path,
+) -> dict[str, object]:
+    """Remove one exact current-run scratch worktree without deleting its ref."""
+    operation_id = _required_text(operation_id, "operation_id")
+    operation = ledger.get_operation(operation_id)
+    if operation is None or operation["phase"] != "authority_committed":
+        raise GitStateError("worktree release requires committed durable authority")
+    outcome = operation["outcome"]
+    fields = {
+        "child_commit": ("worktree", "branch", "commit_id", "tree_id"),
+        "integration_candidate": (
+            "candidate_worktree",
+            "candidate_branch",
+            "candidate_head",
+            "candidate_tree_id",
+        ),
+        "worker_result_observed": (
+            "worktree",
+            "branch",
+            "base_head",
+            "base_tree_id",
+        ),
+    }.get(operation["kind"])
+    if fields is None:
+        raise GitStateError("operation kind cannot release a worktree")
+    worktree_field, branch_field, head_field, tree_field = fields
+    canonical = ledger.repo_root.resolve()
+    target = Path(_required_text(outcome.get(worktree_field), worktree_field)).resolve()
+    root = Path(runtime_root).resolve()
+    branch = _required_text(outcome.get(branch_field), branch_field)
+    expected_head = _required_text(outcome.get(head_field), head_field)
+    expected_tree = _required_text(outcome.get(tree_field), tree_field)
+
+    connection = ledger._connect(read_only=True)
+    try:
+        status = connection.execute(
+            "SELECT status FROM parent_runs WHERE run_id = ?", (ledger.run_id,)
+        ).fetchone()["status"]
+    finally:
+        connection.close()
+    if status != "authorized":
+        raise GitStateError(f"worktree retained while parent status is {status}")
+    if target == root or root not in target.parents:
+        raise GitStateError("worktree release target is outside the current run root")
+    if target == canonical or target in canonical.parents or canonical in target.parents:
+        raise GitStateError("worktree release target overlaps the canonical worktree")
+
+    registered = target in set(_registered_worktrees(canonical))
+    exists = target.exists()
+    if exists != registered:
+        raise GitStateError("worktree release found partial path/registration state")
+    _assert_branch_authority(canonical, branch, expected_head, expected_tree)
+    if not exists:
+        return {"operation_id": operation_id, "removed": False, "worktree": str(target)}
+
+    _assert_same_repository(canonical, target)
+    if (
+        _git_text(target, "symbolic-ref", "--short", "HEAD") != branch
+        or _git_text(target, "rev-parse", "HEAD") != expected_head
+        or _git_text(target, "rev-parse", f"{expected_head}^{{tree}}")
+        != expected_tree
+    ):
+        raise GitStateError("worktree release target differs from durable Git authority")
+
+    dirty = bool(
+        _git(target, "status", "--porcelain=v1", "-z", "--untracked-files=all")
+    )
+    if outcome.get("root_condition") == "candidate_merge_failed":
+        if (
+            outcome.get("candidate_head") != outcome.get("expected_old")
+            or outcome.get("candidate_tree_id") != outcome.get("expected_old_tree")
+            or not isinstance(outcome.get("merge_result"), Mapping)
+            or outcome["merge_result"].get("status") != "failed"
+            or _git_text(target, "rev-parse", "--verify", "MERGE_HEAD")
+            != outcome.get("child_commit_id")
+        ):
+            raise GitStateError("failed merge release lacks exact durable merge inputs")
+        _git(target, "merge", "--abort")
+        dirty = bool(
+            _git(target, "status", "--porcelain=v1", "-z", "--untracked-files=all")
+        )
+        if dirty or _git_text(target, "rev-parse", "HEAD") != expected_head:
+            raise GitStateError("failed merge release did not return to its clean base")
+
+    force = False
+    if dirty:
+        if operation["kind"] != "worker_result_observed":
+            raise GitStateError("worktree retained because its dirt is not disposable")
+        observation = observe_worker_candidate(
+            target, base_head=_required_text(outcome.get("base_head"), "base_head")
+        )
+        expected_dirt = {
+            "actual_touches": outcome.get("actual_touches"),
+            "branch": branch,
+            "diff_identity": outcome.get("diff_identity"),
+            "head": expected_head,
+            "tree_id": outcome.get("result_tree_id"),
+            "worktree": str(target),
+        }
+        if observation["staged_paths"] or any(
+            observation.get(key) != value for key, value in expected_dirt.items()
+        ):
+            raise GitStateError("worktree retained because current dirt is unclassified")
+        allowed = _text_list(outcome.get("allowed_touches"), "allowed_touches")
+        if not observation["actual_touches"] or any(
+            _secret_like_path(path)
+            or not any(_path_matches(path, pattern) for pattern in allowed)
+            for path in observation["actual_touches"]
+        ):
+            raise GitStateError("worktree retained because dirt is secret-like or out of scope")
+        force = True
+
+    args = ["worktree", "remove"]
+    if force:
+        args.append("--force")
+    args.append(str(target))
+    _git(canonical, *args)
+    if target.exists() or target in set(_registered_worktrees(canonical)):
+        raise GitStateError("worktree release did not remove path and registration")
+    _assert_branch_authority(canonical, branch, expected_head, expected_tree)
+    return {"operation_id": operation_id, "removed": True, "worktree": str(target)}
+
+
 def observe_worker_candidate(worktree: Path, *, base_head: str) -> dict[str, object]:
     """Observe a candidate through a temporary index without staging real state."""
     repo = _repository_path(worktree, "worktree")
@@ -742,17 +869,24 @@ def commit_reviewed_candidate(
     _compare_freshness("commit", review["freshness"], runtime["token"])
     execution_base = review["execution_base"]
     source_base = review["source_base"]
-    observation = observe_worker_candidate(
-        Path(review["worktree"]), base_head=str(execution_base["head"])
-    )
     main_state = _main_state(ledger.repo_root, str(source_base["head"]))
     _assert_main_isolated(main_state, review["allowed_touches"])
+    durable_commit = json.loads(git_row["outcome_json"]) if git_row is not None else None
+    observation = (
+        None
+        if durable_commit is not None
+        else observe_worker_candidate(
+            Path(review["worktree"]), base_head=str(execution_base["head"])
+        )
+    )
 
     input_value = {
         "author_email": author_email,
         "author_name": author_name,
         "base_head": execution_base["head"],
-        "branch": observation["branch"],
+        "branch": (
+            durable_commit["branch"] if durable_commit is not None else observation["branch"]
+        ),
         "child_id": review["child_id"],
         "freshness": review["freshness"],
         "main_state": main_state,
@@ -783,6 +917,7 @@ def commit_reviewed_candidate(
         raise GitStateError(
             f"child commit is unresolved at phase {existing['phase']}; B5 reconciliation required"
         )
+    assert observation is not None
     _assert_review_artifact(validation, observation)
     if child_state != "reviewed":
         raise ReviewError("child is not awaiting its parent-owned commit")
@@ -1258,16 +1393,52 @@ def _replay_worktree(
             "SELECT * FROM git_operations WHERE git_operation_id = ?",
             (f"child-worktree:{child_id}",),
         ).fetchone()
+        commit_row = connection.execute(
+            "SELECT * FROM git_operations WHERE git_operation_id = ?",
+            (f"child-commit:{child_id}",),
+        ).fetchone()
+        commit_operation = (
+            connection.execute(
+                "SELECT * FROM operations WHERE operation_id = ?",
+                (commit_row["operation_id"],),
+            ).fetchone()
+            if commit_row is not None
+            else None
+        )
     finally:
         connection.close()
     if row is None or row["operation_id"] != operation_id:
         raise GitStateError("worktree operation lacks matching Git authority")
     outcome = json.loads(row["outcome_json"])
-    _assert_same_repository(ledger.repo_root, Path(outcome["worktree"]))
-    if (
-        _git_text(Path(outcome["worktree"]), "rev-parse", "HEAD")
-        != outcome["base_head"]
-        or _git_text(Path(outcome["worktree"]), "symbolic-ref", "--short", "HEAD")
+    expected_head = outcome["base_head"]
+    expected_tree = outcome["base_tree_id"]
+    released = False
+    if commit_row is not None:
+        if (
+            commit_operation is None
+            or commit_operation["phase"] != "authority_committed"
+            or commit_operation["outcome_json"] != commit_row["outcome_json"]
+        ):
+            raise GitStateError("released worktree lacks matching child commit authority")
+        committed = json.loads(commit_row["outcome_json"])
+        expected_head = committed["commit_id"]
+        expected_tree = committed["tree_id"]
+        released = True
+    target = Path(outcome["worktree"]).resolve()
+    registered = target in set(_registered_worktrees(ledger.repo_root))
+    exists = target.exists()
+    if exists != registered:
+        raise GitStateError("replayed worktree has partial path/registration state")
+    if not exists and not released:
+        raise GitStateError("worktree disappeared before a releasable durable boundary")
+    _assert_branch_authority(
+        ledger.repo_root, outcome["branch"], expected_head, expected_tree
+    )
+    if exists:
+        _assert_same_repository(ledger.repo_root, target)
+    if exists and (
+        _git_text(target, "rev-parse", "HEAD") != expected_head
+        or _git_text(target, "symbolic-ref", "--short", "HEAD")
         != outcome["branch"]
     ):
         raise GitStateError("replayed worktree no longer matches durable authority")
@@ -1292,14 +1463,27 @@ def _replay_child_commit(
     ):
         raise OperationConflict("child commit replay conflicts with durable authority")
     outcome = json.loads(git_row["outcome_json"])
-    repo = Path(outcome["worktree"])
-    _assert_same_repository(ledger.repo_root, repo)
+    repo = Path(outcome["worktree"]).resolve()
+    registered = repo in set(_registered_worktrees(ledger.repo_root))
+    exists = repo.exists()
+    if exists != registered:
+        raise GitStateError("replayed child commit has partial path/registration state")
+    _assert_branch_authority(
+        ledger.repo_root, outcome["branch"], outcome["commit_id"], outcome["tree_id"]
+    )
     if (
-        _git_text(repo, "rev-parse", "HEAD") != outcome["commit_id"]
-        or _git_text(repo, "rev-parse", f"{outcome['commit_id']}^{{tree}}")
-        != outcome["tree_id"]
+        _git_text(ledger.repo_root, "rev-parse", f"{outcome['commit_id']}^")
+        != outcome["base_head"]
     ):
         raise GitStateError("replayed child commit no longer matches Git")
+    if exists:
+        _assert_same_repository(ledger.repo_root, repo)
+        if (
+            _git_text(repo, "rev-parse", "HEAD") != outcome["commit_id"]
+            or _git_text(repo, "symbolic-ref", "--short", "HEAD")
+            != outcome["branch"]
+        ):
+            raise GitStateError("replayed child worktree no longer matches Git")
     return outcome
 
 
@@ -1400,13 +1584,50 @@ def _assert_worktree_target(
     for path in protected:
         if target == path or target in path.parents or path in target.parents:
             raise GitStateError("child worktree overlaps a protected worktree")
-    existing = {
-        Path(line.removeprefix("worktree ")).resolve()
-        for line in _git_text(canonical, "worktree", "list", "--porcelain").splitlines()
-        if line.startswith("worktree ")
-    }
+    existing = set(_registered_worktrees(canonical))
     if target in existing and not allow_registered:
         raise GitStateError("child worktree path is already registered")
+
+
+def _registered_worktrees(repo: Path) -> list[Path]:
+    return [
+        Path(line.removeprefix("worktree ")).resolve()
+        for line in _git_text(repo, "worktree", "list", "--porcelain").splitlines()
+        if line.startswith("worktree ")
+    ]
+
+
+def _assert_branch_authority(
+    repo: Path, branch: str, expected_head: str, expected_tree: str
+) -> None:
+    ref_name = f"refs/heads/{branch}"
+    if (
+        _git_text(repo, "rev-parse", "--verify", ref_name) != expected_head
+        or _git_text(repo, "rev-parse", f"{expected_head}^{{tree}}") != expected_tree
+    ):
+        raise GitStateError("worktree branch or Git object differs from durable authority")
+
+
+def _secret_like_path(value: str) -> bool:
+    names = {part.lower() for part in Path(value).parts}
+    sensitive = {
+        ".env",
+        "credentials",
+        "credentials.json",
+        "id_ed25519",
+        "id_rsa",
+        "private_key",
+        "secrets",
+        "secrets.json",
+    }
+    return bool(names.intersection(sensitive)) or any(
+        name.startswith(".env.")
+        or name.endswith((".key", ".p12", ".pem", ".pfx"))
+        or "credential" in name
+        or "private-key" in name
+        or "secret" in name
+        for name in names
+    )
 
 
 def _assert_same_repository(left: Path, right: Path) -> None:

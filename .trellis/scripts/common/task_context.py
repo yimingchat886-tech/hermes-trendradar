@@ -25,13 +25,19 @@ from pathlib import Path
 from .io import read_json
 from .log import Colors, colored
 from .paths import FILE_TASK_JSON, get_repo_root, get_tasks_dir
-from .task_activity import TaskStateInvalid, classify_task_activity
+from .task_activity import (
+    TaskStateInvalid,
+    classify_task_activity,
+    taskrun_authority_is_absent,
+    validate_taskrun_terminal_proof,
+)
 from .task_utils import resolve_task_dir
 from .done_gate import _find_task_anywhere, cancellation_gate_errors, done_gate_errors
 
 V2_TIERS = {"parent", "child", "light"}
 HARNESS_MODE = "harness_state_machine"
 LOOP_V1_MODE = "loop_v1"
+TASKRUN_MODES = {"taskrun_v1", "taskrun_v2"}
 
 
 # =============================================================================
@@ -238,6 +244,59 @@ def _loop_v1_validation_errors(
     return errors
 
 
+def _taskrun_validation_errors(
+    data: dict, repo_root: Path, task_dir: Path
+) -> list[str]:
+    """Validate one TaskRun planning record or exact SQLite projection."""
+    errors: list[str] = []
+    meta = data.get("meta") or {}
+    if not isinstance(meta, dict):
+        return ["TaskRun task.json meta must be an object"]
+    if "state_machine" in meta:
+        errors.append("TaskRun task must not declare HSM state-machine metadata")
+    if (task_dir / "state-events.jsonl").exists():
+        errors.append("TaskRun task must not contain an HSM state-event stream")
+    strategy = meta.get("taskrun_strategy")
+    if strategy not in {"single", "loop"}:
+        errors.append("TaskRun taskrun_strategy must be single or loop")
+    projection = meta.get("task_run")
+    if projection is None:
+        if data.get("status") == "cancelled":
+            try:
+                classify_task_activity(task_dir, repo_root)
+            except TaskStateInvalid as exc:
+                errors.append(str(exc))
+        elif data.get("status") != "planning":
+            errors.append("unadmitted TaskRun task must remain planning or be cancelled")
+        return errors
+    if (
+        not isinstance(projection, dict)
+        or projection.get("authority") != "sqlite"
+        or projection.get("projection") is not True
+        or not isinstance(projection.get("id"), str)
+    ):
+        return errors + ["TaskRun projection binding is invalid"]
+    try:
+        from taskrun import TaskRun, taskrun_path
+
+        if taskrun_authority_is_absent(taskrun_path(repo_root, projection["id"])):
+            validate_taskrun_terminal_proof(task_dir, repo_root, data, projection)
+            return errors
+        run = TaskRun.open(repo_root, projection["id"])
+        expected = run.task_projection_bytes()
+        snapshot = run.snapshot()
+    except Exception as exc:
+        errors.append(f"TaskRun authority validation failed: {exc}")
+        return errors
+    if expected != (task_dir / FILE_TASK_JSON).read_bytes():
+        errors.append("TaskRun task projection does not match SQLite authority")
+    execution = snapshot.get("execution") or {}
+    config = execution.get("config") if isinstance(execution, dict) else None
+    if not isinstance(config, dict) or config.get("strategy") != strategy:
+        errors.append("TaskRun strategy projection conflicts with SQLite authority")
+    return errors
+
+
 def _validate_v2_task(target_dir: Path, repo_root: Path) -> int:
     task_json = target_dir / FILE_TASK_JSON
     data = read_json(task_json)
@@ -256,8 +315,12 @@ def _validate_v2_task(target_dir: Path, repo_root: Path) -> int:
     workflow_mode = meta.get("workflow_mode") if isinstance(meta, dict) else None
     if workflow_mode == LOOP_V1_MODE:
         errors.extend(_loop_v1_validation_errors(data, repo_root, target_dir))
+    elif workflow_mode in TASKRUN_MODES:
+        errors.extend(_taskrun_validation_errors(data, repo_root, target_dir))
     elif workflow_mode != HARNESS_MODE:
-        errors.append("task.json meta.workflow_mode must be harness_state_machine or loop_v1")
+        errors.append(
+            "task.json meta.workflow_mode must be harness_state_machine, loop_v1, taskrun_v1, or taskrun_v2"
+        )
 
     if data.get("status") == "cancelled":
         if workflow_mode == HARNESS_MODE:
@@ -268,6 +331,30 @@ def _validate_v2_task(target_dir: Path, repo_root: Path) -> int:
             cancellation = data.get("cancellation")
             if not isinstance(cancellation, dict) or cancellation.get("pre_admission") is not True:
                 errors.append("Loop v1 cancellation validation is controlled by loop_v1.orchestrator")
+        if errors:
+            print(f"  {colored('task metadata: ✗', Colors.RED)}")
+            for error in errors:
+                print(f"    - {error}")
+        else:
+            print(f"  {colored('task metadata: ✓', Colors.GREEN)}")
+        return len(errors)
+
+    if workflow_mode in TASKRUN_MODES:
+        if isinstance(meta, dict) and meta.get("task_run") is None:
+            prd_path = target_dir / "prd.md"
+            if not prd_path.is_file() or prd_path.is_symlink():
+                errors.append("task.json and prd.md must be regular files")
+            else:
+                from taskrun.operator import OperatorError, task_prd_preflight
+
+                try:
+                    task_prd_preflight(
+                        repo_root,
+                        data,
+                        prd_path.read_text(encoding="utf-8"),
+                    )
+                except (OperatorError, UnicodeDecodeError) as exc:
+                    errors.append(str(exc))
         if errors:
             print(f"  {colored('task metadata: ✗', Colors.RED)}")
             for error in errors:

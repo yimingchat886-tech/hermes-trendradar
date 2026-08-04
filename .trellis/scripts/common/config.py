@@ -20,6 +20,7 @@ DEFAULT_MAX_JOURNAL_LINES = 2000
 DEFAULT_SESSION_AUTO_COMMIT = True
 DEFAULT_LOOP_V1_ADMISSION_ENABLED = False
 DEFAULT_LOOP_V1_PARENT_DEFAULT = "current_trellis"
+DEFAULT_TASKRUN_NEW_CODE_TASKS = False
 
 CONFIG_FILE = "config.yaml"
 
@@ -110,6 +111,21 @@ def get_loop_v1_admission(repo_root: Path | None = None) -> tuple[bool, str]:
         loop_v1.get("parent_default", DEFAULT_LOOP_V1_PARENT_DEFAULT)
     ).strip()
     return enabled, parent_default or DEFAULT_LOOP_V1_PARENT_DEFAULT
+
+
+def get_taskrun_new_code_tasks(repo_root: Path | None = None) -> bool:
+    """Return whether new code tasks use the current TaskRun authority."""
+    config = _load_config(repo_root)
+    taskrun = config.get("taskrun_v2")
+    if not isinstance(taskrun, dict):
+        # Retained downstream configs enable the new runtime without being
+        # rewritten merely to rename this cutover flag.
+        taskrun = config.get("taskrun_v1")
+    if not isinstance(taskrun, dict):
+        return DEFAULT_TASKRUN_NEW_CODE_TASKS
+    return _is_true_config_value(
+        taskrun.get("new_code_tasks", DEFAULT_TASKRUN_NEW_CODE_TASKS)
+    )
 
 
 def get_hooks(event: str, repo_root: Path | None = None) -> list[str]:

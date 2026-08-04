@@ -324,13 +324,49 @@ def recover_archive_transaction(
     if journal["phase"] in TERMINAL_PHASES:
         return journal
     head = _git(root, "rev-parse", "HEAD").stdout.strip()
-    message = _git(root, "show", "-s", "--format=%B", "HEAD").stdout
-    if (
-        head != journal["git_head"]
+    recorded_commit = journal.get("git_commit")
+    candidate = recorded_commit if isinstance(recorded_commit, str) else head
+    message = _git(root, "show", "-s", "--format=%B", candidate).stdout
+    committed = (
+        candidate != journal["git_head"]
         and f"Archive-Transaction: {transaction_id}" in message
-    ):
-        journal["git_commit"] = head
+        and _git(root, "merge-base", "--is-ancestor", candidate, head, check=False).returncode
+        == 0
+    )
+    if committed:
+        journal["git_commit"] = candidate
         journal["phase"] = "committed"
         _write_journal(path, journal)
         return journal
     return _rollback(root, path, journal)
+
+
+def discard_committed_archive_transaction(
+    repo_root: Path,
+    transaction_id: str,
+) -> None:
+    """Remove one completed journal after its caller finishes external cleanup."""
+    path = _journal_path(Path(repo_root).resolve(), transaction_id)
+    journal = _read_journal(path)
+    if journal["phase"] != "committed":
+        raise ArchiveTransactionError(
+            f"archive transaction is not committed: {transaction_id}"
+        )
+    path.unlink()
+
+
+def mark_archive_transaction_recovery_required(
+    repo_root: Path,
+    transaction_id: str,
+    error: str,
+) -> None:
+    """Keep a committed archive journal visible until caller cleanup replays."""
+    path = _journal_path(Path(repo_root).resolve(), transaction_id)
+    journal = _read_journal(path)
+    if journal["phase"] != "committed":
+        raise ArchiveTransactionError(
+            f"archive transaction is not committed: {transaction_id}"
+        )
+    journal["phase"] = "recovery_required"
+    journal["recovery_errors"] = [str(error)]
+    _write_journal(path, journal)
