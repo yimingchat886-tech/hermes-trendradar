@@ -15,7 +15,7 @@ Stop and ask the user before continuing when a PLAN needs:
 - broad directory reorganization
 - module rewrite
 - deletion or replacement of a public API
-- expanding a child task into an implicit larger feature
+- expanding an action into an implicit larger feature
 
 Use this prompt:
 
@@ -43,7 +43,7 @@ Record accept/reject reasoning, but do not block, for:
 - shorter equivalent code
 - reuse of existing helper
 - less boilerplate
-- smaller implementation for the accepted child scope
+- smaller implementation for the accepted action scope
 - duplicated logic that can be merged safely
 
 ## Safety Limit

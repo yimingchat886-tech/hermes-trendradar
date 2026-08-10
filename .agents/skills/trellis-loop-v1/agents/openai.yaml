@@ -1,4 +1,0 @@
-interface:
-  display_name: "Trellis Loop v1 Operator"
-  short_description: "Operate exact Loop v1 actions safely"
-  default_prompt: "Use $trellis-loop-v1 to continue the current Loop v1 parent from its exact next action."

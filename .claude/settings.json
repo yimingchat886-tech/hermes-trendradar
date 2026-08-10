@@ -17,10 +17,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 .claude/hooks/claim_guard.py"
-          },
-          {
-            "type": "command",
             "command": "python3 .claude/hooks/impact_gate.py"
           }
         ]

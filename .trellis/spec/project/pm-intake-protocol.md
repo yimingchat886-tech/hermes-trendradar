@@ -2,7 +2,8 @@
 
 ## When To Use
 
-Use PM intake for non-trivial requests before drafting a PRD or implementing v3 parent/child harness work.
+Use PM intake for non-trivial requests before accepting a PRD binding and
+starting the one stable TaskRun.
 
 ## Required Output
 
@@ -34,9 +35,9 @@ T0 / T1 / T2 / T3 / T4
 
 yes/no + reason
 
-## 7. Oracle Review Budget Needed
+## 7. Independent Review Needed
 
-yes/no + reason
+yes/no + risk, checkpoint, reviewer count, and evidence contract
 
 ## 8. User Confirmation Points
 
@@ -46,3 +47,7 @@ yes/no + reason
 ## Rule
 
 The agent may improve unclear user wording, but must show what changed and why before treating the rewritten requirement as final.
+
+Accepted scope becomes one Task with an internal action graph. PM intake must
+not propose lifecycle tiers, successor work, or a separate review/fix Task.
+Oracle review remains stopped by `oracle-review-policy.md`.

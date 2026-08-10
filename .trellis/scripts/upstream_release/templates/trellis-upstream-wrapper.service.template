@@ -1,6 +1,0 @@
-[Unit]
-Description=Trellis upstream wrapper source check
-
-[Service]
-Type=oneshot
-ExecStart=/usr/bin/env bash @TRELLIS_HARNESS_ROOT@/.trellis/scripts/upstream_release/trellis-upstream-wrapper.sh doctor

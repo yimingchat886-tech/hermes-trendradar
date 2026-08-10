@@ -1,9 +1,0 @@
-{
-  "fixture_schema_version": 1,
-  "historical_helper": {
-    "path": ".trellis/scripts/common/task_utils.py",
-    "sha256": "f5ef4af87ba3e11d8b19630c0c96d009de1811fc9be56c2027a9c96e21ed103e"
-  },
-  "official_release": "0.6.5",
-  "target_id": "RAG v2"
-}

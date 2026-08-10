@@ -1,62 +1,48 @@
-# Oracle Review Policy
+# Oracle Review Stop Policy
 
 ## Purpose
 
-Oracle/GPT-5.5 Pro is an external review path for expensive or high-risk judgment. It is not run for every v3 child task.
+Oracle review is stopped repository-wide by explicit user instruction on
+2026-07-12. This compatibility-named file prevents older workflow guidance from
+reintroducing Oracle as a gate.
 
-## Required Checkpoints
+## Active Rule
 
-| Checkpoint | Required when | Purpose |
-|---|---|---|
-| PRD first complete draft | T3/T4 parent work | intent, conflict, missing requirement, unverifiable scope |
-| High-risk trial PLAN | high-risk T2/T3/T4 child PLAN | architecture, data, security, migration, cross-module risk |
-| Blocker | any unresolved blocker | avoid guessing through risky ambiguity |
-| Parent closeout code/report review | T3/T4 parent closeout | final code, RTM, report, verification evidence |
+- Do not invoke Oracle in API, browser, bridge, render-copy, or manual mode.
+- Do not probe Oracle availability, retry Oracle, or wait on Oracle.
+- Do not create new `oracle-review-budget.md` artifacts.
+- Oracle unavailability must never block PRD, PLAN, ADR, implementation,
+  blocker handling, integration, closeout, or archive.
+- Apply this rule to the Unified Intent Loop and sealed legacy evidence.
 
-## Usually Skipped
+## Replacement Review
 
-- ordinary child PLAN
-- low-risk implementation
-- normal stage-report with strong verification
-- T0/T1 work
-
-## Oracle Review Budget
-
-Parent PRD first complete draft must create `oracle-review-budget.md` with:
-
-```md
-# Oracle Review Budget
-
-| Checkpoint | Required | Trigger | Reason | Expected Cost | Decision |
-|---|---:|---|---|---:|---|
-| PRD first draft | yes | always | intent/risk review | high | run |
-| SPEC | conditional | architecture/data/security risk | ... | medium | skip/run |
-| child PLAN | conditional | high-risk only | ... | medium | skip/run |
-| blocker | yes | when occurs | external challenge | high | run if occurs |
-| stage-report | conditional | abnormal only | ... | medium | skip/run |
-| closeout code review | yes | parent closeout | final evidence review | high | run |
-```
-
-## Unavailable Oracle
-
-| Task | Behavior |
+| Task | Review behavior |
 |---|---|
-| T0/T1 | skip and report reason |
-| ordinary T2 | local checklist fallback |
-| high-risk T2 | block or ask user to allow downgrade |
-| T3/T4 | block unless user explicitly allows downgrade |
+| T0/T1 | normal task verification; no independent reviewer required |
+| ordinary T2 | local checklist or one independent local review when risk warrants it |
+| high-risk T2 | two independent local reviews bound to the same artifact digest |
+| T3/T4 | two independent local reviews for high-risk PRD, PLAN/ADR, and closeout checkpoints |
 
-## Manual Mode / Downgrade Checklist
+For two-review checkpoints:
 
-When Oracle is unavailable or browser/API mode is too slow, record:
+- use separate read-only review passes;
+- bind both verdicts to the same artifact SHA-256 digest;
+- record every blocker and its disposition;
+- invalidate both verdicts after a semantic revision;
+- keep final acceptance dependent on relevant tests and evidence, not reviewer
+  opinion alone.
 
-- Oracle mode attempted: API / browser / render-copy / manual / none
-- Failure or skip reason:
-- Task level: T0 / T1 / T2 / T3 / T4
-- Downgrade allowed by policy: yes/no
-- User approved downgrade: yes/no
-- Local reviewer:
-- Local checklist used:
-- Remaining risk:
+## Historical Evidence
 
-Manual mode is acceptable only when the policy row above allows downgrade, or the user explicitly accepts the downgrade for the current checkpoint.
+- Preserve existing Oracle transcripts, review reports, budgets, and verdicts as
+  historical evidence.
+- An existing Oracle-named artifact does not authorize a new Oracle call.
+- Active task documents must label remaining Oracle checkpoints as superseded
+  and use the replacement read-only Check Agent contract above.
+
+## Resume Rule
+
+Oracle remains stopped until the user explicitly requests resumption. A future
+resume requires an intentional update to this policy and the affected workflow
+artifacts; tool availability alone must not reactivate it.

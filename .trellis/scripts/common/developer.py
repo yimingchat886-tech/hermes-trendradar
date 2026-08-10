@@ -137,9 +137,7 @@ def init_developer(name: str, repo_root: Path | None = None) -> bool:
 
 ## Notes
 
-- Sessions are appended to journal files
-- New journal file created when current exceeds 2000 lines
-- Use `add_session.py` to record sessions
+- Unified Intent Loop closeout may refresh journal projections
 """
         try:
             index_file.write_text(index_content, encoding="utf-8")

@@ -1,0 +1,522 @@
+{
+  "issues": [],
+  "ledger": {
+    "migration_generation": 1,
+    "schema_version": 2
+  },
+  "local_only": {
+    "ci_required": false,
+    "hooks_required": false,
+    "network_required": false,
+    "remote_required": false
+  },
+  "overlay": {
+    "evidence_digest": "a19715f666eb9fcb59cafa62cc82916e6921dea55e8be746d82c50d0bcf0b3a2",
+    "issues": [],
+    "manifest_digest": "b64d34e8e19d72571f3691fb36bb7b038b7d8e33f05f0c2aaac03453b4f77fe0",
+    "manifest_schema_version": 1,
+    "overlay_version": "loop-v1.0.3-local",
+    "owners": {
+      "generated": {
+        "path_set_digest": "02258f0791b1048e6b90a7a801a1acc2107f8ef0ef516acaf2151ec642bf7678",
+        "payload_digest": "not-distributable"
+      },
+      "official": {
+        "path_set_digest": "7300a321a0e3b24a839d64a7e27599c636e17f9ed58dcd5b859501c36f763170",
+        "payload_digest": "8ecc51bf724b773d61684ad1d847a5ca393b3d269286ba44d82147c0d834665c"
+      },
+      "overlay": {
+        "path_set_digest": "0a0ae1993f0de87b14aa3d9d7fc4e175873b19ef828fb9b350b8d000c5b684cc",
+        "payload_digest": "7b0c43f9adf8b2fe2cca010aa1d725ef7c8c8014ee026cac359cbf85c82b9a32"
+      },
+      "project": {
+        "path_set_digest": "ddc1d805d971ecb75548b70f6da21df41ed233aa0b086b9ff472d125fdc9368a",
+        "payload_digest": "not-distributable"
+      }
+    },
+    "status": "passed"
+  },
+  "overlay_application": {
+    "application": {
+      "path_set_digest": "0a0ae1993f0de87b14aa3d9d7fc4e175873b19ef828fb9b350b8d000c5b684cc",
+      "payload_digest": "7b0c43f9adf8b2fe2cca010aa1d725ef7c8c8014ee026cac359cbf85c82b9a32"
+    },
+    "evidence_digest": "e3714e23ccfb729920e2b6e742ffbc67ee81797175db7454218ec75ff928b335",
+    "issues": [],
+    "manifest_digest": "b64d34e8e19d72571f3691fb36bb7b038b7d8e33f05f0c2aaac03453b4f77fe0",
+    "manifest_schema_version": 1,
+    "official_update": {
+      "base_tree": "ca4b899bf44d3e264f1c000240ea5b6bec1498fb",
+      "fast_forwarded": true,
+      "updated_tree": "2bc95ab315a4931e501cdf2a975bf8b4359a5783"
+    },
+    "overlay_version": "loop-v1.0.3-local",
+    "owners": {
+      "generated": {
+        "path_set_digest": "02258f0791b1048e6b90a7a801a1acc2107f8ef0ef516acaf2151ec642bf7678",
+        "payload_digest": "not-distributable"
+      },
+      "official": {
+        "path_set_digest": "7300a321a0e3b24a839d64a7e27599c636e17f9ed58dcd5b859501c36f763170",
+        "payload_digest": "8ecc51bf724b773d61684ad1d847a5ca393b3d269286ba44d82147c0d834665c"
+      },
+      "overlay": {
+        "path_set_digest": "0a0ae1993f0de87b14aa3d9d7fc4e175873b19ef828fb9b350b8d000c5b684cc",
+        "payload_digest": "7b0c43f9adf8b2fe2cca010aa1d725ef7c8c8014ee026cac359cbf85c82b9a32"
+      },
+      "project": {
+        "path_set_digest": "ddc1d805d971ecb75548b70f6da21df41ed233aa0b086b9ff472d125fdc9368a",
+        "payload_digest": "not-distributable"
+      }
+    },
+    "preservation": {
+      "generated": {
+        "path": "BOARD.md",
+        "payload_digest": "d50f50c83cc09ed25ede0c27313bbb6c30c4615be2dd97744121784a52991c96",
+        "preserved": true
+      },
+      "project": {
+        "path": "README.md",
+        "payload_digest": "4b5593d3035be5eff841eb74db3f3792de04b42d96b390482e34a09ac3e5059a",
+        "preserved": true
+      }
+    },
+    "status": "passed"
+  },
+  "qualification": {
+    "matrix_digest": "ee9584b69086acb4fb5f78d9e2ac53be4d3c40f3f6a75221d4e7583f3bb75c35",
+    "scenarios": [
+      {
+        "id": "Q01",
+        "negative": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_acceptance.LoopV1AcceptanceTests.test_two_child_path_rejects_incomplete_required_child"
+          ],
+          "returncode": 0,
+          "source_digest": "cee667ba66ccaeec798cea4f1a69328787c1053dfc23546bfed87723e0c66a83",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_acceptance.LoopV1AcceptanceTests.test_two_child_path_rejects_incomplete_required_child"
+        },
+        "positive": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_acceptance.LoopV1AcceptanceTests.test_two_child_happy_path_qualifies_end_to_end"
+          ],
+          "returncode": 0,
+          "source_digest": "cee667ba66ccaeec798cea4f1a69328787c1053dfc23546bfed87723e0c66a83",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_acceptance.LoopV1AcceptanceTests.test_two_child_happy_path_qualifies_end_to_end"
+        },
+        "status": "passed"
+      },
+      {
+        "id": "Q02",
+        "negative": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_admission.LoopV1AdmissionTests.test_historical_and_unknown_selectors_fail_closed"
+          ],
+          "returncode": 0,
+          "source_digest": "56c040a8ca50dd046cd3fb693beadb0c73990de832c34b6564b09c7b7f02bb91",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_admission.LoopV1AdmissionTests.test_historical_and_unknown_selectors_fail_closed"
+        },
+        "positive": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_admission.LoopV1AdmissionTests.test_no_selector_keeps_current_trellis_modes"
+          ],
+          "returncode": 0,
+          "source_digest": "56c040a8ca50dd046cd3fb693beadb0c73990de832c34b6564b09c7b7f02bb91",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "79a2155b4372a10c7a7623e44260d644234e47d60968134fd708cd39dfa409de",
+          "test_id": "test_loop_v1_admission.LoopV1AdmissionTests.test_no_selector_keeps_current_trellis_modes"
+        },
+        "status": "passed"
+      },
+      {
+        "id": "Q03",
+        "negative": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_scheduler.LoopV1SchedulerTests.test_graph_cycles_pause_and_satisfied_edges_repair"
+          ],
+          "returncode": 0,
+          "source_digest": "b15580cc5f72a8165f2c4e3daab12756676e1e9db25646985b9b15d5f2248dee",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_scheduler.LoopV1SchedulerTests.test_graph_cycles_pause_and_satisfied_edges_repair"
+        },
+        "positive": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_scheduler.LoopV1SchedulerTests.test_same_child_requirement_dependencies_are_co_delivered"
+          ],
+          "returncode": 0,
+          "source_digest": "b15580cc5f72a8165f2c4e3daab12756676e1e9db25646985b9b15d5f2248dee",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_scheduler.LoopV1SchedulerTests.test_same_child_requirement_dependencies_are_co_delivered"
+        },
+        "status": "passed"
+      },
+      {
+        "id": "Q04",
+        "negative": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_scheduler.LoopV1SchedulerTests.test_alias_path_exclusive_and_shared_capacity_conflicts"
+          ],
+          "returncode": 0,
+          "source_digest": "b15580cc5f72a8165f2c4e3daab12756676e1e9db25646985b9b15d5f2248dee",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_scheduler.LoopV1SchedulerTests.test_alias_path_exclusive_and_shared_capacity_conflicts"
+        },
+        "positive": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_scheduler.LoopV1SchedulerTests.test_ready_order_cap_three_and_replay_are_deterministic"
+          ],
+          "returncode": 0,
+          "source_digest": "b15580cc5f72a8165f2c4e3daab12756676e1e9db25646985b9b15d5f2248dee",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_scheduler.LoopV1SchedulerTests.test_ready_order_cap_three_and_replay_are_deterministic"
+        },
+        "status": "passed"
+      },
+      {
+        "id": "Q05",
+        "negative": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_context.LoopV1ContextTests.test_every_boundary_rejects_stale_context"
+          ],
+          "returncode": 0,
+          "source_digest": "b0ed8f1b2cf1a06559b4ddaba4bb5558cd55b16253944145227b4a7110564f48",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_context.LoopV1ContextTests.test_every_boundary_rejects_stale_context"
+        },
+        "positive": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_orchestrator.LoopV1OrchestratorTests.test_explicit_pause_resume_and_cancel_compose_existing_controls"
+          ],
+          "returncode": 0,
+          "source_digest": "f20ee172ff0a3c03062501f3746833db0ca158746b0f6b81f7fbd3940e9aaf0b",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_orchestrator.LoopV1OrchestratorTests.test_explicit_pause_resume_and_cancel_compose_existing_controls"
+        },
+        "status": "passed"
+      },
+      {
+        "id": "Q06",
+        "negative": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_orchestrator.LoopV1OrchestratorTests.test_task_b_replacement_unblocks_same_child_requirement_dependency"
+          ],
+          "returncode": 0,
+          "source_digest": "f20ee172ff0a3c03062501f3746833db0ca158746b0f6b81f7fbd3940e9aaf0b",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_orchestrator.LoopV1OrchestratorTests.test_task_b_replacement_unblocks_same_child_requirement_dependency"
+        },
+        "positive": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_orchestrator.LoopV1OrchestratorTests.test_worker_validation_failure_dispatches_bounded_replacement"
+          ],
+          "returncode": 0,
+          "source_digest": "f20ee172ff0a3c03062501f3746833db0ca158746b0f6b81f7fbd3940e9aaf0b",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_orchestrator.LoopV1OrchestratorTests.test_worker_validation_failure_dispatches_bounded_replacement"
+        },
+        "status": "passed"
+      },
+      {
+        "id": "Q07",
+        "negative": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_orchestrator.LoopV1OrchestratorTests.test_round_three_exhaustion_emits_exact_retry_budget_intervention"
+          ],
+          "returncode": 0,
+          "source_digest": "f20ee172ff0a3c03062501f3746833db0ca158746b0f6b81f7fbd3940e9aaf0b",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_orchestrator.LoopV1OrchestratorTests.test_round_three_exhaustion_emits_exact_retry_budget_intervention"
+        },
+        "positive": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_orchestrator.LoopV1OrchestratorTests.test_failed_integration_preserves_ref_and_dispatches_only_failed_slice"
+          ],
+          "returncode": 0,
+          "source_digest": "f20ee172ff0a3c03062501f3746833db0ca158746b0f6b81f7fbd3940e9aaf0b",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_orchestrator.LoopV1OrchestratorTests.test_failed_integration_preserves_ref_and_dispatches_only_failed_slice"
+        },
+        "status": "passed"
+      },
+      {
+        "id": "Q08",
+        "negative": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_recovery.LoopV1RecoveryTests.test_prepared_candidate_recovers_as_no_effect_under_new_fence"
+          ],
+          "returncode": 0,
+          "source_digest": "87e5eb993ff0ceda5578a0c47df4cd4aa5d35198efb0c2f08f3f0fc8b83fcb4e",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_recovery.LoopV1RecoveryTests.test_prepared_candidate_recovers_as_no_effect_under_new_fence"
+        },
+        "positive": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_acceptance.LoopV1AcceptanceTests.test_crash_after_merge_recovers_without_second_merge"
+          ],
+          "returncode": 0,
+          "source_digest": "cee667ba66ccaeec798cea4f1a69328787c1053dfc23546bfed87723e0c66a83",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_acceptance.LoopV1AcceptanceTests.test_crash_after_merge_recovers_without_second_merge"
+        },
+        "status": "passed"
+      },
+      {
+        "id": "Q09",
+        "negative": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_qualification.LoopV1QualificationFixtureTests.test_disable_marker_pauses_parent_and_preserves_evidence"
+          ],
+          "returncode": 0,
+          "source_digest": "c03e7510b8fba4aac44f3751278ddac8035b5f61fe89cc05e6cdfcfc7aa55772",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_qualification.LoopV1QualificationFixtureTests.test_disable_marker_pauses_parent_and_preserves_evidence"
+        },
+        "positive": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_qualification.LoopV1QualificationFixtureTests.test_valid_receipt_allows_ledger_write"
+          ],
+          "returncode": 0,
+          "source_digest": "c03e7510b8fba4aac44f3751278ddac8035b5f61fe89cc05e6cdfcfc7aa55772",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_qualification.LoopV1QualificationFixtureTests.test_valid_receipt_allows_ledger_write"
+        },
+        "status": "passed"
+      },
+      {
+        "id": "Q10",
+        "negative": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_context.LoopV1ContextTests.test_start_request_is_immutable_and_direct_response_bound"
+          ],
+          "returncode": 0,
+          "source_digest": "b0ed8f1b2cf1a06559b4ddaba4bb5558cd55b16253944145227b4a7110564f48",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_context.LoopV1ContextTests.test_start_request_is_immutable_and_direct_response_bound"
+        },
+        "positive": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_recovery.LoopV1RecoveryTests.test_cancel_is_human_only_terminal_and_preserves_integrated_evidence"
+          ],
+          "returncode": 0,
+          "source_digest": "87e5eb993ff0ceda5578a0c47df4cd4aa5d35198efb0c2f08f3f0fc8b83fcb4e",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_recovery.LoopV1RecoveryTests.test_cancel_is_human_only_terminal_and_preserves_integrated_evidence"
+        },
+        "status": "passed"
+      },
+      {
+        "id": "Q11",
+        "negative": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_acceptance.LoopV1AcceptanceTests.test_drift_after_approval_invalidates_gate_without_merging"
+          ],
+          "returncode": 0,
+          "source_digest": "cee667ba66ccaeec798cea4f1a69328787c1053dfc23546bfed87723e0c66a83",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_acceptance.LoopV1AcceptanceTests.test_drift_after_approval_invalidates_gate_without_merging"
+        },
+        "positive": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_orchestrator.LoopV1OrchestratorTests.test_final_review_subset_replaces_complete_multi_requirement_child"
+          ],
+          "returncode": 0,
+          "source_digest": "f20ee172ff0a3c03062501f3746833db0ca158746b0f6b81f7fbd3940e9aaf0b",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_orchestrator.LoopV1OrchestratorTests.test_final_review_subset_replaces_complete_multi_requirement_child"
+        },
+        "status": "passed"
+      },
+      {
+        "id": "Q12",
+        "negative": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_qualification.LoopV1QualificationFixtureTests.test_unknown_and_prohibited_effects_fail_closed"
+          ],
+          "returncode": 0,
+          "source_digest": "c03e7510b8fba4aac44f3751278ddac8035b5f61fe89cc05e6cdfcfc7aa55772",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_qualification.LoopV1QualificationFixtureTests.test_unknown_and_prohibited_effects_fail_closed"
+        },
+        "positive": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_qualification.LoopV1QualificationFixtureTests.test_local_qualification_requires_no_remote_ci_hooks_or_network"
+          ],
+          "returncode": 0,
+          "source_digest": "c03e7510b8fba4aac44f3751278ddac8035b5f61fe89cc05e6cdfcfc7aa55772",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_qualification.LoopV1QualificationFixtureTests.test_local_qualification_requires_no_remote_ci_hooks_or_network"
+        },
+        "status": "passed"
+      }
+    ],
+    "test_source_digests": {
+      ".trellis/scripts/tests/test_loop_v1_acceptance.py": "cee667ba66ccaeec798cea4f1a69328787c1053dfc23546bfed87723e0c66a83",
+      ".trellis/scripts/tests/test_loop_v1_admission.py": "56c040a8ca50dd046cd3fb693beadb0c73990de832c34b6564b09c7b7f02bb91",
+      ".trellis/scripts/tests/test_loop_v1_context.py": "b0ed8f1b2cf1a06559b4ddaba4bb5558cd55b16253944145227b4a7110564f48",
+      ".trellis/scripts/tests/test_loop_v1_integration.py": "9302f68f423bb75a175e638e300bd88531df9bdb3e45142f13f3f3541ffc393a",
+      ".trellis/scripts/tests/test_loop_v1_ledger.py": "2ebbd97565ec441a2a63ddba3489af5afcf66ee1b7490c54997261297e06ecd3",
+      ".trellis/scripts/tests/test_loop_v1_orchestrator.py": "f20ee172ff0a3c03062501f3746833db0ca158746b0f6b81f7fbd3940e9aaf0b",
+      ".trellis/scripts/tests/test_loop_v1_qualification.py": "c03e7510b8fba4aac44f3751278ddac8035b5f61fe89cc05e6cdfcfc7aa55772",
+      ".trellis/scripts/tests/test_loop_v1_recovery.py": "87e5eb993ff0ceda5578a0c47df4cd4aa5d35198efb0c2f08f3f0fc8b83fcb4e",
+      ".trellis/scripts/tests/test_loop_v1_scheduler.py": "b15580cc5f72a8165f2c4e3daab12756676e1e9db25646985b9b15d5f2248dee",
+      ".trellis/scripts/tests/test_loop_v1_skill.py": "a683b5d9d64f7d7e4a510bb0e29d868dc76683ae2d0c12fc622d5e50a220a22e",
+      ".trellis/scripts/tests/test_loop_v1_worker_commit.py": "b8843e7137171e1f8fd2ccfe32154d77b1699be0087ca9491dc83f5a948b05f1"
+    }
+  },
+  "receipt_digest": "39171ab76e4e708c2e87caaad5d817d80a38cf884d3f05a6296ed010bb6a8bfc",
+  "receipt_id": "sha256:39171ab76e4e708c2e87caaad5d817d80a38cf884d3f05a6296ed010bb6a8bfc",
+  "receipt_schema_version": 2,
+  "runtime": {
+    "bundle_digest": "b7713e27e0bae3fec38e42a04944fd5ad03bc2fb551a22d019ccd963c7a0ac95",
+    "files": {
+      ".trellis/scripts/common/config.py": "7c22e44c986b55cb34211b8a5d048ad89bada006d7bbd4f8ca3de957ba4c0ef4",
+      ".trellis/scripts/common/io.py": "276d8af04b963190754da4a22fa87f4a5319e60d06707b61a433d0559a938d27",
+      ".trellis/scripts/common/task_store.py": "4f0b665a526162e61a8d20ca23e26c8de5f345175c76114d4626962b4c3c0399",
+      ".trellis/scripts/common/trellis_config.py": "0839dcf90ebbd77712c276930a89335b3313927051650c91d220fb51ca2a6a3c",
+      ".trellis/scripts/loop_v1/__init__.py": "a0387f986397cb9c8a39147f26c9703b1c519cb572ae01a9f7a40a4111cea94e",
+      ".trellis/scripts/loop_v1/acceptance.py": "f9f916142e4d90c5d3d85cdaac800a520ad3c807059583251212b970d573eb6a",
+      ".trellis/scripts/loop_v1/context.py": "64be9cada9a91e3961a9c2dab604c3bfae6a4a32977b531bc1e65f43a97c591d",
+      ".trellis/scripts/loop_v1/integration.py": "2878da9e9b8e27e2fb0e06de5c43c27da2cecaba48d55279934792e7fcb3bfe6",
+      ".trellis/scripts/loop_v1/ledger.py": "ad00372273ed62d4a3e15288be86578179bccf92155d63e27081e81e14d7194d",
+      ".trellis/scripts/loop_v1/orchestrator.py": "2d2443094c3d47e43f94b65f60672939a7448578bdad1cea5dc6a6aae5bfe1d8",
+      ".trellis/scripts/loop_v1/qualification.py": "ddd8891b379e05fe267561af8810c129612fb50eacd87e4b4597e0c7ca9b5220",
+      ".trellis/scripts/loop_v1/scheduler.py": "273e8c90b66b1c86f96ffec27c7f3e47f1d46b6be70c45a9dc657728cc064993",
+      ".trellis/scripts/loop_v1/worker_commit.py": "2f2b74226145693e550110e95e4472134ed2aa9f395cf2d3acd5288c45419e92",
+      ".trellis/scripts/task.py": "333cb0336e95c2eb8f5d23a9659dbd100e7a3bde64f5cd3bef225d458514b79f"
+    },
+    "git_commit": "481248c333eab9b74622a08ea31b22b17b63b1ba",
+    "git_tree": "d7f213d827709d5b6a6dc785446c610fdf7cead6"
+  },
+  "status": "qualified",
+  "tools": {
+    "filesystem_case_sensitive": true,
+    "git": "git version 2.43.0",
+    "node": "v24.14.0",
+    "os_release": "6.6.87.2-microsoft-standard-WSL2",
+    "platform": "Linux",
+    "python": "3.12.3",
+    "trellis": "0.6.7"
+  }
+}
