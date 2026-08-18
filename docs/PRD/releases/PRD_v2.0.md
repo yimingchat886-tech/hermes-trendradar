@@ -2,15 +2,17 @@
 project: Hermes Agent
 doc_type: release_prd
 version: v2.0
-status: draft
+status: paused
 created: 2026-07-06
-updated: 2026-07-06
+updated: 2026-08-18
 owner: Jym
 parent: ../PRD_MASTER.md
 parent_task: ../../../.trellis/tasks/07-05-parent-v2-0-real-analysis-loop/
 ---
 
 # PRD v2.0：真实分析闭环
+
+> **Paused 2026-08-18**：本路径及其实现保留，但当前交付主线切换到 `PRD_v2.0_extra.md`。除非用户另行恢复，本路径不再进入默认任务编排或调度。
 
 ## 0. 文档边界
 

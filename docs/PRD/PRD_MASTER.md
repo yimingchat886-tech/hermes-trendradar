@@ -3,10 +3,10 @@ project: Hermes Agent
 doc_type: master_prd
 status: active
 created: 2026-07-01
-updated: 2026-07-06
+updated: 2026-08-18
 owner: Jym
 last_closed_release: releases/archive/PRD_v1.4_split-index.md
-next_release: releases/PRD_v2.0.md
+next_release: releases/PRD_v2.0_extra.md
 ---
 
 # Hermes Agent PRD MASTER
@@ -35,6 +35,8 @@ Hermes Agent 是面向 AI 赛道内容+技术协作的内容选题系统。
 2. 热点信息跟踪与沉淀。
 
 系统的核心价值循环是：**对标账号新内容 → 结构化采集与转录 → Hermes 拆解 → 选题建议 → 人工采纳与沉淀**。所有工程能力（采集、状态、审计、写表）都服务于这个循环，不独立成为目标。
+
+当前交付主线为 **v2.0 Extra**：将已存在的采集/下载能力整理为面向 Agent 的视频获取器，供 HyperFrames + AI 工作流消费。原 Hermes 真实分析闭环保留但暂停，不进入默认任务编排或调度。
 
 ---
 
@@ -171,7 +173,8 @@ Codex 是开发期工程执行者，负责实现、修复、测试、重构、�
 | 阶段 | 主题 | 目标 |
 |---|---|---|
 | v1.x（已关闭） | 对标账号追踪工具层 | 已交付：采集、转录、去重、SQLite 状态、handoff package。飞书 live 写入与真实分析未在 v1.x 交付（§9）。 |
-| v2.0 | 真实分析闭环（价值先行） | M0：hermes-agent cron → CLI → 飞书推送链路一次跑通（不过则调度回退 systemd）。M1：hermes-benchmark skill——消费 handoff、按 §4.2 边界真实拆解、每日 digest 推内部群。M2：人工反馈最小回路（群内采用/拒绝 → CLI → SQLite），作为规则沉淀/RAG 的数据起点。M3（条件触发）：Bitable 写表——消息流实际运转 ≥2 周且确认需要结构化筛选/回溯后启动；届时定案授权信任根与表 2/3 去留（§8）。 |
+| v2.0（暂停、保留） | 真实分析闭环（价值先行） | Hermes 分析、digest、反馈与条件写表路径保留；当前不进入默认任务编排或调度。恢复需用户另行确认。 |
+| v2.0 Extra（当前） | 面向 Agent 的视频获取器 | 增加视频来源与下载途径，提供最小任务编排器，以 JSON completion envelope、media manifest 和本地文件交付给 HyperFrames + AI 工作流中的 Agent。 |
 | v2.1 | 热点信息系统 | 首切片：推特源单源闭环（高信号账号订阅 → 采集 → Hermes 热潮/教程判定 → digest），验证「源接入范式」。国内热榜、RSSHub 多源、TrendRadar、跨源事件聚类推迟到多源阶段。设计 PRD 见 §7。 |
 | 后续版本 | 正式 RAG | 将长期沉淀内容清洗入库，支持可追溯检索和选题证据链。 |
 | v4/v5 决议 | 选题 Skill 与观察表收敛 | 决定临时观察表（表 10-12）是否取消，并将稳定规则沉淀为 Skill。 |
@@ -185,7 +188,8 @@ Codex 是开发期工程执行者，负责实现、修复、测试、重构、�
 |---|---|---|
 | v1.3 | [releases/archive/PRD_v1.3.md](releases/archive/PRD_v1.3.md) | superseded；历史 PRD 已归档。 |
 | v1.4 | [releases/archive/PRD_v1.4_split-index.md](releases/archive/PRD_v1.4_split-index.md) | 已关闭（partial）：工具层至 handoff 交付；child 8/9（limited-live 表 4、生产硬化）于 closeout 取消，需求由 v2.0 M3 条件承接。其中 `PRD_v1.4_hermes-runtime-and-profiles.md` 的"Hermes 侧实现需求"形态已废弃（§9），仅作历史参考。历史 PRD 已归档。 |
-| v2.0 | [releases/PRD_v2.0.md](releases/PRD_v2.0.md) | scope 一句话：真实分析闭环（M0-M3），Douyin-only 延续，集成物为 Hermes skill + 最小 CLI 反馈子命令。 |
+| v2.0（暂停、保留） | [releases/PRD_v2.0.md](releases/PRD_v2.0.md) | scope 一句话：真实分析闭环（M0-M3）；实现与文档保留，但不进入默认任务编排或调度。 |
+| v2.0 Extra（当前） | [releases/PRD_v2.0_extra.md](releases/PRD_v2.0_extra.md) | scope 一句话：为 Agent 提供多来源视频下载、任务编排、机器可读 manifest 和本地文件交付。 |
 | v2.1 | [trending-system.md](trending-system.md)（模块设计 PRD，draft） | scope 一句话：热点系统推特首发切片——账号订阅→采集→Hermes 判定→digest，表格只定原则；问答留档见 [_ledger/trending-twitter-source.md](_ledger/trending-twitter-source.md)。 |
 
 索引维护规则：
