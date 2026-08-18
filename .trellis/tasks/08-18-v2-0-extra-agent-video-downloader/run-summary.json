@@ -1,0 +1,94 @@
+{
+  "binding_generation": 1,
+  "checks": [
+    {
+      "action_id": "ACT-10-media-runtime",
+      "argv_digest": "c15ca7b72dc443cac38d52296beff55ba27c0a5a708288ae79a27d5e8ccbbd9f",
+      "attempt_no": 1,
+      "check_id": "trellis.unittest.focused",
+      "output_digest": "997f254772e989ee5779fadd9d253731ef40d2833f3b927360d3778904742aaa",
+      "return_code": 1
+    },
+    {
+      "action_id": "ACT-10-media-runtime",
+      "argv_digest": "4f52a06f45cbf16520b8045533f643b165fc38a9b1e512e36c0ccb4d498be852",
+      "attempt_no": 1,
+      "check_id": "trellis.diff.check",
+      "output_digest": "6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d",
+      "return_code": 0
+    },
+    {
+      "action_id": "ACT-10-media-runtime",
+      "argv_digest": "c15ca7b72dc443cac38d52296beff55ba27c0a5a708288ae79a27d5e8ccbbd9f",
+      "attempt_no": 1,
+      "check_id": "trellis.unittest.focused",
+      "output_digest": "36bbf4cce8cd35373161b3f1013ce951d101f881a1382e3f24f3f96175040ec3",
+      "return_code": 0
+    },
+    {
+      "action_id": "ACT-10-media-runtime",
+      "argv_digest": "4f52a06f45cbf16520b8045533f643b165fc38a9b1e512e36c0ccb4d498be852",
+      "attempt_no": 1,
+      "check_id": "trellis.diff.check",
+      "output_digest": "6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d",
+      "return_code": 0
+    },
+    {
+      "action_id": "ACT-20-agent-handoff",
+      "argv_digest": "c15ca7b72dc443cac38d52296beff55ba27c0a5a708288ae79a27d5e8ccbbd9f",
+      "attempt_no": 1,
+      "check_id": "trellis.unittest.focused",
+      "output_digest": "b3062744840055454bc68cc188040627245055b3c9335ef3e9d7569a0906d6cb",
+      "return_code": 0
+    },
+    {
+      "action_id": "ACT-20-agent-handoff",
+      "argv_digest": "4f52a06f45cbf16520b8045533f643b165fc38a9b1e512e36c0ccb4d498be852",
+      "attempt_no": 1,
+      "check_id": "trellis.diff.check",
+      "output_digest": "6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d",
+      "return_code": 0
+    },
+    {
+      "action_id": "ACT-10-media-runtime",
+      "argv_digest": "c15ca7b72dc443cac38d52296beff55ba27c0a5a708288ae79a27d5e8ccbbd9f",
+      "attempt_no": 2,
+      "check_id": "trellis.unittest.focused",
+      "output_digest": "0da7ef8f242921f1ddfcaef89819c0362e4df712c6704dec8ee03e931ef6bdcc",
+      "return_code": 0
+    },
+    {
+      "action_id": "ACT-10-media-runtime",
+      "argv_digest": "4f52a06f45cbf16520b8045533f643b165fc38a9b1e512e36c0ccb4d498be852",
+      "attempt_no": 2,
+      "check_id": "trellis.diff.check",
+      "output_digest": "6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d",
+      "return_code": 0
+    },
+    {
+      "action_id": "ACT-20-agent-handoff",
+      "argv_digest": "c15ca7b72dc443cac38d52296beff55ba27c0a5a708288ae79a27d5e8ccbbd9f",
+      "attempt_no": 2,
+      "check_id": "trellis.unittest.focused",
+      "output_digest": "bb11c7acd3179e111871b19b00c294b68d0eabcdfe20523cb65d656cda724938",
+      "return_code": 0
+    },
+    {
+      "action_id": "ACT-20-agent-handoff",
+      "argv_digest": "4f52a06f45cbf16520b8045533f643b165fc38a9b1e512e36c0ccb4d498be852",
+      "attempt_no": 2,
+      "check_id": "trellis.diff.check",
+      "output_digest": "6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d",
+      "return_code": 0
+    }
+  ],
+  "reviews": [
+    {
+      "candidate_digest": "f559a7c442f8a32c8b98ae7e26e9546f496f2cd95f3b2e0fbeb5b1401dfb3c39",
+      "findings_json": "[]",
+      "review_no": 1
+    }
+  ],
+  "run_id": "run-565306305e117574c44381a4c6c09f461d614b0a7013d96e838589a1253c00fe",
+  "task_id": "v2-0-extra-agent-video-downloader"
+}

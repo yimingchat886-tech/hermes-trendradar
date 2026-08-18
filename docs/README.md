@@ -7,8 +7,10 @@ evidence, task execution state, and commit records stay in `.trellis/`.
 
 - [PRD master](PRD/PRD_MASTER.md) - long-term product boundary, roadmap, and
   release index.
-- [v2.0 release PRD](PRD/releases/PRD_v2.0.md) - current release scope for the
-  real-analysis loop.
+- [v2.0 Extra release PRD](PRD/releases/PRD_v2.0_extra.md) - accepted Agent
+  video downloader, orchestration, and seven-day retention contract.
+- [v2.0 release PRD](PRD/releases/PRD_v2.0.md) - retained but paused Hermes
+  analysis scope.
 - [v2.1 trending-system PRD](PRD/trending-system.md) - draft module PRD for the
   Twitter-first hotspot slice.
 - [v2.1 decision ledger](PRD/_ledger/trending-twitter-source.md) - Q/A record
@@ -16,6 +18,8 @@ evidence, task execution state, and commit records stay in `.trellis/`.
 
 ## Runbooks
 
+- [Agent media downloader](runbooks/agent-media-downloader.md) - request,
+  completion envelope, manifest, backend, and cleanup contracts.
 - [Hermes agent deployer handoff](runbooks/hermes-agent-deployer-handoff.md) -
   profile, transport, MCP, and SKILL.md contract for Hermes deployers.
 - [External runtime smoke](runbooks/external-runtime-smoke.md) - local external

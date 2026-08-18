@@ -11,6 +11,7 @@ dependencies = []
 
 [project.scripts]
 hermes-benchmark = "hermes_benchmark.cli:main"
+trendradar-media = "hermes_benchmark.media_jobs:main"
 
 [tool.setuptools.packages.find]
 include = ["hermes_benchmark*"]
