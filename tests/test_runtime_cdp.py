@@ -105,6 +105,17 @@ def test_healthcheck_reports_launch_required_without_raw_paths_or_endpoint() -> 
     assert str(root) not in encoded
 
 
+def test_healthcheck_does_not_create_runtime_lock_file() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        config = runtime_config(Path(tmp), free_port())
+        assert not config.lock_path.exists()
+
+        available = runtime_cdp._probe_lock(config.lock_path)
+
+        assert available is True
+        assert not config.lock_path.exists()
+
+
 def runtime_config(root: Path, port: int) -> RuntimeCdpConfig:
     storage = root / "hermes-stock-runs"
     user_data = root / "chrome-profile"
@@ -191,3 +202,4 @@ if __name__ == "__main__":
     test_runtime_lock_conflict_fails_before_preflight_or_launch()
     test_valid_cdp_without_owner_marker_is_blocked()
     test_healthcheck_reports_launch_required_without_raw_paths_or_endpoint()
+    test_healthcheck_does_not_create_runtime_lock_file()

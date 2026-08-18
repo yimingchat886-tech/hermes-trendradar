@@ -30,9 +30,9 @@ Managed by Trellis. Edits outside this block are preserved; edits inside may be 
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **Hermes stock** (1527 symbols, 2895 relationships, 135 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **hermes-trendradar**. Live index stats are intentionally not committed; use GitNexus status/list for current counts.
 
-> Index stale? Run `node .gitnexus/run.cjs analyze` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? `npx gitnexus analyze` (npm 11 crash → `npm i -g gitnexus`; #1939).
+> Index stale? Run `node .gitnexus/run.cjs analyze --index-only --name hermes-trendradar` from the project root. No `.gitnexus/run.cjs` yet? Run `npx gitnexus analyze --index-only --name hermes-trendradar`. Use plain/full `analyze` only when intentionally regenerating tracked AGENTS/CLAUDE/skill guidance.
 
 ## Always Do
 
@@ -54,10 +54,10 @@ This project is indexed by GitNexus as **Hermes stock** (1527 symbols, 2895 rela
 
 | Resource | Use for |
 |----------|---------|
-| `gitnexus://repo/Hermes stock/context` | Codebase overview, check index freshness |
-| `gitnexus://repo/Hermes stock/clusters` | All functional areas |
-| `gitnexus://repo/Hermes stock/processes` | All execution flows |
-| `gitnexus://repo/Hermes stock/process/{name}` | Step-by-step execution trace |
+| `gitnexus://repo/hermes-trendradar/context` | Codebase overview, check index freshness |
+| `gitnexus://repo/hermes-trendradar/clusters` | All functional areas |
+| `gitnexus://repo/hermes-trendradar/processes` | All execution flows |
+| `gitnexus://repo/hermes-trendradar/process/{name}` | Step-by-step execution trace |
 
 ## CLI
 

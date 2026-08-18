@@ -31,7 +31,7 @@ new probe, and repeat until the result is executable.
 Minimum round structure:
 
 1. Direction split: should this live in an existing mechanism or a new one?
-2. MVP boundary: v1, v2, and what would force v2 back into v1.
+2. Accepted slice boundary: v1, v2, and what would force v2 back into v1.
 3. Data contract: events, schema, metadata, state source of truth, compatibility.
 4. CLI / UX contract: command names, flags, errors, defaults, ambiguity.
 5. Cross-layer risk and tests: shared helpers, drift points, release-blocking tests.

@@ -1,0 +1,6 @@
+{"by": "system", "created_at": "2026-07-05T02:52:22Z", "current_state": "child_plan_draft", "event": "init", "kind": "child", "note": "task.py create", "previous_state": null}
+{"by": "agent", "created_at": "2026-07-05T02:52:49Z", "current_state": "child_waiting_completion_signal", "event": "plan_drafted", "kind": "child", "note": "M5-4 PRD filled and validated", "previous_state": "child_plan_draft"}
+{"by": "user", "created_at": "2026-07-05T03:32:16Z", "current_state": "child_commit_ready", "event": "completion_signal_received", "kind": "child", "note": "提交git并push", "previous_state": "child_waiting_completion_signal"}
+{"by": "system", "created_at": "2026-07-05T03:34:36Z", "current_state": "child_archive_ready", "event": "commit_created", "kind": "child", "note": "task.py soft-archive", "previous_state": "child_commit_ready"}
+{"by": "system", "created_at": "2026-07-05T03:34:36Z", "current_state": "child_archived", "event": "child_archive_completed", "kind": "child", "note": "task.py soft-archive", "previous_state": "child_archive_ready"}
+{"by": "agent", "created_at": "2026-07-06T09:40:41Z", "current_state": null, "event": "force_archive", "kind": "audit", "note": "user requested archiving completed soft-archived child; parent already closed", "previous_state": null}

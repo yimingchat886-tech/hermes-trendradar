@@ -1,0 +1,3 @@
+{"file": ".trellis/tasks/07-05-child-5-v2-0-m3-write-table-gate/prd.md", "reason": "child acceptance boundary"}
+{"file": "docs/PRD/PRD_MASTER.md", "reason": "verify M3 conditions and open decisions are honored"}
+{"file": ".trellis/spec/project/rtm-guidelines.md", "reason": "verify evidence is recorded before any implementation child"}

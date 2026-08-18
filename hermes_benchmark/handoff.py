@@ -48,17 +48,21 @@ def account_display_names(profile: LoadedProfile) -> dict[str, str]:
     return names
 
 
-def contents_from_state(conn: sqlite3.Connection, account_names: Mapping[str, str]) -> list[dict[str, str]]:
+def contents_from_state(conn: sqlite3.Connection, account_names: Mapping[str, str], *, run_id: str | None = None) -> list[dict[str, str]]:
+    where = "WHERE c.first_run_id = ?" if run_id else ""
+    params = (run_id,) if run_id else ()
     rows = conn.execute(
-        """
+        f"""
         SELECT
           c.content_id, c.platform, c.account_id, c.source_url, c.publish_at,
           c.dedup_key, c.created_at, c.updated_at,
           t.status AS transcript_status, t.artifact_ref AS transcript_artifact_ref
         FROM content_ledger c
         LEFT JOIN transcripts t ON t.content_id = c.content_id
+        {where}
         ORDER BY c.created_at, c.content_id, t.updated_at DESC
-        """
+        """,
+        params,
     ).fetchall()
     contents: list[dict[str, str]] = []
     seen: set[str] = set()

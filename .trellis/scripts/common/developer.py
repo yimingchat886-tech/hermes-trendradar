@@ -55,16 +55,22 @@ def init_developer(name: str, repo_root: Path | None = None) -> bool:
     dev_file = repo_root / DIR_WORKFLOW / FILE_DEVELOPER
     workspace_dir = repo_root / DIR_WORKFLOW / DIR_WORKSPACE / name
 
-    # Create .developer file
-    initialized_at = datetime.now().isoformat()
-    try:
-        dev_file.write_text(
-            f"name={name}\ninitialized_at={initialized_at}\n",
-            encoding="utf-8"
-        )
-    except (OSError, IOError) as e:
-        print(f"Error: Failed to create .developer file: {e}", file=sys.stderr)
+    existing = get_developer(repo_root)
+    if existing and existing != name:
+        print(f"Error: Developer already initialized: {existing}", file=sys.stderr)
         return False
+
+    # Preserve existing identity metadata during same-name workspace repair.
+    if not existing:
+        initialized_at = datetime.now().isoformat()
+        try:
+            dev_file.write_text(
+                f"name={name}\ninitialized_at={initialized_at}\n",
+                encoding="utf-8"
+            )
+        except (OSError, IOError) as e:
+            print(f"Error: Failed to create .developer file: {e}", file=sys.stderr)
+            return False
 
     # Create workspace directory structure
     try:
@@ -131,9 +137,7 @@ def init_developer(name: str, repo_root: Path | None = None) -> bool:
 
 ## Notes
 
-- Sessions are appended to journal files
-- New journal file created when current exceeds 2000 lines
-- Use `add_session.py` to record sessions
+- Unified Intent Loop closeout may refresh journal projections
 """
         try:
             index_file.write_text(index_content, encoding="utf-8")

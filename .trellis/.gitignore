@@ -1,11 +1,16 @@
 # Developer identity (local only)
 .developer
 
+# Trellis local update metadata
+.version
+.template-hashes.json
+
 # Current task pointer (each dev works on different task)
 .current-task
 
 # Session/window scoped runtime state
 .runtime/
+workspace/
 
 # Ralph Loop state file
 .ralph-state.json
@@ -17,6 +22,11 @@
 
 # Task directory runtime files
 .plan-log
+tasks/*/task.json
+tasks/*/check.jsonl
+tasks/*/implement.jsonl
+tasks/*/stage-report.md
+tasks/*/taskrun-start.json
 
 # Atomic update temp files
 *.tmp

@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/guides/project-development.md", "reason": "repo task and verification rules"}
+{"file": ".trellis/spec/project/pm-intake-protocol.md", "reason": "decision-gate framing"}
+{"file": ".trellis/spec/project/rtm-guidelines.md", "reason": "record evidence before creating write implementation child"}
+{"file": "docs/PRD/PRD_MASTER.md", "reason": "M3 conditional write-table rule and open decisions"}
+{"file": ".trellis/tasks/07-05-parent-v2-0-real-analysis-loop/prd.md", "reason": "parent P20-REQ-060 scope"}

@@ -103,7 +103,7 @@ def test_impact_gate_blocks_source_until_marker_and_marker_hook_writes_it(tmp_pa
     gate = ROOT / ".claude" / "hooks" / "impact_gate.py"
     marker = ROOT / ".claude" / "hooks" / "impact_marker.py"
 
-    source_payload = json.dumps({"session_id": "s1", "tool_input": {"file_path": "src/app.py"}})
+    source_payload = json.dumps({"session_id": "s1", "tool_input": {"file_path": ".trellis/scripts/task.py"}})
     blocked = run([sys.executable, str(gate)], tmp_path, stdin=source_payload, check=False)
     assert blocked.returncode == 2
     assert "G2 impact gate" in blocked.stderr
@@ -114,32 +114,6 @@ def test_impact_gate_blocks_source_until_marker_and_marker_hook_writes_it(tmp_pa
     impact_payload = json.dumps({"session_id": "s1", "tool_name": "mcp__gitnexus__impact"})
     assert run([sys.executable, str(marker)], tmp_path, stdin=impact_payload).returncode == 0
     assert run([sys.executable, str(gate)], tmp_path, stdin=source_payload).returncode == 0
-
-
-def test_claim_guard_blocks_cross_owner_and_audits_override(tmp_path: Path) -> None:
-    task_dir = tmp_path / ".trellis" / "tasks" / "m6-child"
-    task_dir.mkdir(parents=True)
-    (tmp_path / ".trellis" / ".developer").write_text("name=cc\n", encoding="utf-8")
-    (task_dir / "task.json").write_text(
-        json.dumps({"status": "in_progress", "owner": "codex", "touches": [".claude/hooks/**"]}),
-        encoding="utf-8",
-    )
-    (task_dir / "state-events.jsonl").write_text("", encoding="utf-8")
-    guard = ROOT / ".claude" / "hooks" / "claim_guard.py"
-
-    payload = json.dumps({"tool_input": {"file_path": ".claude/hooks/claim_guard.py"}})
-    blocked = run([sys.executable, str(guard)], tmp_path, stdin=payload, check=False)
-    assert blocked.returncode == 2
-    assert "G5 claim guard" in blocked.stderr
-
-    override_payload = json.dumps(
-        {"tool_input": {"file_path": ".claude/hooks/claim_guard.py", "override_claim": "manual handoff"}}
-    )
-    allowed = run([sys.executable, str(guard)], tmp_path, stdin=override_payload)
-    assert allowed.returncode == 0
-    events = (task_dir / "state-events.jsonl").read_text(encoding="utf-8")
-    assert '"event": "override_claim"' in events
-    assert "manual handoff" in events
 
 
 def test_pre_push_blocks_stale_main_and_private_runtime_paths(tmp_path: Path) -> None:

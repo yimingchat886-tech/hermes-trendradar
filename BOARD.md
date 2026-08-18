@@ -8,7 +8,7 @@ owner=jym
 
 | Task | Tier | Owner | Status | Updated | Blocked |
 |---|---|---|---|---|---|
-| 07-02-mediacrawler-long-running-stability | - | jym | in_progress | 2026-07-03 01:14 | no |
+| - | - | - | - | - | - |
 
 ## Waiting For Acceptance
 
@@ -20,23 +20,4 @@ owner=jym
 
 ## Recent Archives (7d)
 
-- 07-04-workflow-v2-m6-parallel-development (completed, 2026-07-04 23:41)
-- 07-04-workflow-v2-m5-remote-ci-staging (completed, 2026-07-04 21:03)
-- 07-04-workflow-v2-mechanization (completed, 2026-07-04 16:47)
-- 07-03-prd-pre-design-input-skill (cancelled, 2026-07-04 13:58)
-- 07-03-staged-acceptance-commit-archive-rule (cancelled, 2026-07-04 13:58)
-- 07-03-v2-1-0-state-engine-mvp (completed, 2026-07-04 13:58)
-- 07-01-parent-v1-4-benchmark-productionization (completed, 2026-07-04 13:58)
-- 07-02-child-6a-v1-4-media-download-manifest (completed, 2026-07-04 13:58)
-- 07-03-gitignore-development-hygiene (cancelled, 2026-07-04 13:58)
-- 07-01-production-deployment-handoff (cancelled, 2026-07-04 13:58)
-- 07-01-child-9-v1-4-production-hardening (cancelled, 2026-07-04 13:58)
-- 07-01-child-8-v1-4-feishu-limited-live-table4 (cancelled, 2026-07-04 13:58)
-- 07-01-child-7-v1-4-hermes-handoff-package (completed, 2026-07-04 13:58)
-- 07-01-child-3-v1-4-sqlite-dedup-state (completed, 2026-07-04 13:58)
-- 07-01-child-5-v1-4-whisper-batch-runner (completed, 2026-07-04 13:58)
-- 07-01-child-4-v1-4-douyin-collection-runner (completed, 2026-07-04 13:58)
-- 07-01-child-6-v1-4-transcription-threshold-smoke (completed, 2026-07-04 13:58)
-- 06-30-local-ai-state-versioning (completed, 2026-07-04 13:58)
-- 06-30-child-8-mediacrawler-collection-runner (completed, 2026-07-04 13:58)
-- 07-01-child-2-v1-4-profile-local-config (completed, 2026-07-04 13:58)
+- 07-06-sync-trellis-harness (completed, 2026-07-30 12:14)

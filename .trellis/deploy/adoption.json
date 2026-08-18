@@ -1,0 +1,28 @@
+{
+  "candidate_tree": "30909d9478e8da1fa1ba34b7bfaa683555926588944dcc625669bc50fd3c169f",
+  "check_ids": [
+    "trellis.task_cli.help"
+  ],
+  "check_results_digest": "62308445fcc33ed331dd65b1e14920179192d2f0577d90c192df8b56dbdcc967",
+  "dirty_closeout_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "dirty_preimage_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "index_closeout_digest": "ea319995d67c515658af25dae6523d9620889c15e359157a7fe3058198aec2fb",
+  "index_preimage_digest": "ea319995d67c515658af25dae6523d9620889c15e359157a7fe3058198aec2fb",
+  "managed_payload_digest": "a82c74c6118af5e481a35fac5ab29513593dee227d6bf0d00ecf505b972449ed",
+  "managed_preimage_digest": "bd47ab5c15a72d02db71859937b03f41e4f2b9adc3e13a4436d2443aa2c906fd",
+  "release_id": "e568c4af4f31af084738904adcfaa9756c1df4bc78a7200260cfab4f325dfba7",
+  "release_material": {
+    "artifact_locator": {
+      "root": "trellis/releases/artifacts",
+      "scheme": "git-common-dir-v2"
+    },
+    "manifest_path": ".trellis/releases/e568c4af4f31af084738904adcfaa9756c1df4bc78a7200260cfab4f325dfba7.json",
+    "validated_release_id": "e568c4af4f31af084738904adcfaa9756c1df4bc78a7200260cfab4f325dfba7"
+  },
+  "sync_attempt": 7,
+  "target_base": "7b2bfe2ac8e616f9c78dcd76e3bbab64da332c3d",
+  "target_branch": "codex/workflow-v2-m4-board",
+  "target_id": "hermes-trendradar",
+  "trellis_base_payload_digest": "87c36d0a73790b4a61f71e6492a72506e683f515d146f47d1200df1776b4af0b",
+  "working_candidate_digest": "1488a48acf2fd2626225919fba66afc094de3f1435070b56820bdb7483e41214"
+}

@@ -1,5 +1,0 @@
-{"by": "agent", "created_at": "2026-07-04T22:46:29Z", "current_state": "child_plan_draft", "event": "init", "kind": "child", "note": "split child initialized", "previous_state": null}
-{"by": "agent", "created_at": "2026-07-04T22:47:21Z", "current_state": "child_waiting_completion_signal", "event": "plan_drafted", "kind": "child", "note": "PLAN confirmation from user request; implementation may begin", "previous_state": "child_plan_draft"}
-{"by": "system", "created_at": "2026-07-04T23:44:12Z", "current_state": "child_commit_ready", "event": "completion_signal_received", "kind": "child", "note": "task.py soft-archive", "previous_state": "child_waiting_completion_signal"}
-{"by": "system", "created_at": "2026-07-04T23:44:12Z", "current_state": "child_archive_ready", "event": "commit_created", "kind": "child", "note": "task.py soft-archive", "previous_state": "child_commit_ready"}
-{"by": "system", "created_at": "2026-07-04T23:44:12Z", "current_state": "child_archived", "event": "child_archive_completed", "kind": "child", "note": "task.py soft-archive", "previous_state": "child_archive_ready"}

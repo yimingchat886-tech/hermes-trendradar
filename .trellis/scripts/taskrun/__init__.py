@@ -1,0 +1,61 @@
+"""Unified Intent Loop v1 public service surface."""
+
+from .authority import Authority, AuthorityError, OperationConflict, authority_path
+from .migration import apply_cutover, legacy_inventory, legacy_records, migration_plan
+from .release import (
+    build_release,
+    latest_qualified_release,
+    load_catalog,
+    qualify_release,
+    resolve_check,
+    run_check,
+    sync_targets,
+)
+from .service import (
+    CLOSEOUT_STEPS,
+    append_binding,
+    cancel_task,
+    claim_actions,
+    close_finding,
+    close_task,
+    plan_task,
+    rebuild_projections,
+    record_attempt,
+    record_check_result,
+    record_review,
+    run_task,
+    task_status,
+    touches_overlap,
+)
+
+__all__ = [
+    "Authority",
+    "AuthorityError",
+    "CLOSEOUT_STEPS",
+    "OperationConflict",
+    "append_binding",
+    "apply_cutover",
+    "authority_path",
+    "build_release",
+    "cancel_task",
+    "claim_actions",
+    "close_finding",
+    "close_task",
+    "latest_qualified_release",
+    "legacy_inventory",
+    "legacy_records",
+    "load_catalog",
+    "migration_plan",
+    "plan_task",
+    "qualify_release",
+    "rebuild_projections",
+    "record_attempt",
+    "record_check_result",
+    "record_review",
+    "resolve_check",
+    "run_check",
+    "run_task",
+    "sync_targets",
+    "task_status",
+    "touches_overlap",
+]

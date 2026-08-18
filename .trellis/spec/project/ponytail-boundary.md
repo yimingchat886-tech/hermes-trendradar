@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Ponytail constrains staged delivery to the smallest necessary implementation. It can challenge scope, but it cannot silently remove confirmed requirements.
+Ponytail constrains staged delivery to the smallest implementation that satisfies the accepted scope. It can challenge scope, but it cannot silently remove confirmed requirements.
 
 ## Blocking Findings
 
@@ -15,7 +15,7 @@ Stop and ask the user before continuing when a PLAN needs:
 - broad directory reorganization
 - module rewrite
 - deletion or replacement of a public API
-- expanding a child task into an implicit larger feature
+- expanding an action into an implicit larger feature
 
 Use this prompt:
 
@@ -29,7 +29,7 @@ Affected requirement: <id or section>
 
 Options:
 A. Do not do it; use the minimal path
-B. Do it with a smaller scope
+B. Do it with a smaller implementation that still satisfies accepted scope
 C. Do the current PLAN
 D. Redesign
 
@@ -43,9 +43,11 @@ Record accept/reject reasoning, but do not block, for:
 - shorter equivalent code
 - reuse of existing helper
 - less boilerplate
-- smaller child scope
+- smaller implementation for the accepted action scope
 - duplicated logic that can be merged safely
 
 ## Safety Limit
 
-Do not use Ponytail to weaken validation, security, accessibility, data-loss protections, correctness checks, or explicit user requirements.
+Do not use Ponytail to weaken production completeness, confirmed requirements,
+validation, safety, verification, compatibility gates, security, accessibility,
+data-loss protections, correctness checks, or explicit user requirements.

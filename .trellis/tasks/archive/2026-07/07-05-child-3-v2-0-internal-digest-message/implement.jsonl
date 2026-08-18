@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/guides/project-development.md", "reason": "repo task and verification rules"}
+{"file": ".trellis/spec/project/cli-contracts.md", "reason": "digest/message JSON contract"}
+{"file": "docs/PRD/PRD_MASTER.md", "reason": "message-first v2.0 M1 boundary"}
+{"file": ".trellis/tasks/07-05-parent-v2-0-real-analysis-loop/prd.md", "reason": "parent P20-REQ-040 scope"}

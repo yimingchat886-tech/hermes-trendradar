@@ -1,0 +1,49 @@
+{
+  "id": "workflow-v2-m6-3-worktree-parallel-trial",
+  "name": "workflow-v2-m6-3-worktree-parallel-trial",
+  "title": "M6-3 worktree parallel trial",
+  "description": "Update the operator worktree workflow and run one CC+Codex non-overlapping child parallel trial.",
+  "status": "completed",
+  "dev_type": null,
+  "scope": null,
+  "tier": "child",
+  "owner": "cc",
+  "touches": [
+    "docs/runbooks/workflow-v2-operator-guide.md",
+    "BOARD.md",
+    ".trellis/tasks/07-04-workflow-v2-m6-3-worktree-parallel-trial/**",
+    ".trellis/tasks/07-04-workflow-v2-m6-parallel-development/governance.md"
+  ],
+  "package": null,
+  "priority": "P1",
+  "creator": "jym",
+  "assignee": "jym",
+  "createdAt": "2026-07-04",
+  "completedAt": "2026-07-06",
+  "branch": "cc/workflow-v2-m6-3-worktree-parallel-trial",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": "adbf0a7",
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [
+    "docs/reports/workflow-v2-m2-m6-plan.md",
+    "docs/runbooks/workflow-v2-operator-guide.md",
+    ".trellis/spec/project/ponytail-boundary.md",
+    ".trellis/spec/project/git-commit-push-policy.md"
+  ],
+  "notes": "force-archive: user requested archiving completed soft-archived child; parent already closed",
+  "meta": {
+    "workflow_mode": "harness_state_machine",
+    "state_machine": {
+      "kind": "child",
+      "current_state": "child_archived",
+      "previous_state": "child_archive_ready",
+      "last_event": "child_archive_completed",
+      "blocked_from_state": null,
+      "updated_at": "2026-07-05T06:19:54Z"
+    }
+  }
+}

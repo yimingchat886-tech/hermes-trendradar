@@ -1,0 +1,33 @@
+{
+  "id": "docs-naming-archive-update-review",
+  "name": "docs-naming-archive-update-review",
+  "title": "Review docs naming archive and update status",
+  "description": "Review the docs/ tree for file naming consistency, archive/placement, and update recency; first capture the current docs file inventory.",
+  "status": "completed",
+  "dev_type": null,
+  "scope": null,
+  "tier": "light",
+  "owner": "codex",
+  "touches": [
+    "docs"
+  ],
+  "package": null,
+  "priority": "P2",
+  "creator": "jym",
+  "assignee": "jym",
+  "createdAt": "2026-07-08",
+  "completedAt": "2026-07-08",
+  "branch": null,
+  "base_branch": "codex/workflow-v2-m4-board",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {
+    "workflow_mode": "harness_state_machine"
+  }
+}

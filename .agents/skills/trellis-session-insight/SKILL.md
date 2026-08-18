@@ -11,7 +11,7 @@ It is intentionally a **capability skill, not a workflow**. There is no fixed ou
 
 ## What `trellis mem` is
 
-A local CLI that indexes the user's past Claude Code, Codex, and Pi Agent conversation logs (the JSONL files each platform stores under `~/.claude/projects/`, `~/.codex/sessions/`, and `~/.pi/agent/sessions/`) and lets you list, search, slice by Trellis task boundaries, and dump cleaned dialogue from them. OpenCode logs are not yet indexable (provider adapter pending) — when an OpenCode session is the obvious target, surface that limitation rather than guessing.
+A local CLI that indexes the user's past Claude Code and Codex conversation logs, plus legacy local session stores such as `.pi` when present. It lets you list, search, slice by Trellis task boundaries, and dump cleaned dialogue from them. The legacy opencode reader is not yet indexable (provider adapter pending) — when that session store is the obvious target, surface the limitation rather than guessing.
 
 Nothing in `mem` is uploaded. All reads are local.
 
@@ -68,7 +68,8 @@ trellis mem list --cwd <project-path>
 trellis mem projects   # → list active project cwds, then narrow
 ```
 
-Phase slicing (`--phase brainstorm|implement|all`) cuts the session at `task.py create` and `task.py start` boundaries. For a finish-work review of the current task, `--phase brainstorm` recovers the planning discussion and `--phase implement` recovers the execution loop. Default is `all`.
+Phase slicing is legacy-session compatibility. New Unified Intent Loop sessions
+should prefer `--phase all` and bind recovered evidence to the stable Task ID.
 
 ## Triggering patterns
 

@@ -13,7 +13,7 @@ from urllib.parse import urlsplit, urlunsplit
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run a Playwright staging smoke check.")
     parser.add_argument("--url", default="http://127.0.0.1:18080/healthz")
-    parser.add_argument("--expect", default="hermes-trendradar")
+    parser.add_argument("--expect", default="trellis-harness")
     parser.add_argument("--page-url")
     parser.add_argument("--page-expect", default="healthz")
     parser.add_argument("--timeout-ms", type=int, default=10_000)

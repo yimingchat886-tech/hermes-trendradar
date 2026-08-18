@@ -28,9 +28,24 @@ def test_batch_success_persists_artifact_hash_and_cleans_temp() -> None:
         assert summary["queued"] == 1
         assert summary["succeeded"] == 1
         assert summary["failed"] == 0
-        assert summary["items"][0]["artifact_hash"].startswith("sha256:")
-        assert "fixture transcript" not in json.dumps(summary)
+        item = summary["items"][0]
+        artifact_ref = item.get("artifact_ref")
+        artifact_hash = item.get("artifact_hash")
+        temp_video_path = item.get("temp_video_path")
+        assert isinstance(artifact_hash, str)
+        assert artifact_hash.startswith("sha256:")
+        serialized = json.dumps(summary)
+        assert "fixture transcript" not in serialized
+        assert str(root) not in serialized
+        assert "/tmp/" not in serialized
+        assert "/var/tmp/" not in serialized
+        assert isinstance(artifact_ref, str)
+        assert artifact_ref.startswith(f"file:transcripts/{run_id}/")
+        assert temp_video_path == "temp:input.mp4"
         assert not video.exists()
+        artifact_path = root / "artifacts" / artifact_ref.removeprefix("file:")
+        artifact_payload = json.loads(artifact_path.read_text(encoding="utf-8"))
+        assert str(root) not in json.dumps(artifact_payload)
         row = conn.execute("SELECT * FROM transcripts").fetchone()
         assert row["status"] == "done"
         assert row["artifact_ref"] == summary["items"][0]["artifact_ref"]
@@ -67,6 +82,12 @@ def test_command_failure_cleans_video_and_records_error() -> None:
         assert summary["failed"] == 1
         assert summary["items"][0]["error_code"] == "transcription_command_failed"
         assert summary["items"][0]["temp_video_exists_after"] is False
+        temp_video_path = summary["items"][0].get("temp_video_path")
+        serialized = json.dumps(summary)
+        assert str(root) not in serialized
+        assert "/tmp/" not in serialized
+        assert "/var/tmp/" not in serialized
+        assert temp_video_path == "temp:input.mp4"
         assert not video.exists()
         assert conn.execute("SELECT error_code FROM transcripts").fetchone()[0] == "transcription_command_failed"
         assert conn.execute("SELECT error_code FROM errors").fetchone()[0] == "transcription_command_failed"

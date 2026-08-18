@@ -1,0 +1,843 @@
+{
+  "issues": [],
+  "ledger": {
+    "migration_generation": 1,
+    "schema_version": 2
+  },
+  "local_only": {
+    "ci_required": false,
+    "hooks_required": false,
+    "network_required": false,
+    "remote_required": false
+  },
+  "overlay": {
+    "evidence_digest": "97cf5d6d1ae8bdd01d89218872763556ec80651dfe2fa1d87eba746446de3f2b",
+    "issues": [],
+    "manifest_digest": "9189d881f7c0854efd18e91b90a688789833c9c775e2c2a189198e95d56e1f20",
+    "manifest_schema_version": 2,
+    "materialization_metadata": {
+      ".trellis/.template-hashes.json": {
+        "format": "trellis-template-hashes-v2",
+        "schema_version": 2
+      }
+    },
+    "overlay_version": "loop-v1.0.9-local",
+    "owners": {
+      "generated": {
+        "path_set_digest": "02258f0791b1048e6b90a7a801a1acc2107f8ef0ef516acaf2151ec642bf7678",
+        "payload_digest": "not-distributable"
+      },
+      "official": {
+        "path_set_digest": "acdcfe574c20f82cfd515c9b8807e6c8bdcf5be1330f8f4fdf5dfbf761603ed3",
+        "payload_digest": "989baf0272ac1822488d1ca2e19a0ac4bf809038a7c92208b1933b415e2d1307"
+      },
+      "overlay": {
+        "path_set_digest": "de42f6c512589b33279ad1c362f653dcccb9905221a6cad91a2e9ac352264d45",
+        "payload_digest": "210e15ad935c3bfc8c52ca1a749485cf60ee3d368a3ef3a01eb94b9114e185fe"
+      },
+      "project": {
+        "path_set_digest": "6f2d1a6f8ac2d3865be6aa3077fdd6c8c9bedd5229eec2ad779d843d24670e06",
+        "payload_digest": "not-distributable"
+      }
+    },
+    "status": "passed"
+  },
+  "overlay_application": {
+    "application": {
+      "path_set_digest": "de42f6c512589b33279ad1c362f653dcccb9905221a6cad91a2e9ac352264d45",
+      "payload_digest": "210e15ad935c3bfc8c52ca1a749485cf60ee3d368a3ef3a01eb94b9114e185fe"
+    },
+    "evidence_digest": "cb6f6e69979ae969a909bc921b352384c62b7bdc6510f52b736dc9fd3637eb57",
+    "issues": [],
+    "manifest_digest": "9189d881f7c0854efd18e91b90a688789833c9c775e2c2a189198e95d56e1f20",
+    "manifest_schema_version": 2,
+    "official_update": {
+      "base_tree": "ca4b899bf44d3e264f1c000240ea5b6bec1498fb",
+      "fast_forwarded": true,
+      "updated_tree": "9b4b53023a2ad984af3a1f7a6d25c6b6e047c2df"
+    },
+    "overlay_version": "loop-v1.0.9-local",
+    "owners": {
+      "generated": {
+        "path_set_digest": "02258f0791b1048e6b90a7a801a1acc2107f8ef0ef516acaf2151ec642bf7678",
+        "payload_digest": "not-distributable"
+      },
+      "official": {
+        "path_set_digest": "acdcfe574c20f82cfd515c9b8807e6c8bdcf5be1330f8f4fdf5dfbf761603ed3",
+        "payload_digest": "989baf0272ac1822488d1ca2e19a0ac4bf809038a7c92208b1933b415e2d1307"
+      },
+      "overlay": {
+        "path_set_digest": "de42f6c512589b33279ad1c362f653dcccb9905221a6cad91a2e9ac352264d45",
+        "payload_digest": "210e15ad935c3bfc8c52ca1a749485cf60ee3d368a3ef3a01eb94b9114e185fe"
+      },
+      "project": {
+        "path_set_digest": "6f2d1a6f8ac2d3865be6aa3077fdd6c8c9bedd5229eec2ad779d843d24670e06",
+        "payload_digest": "not-distributable"
+      }
+    },
+    "preservation": {
+      "generated": {
+        "path": "BOARD.md",
+        "payload_digest": "d50f50c83cc09ed25ede0c27313bbb6c30c4615be2dd97744121784a52991c96",
+        "preserved": true
+      },
+      "project": {
+        "path": "README.md",
+        "payload_digest": "4b5593d3035be5eff841eb74db3f3792de04b42d96b390482e34a09ac3e5059a",
+        "preserved": true
+      }
+    },
+    "status": "passed"
+  },
+  "qualification": {
+    "candidate_compatibility": {
+      "baseline_materialization": {
+        "command": [
+          "trellis",
+          "update",
+          "--force",
+          "--migrate"
+        ],
+        "returncode": 0
+      },
+      "candidate_payload_digest": "cb2bf853c777c15c81944f424ea1fb1d84f3362fc7b31aad88e0a4b620049cc7",
+      "evidence_digest": "1df8d9b3275e7bad9037d7bc74950c127e7ab09cb164b10c807cb0036b93a126",
+      "fixture": {
+        "helper_sha256": "f5ef4af87ba3e11d8b19630c0c96d009de1811fc9be56c2027a9c96e21ed103e",
+        "official_release": "0.6.5",
+        "target_id": "RAG v2"
+      },
+      "fixture_digest": "9d8198f39ca140453be3cd4efac96dee8b086ed250ef034c2998558ee0b22c8a",
+      "issues": [],
+      "manifest_digest": "9189d881f7c0854efd18e91b90a688789833c9c775e2c2a189198e95d56e1f20",
+      "materialization": {
+        "command": [
+          "trellis",
+          "update",
+          "--force",
+          "--migrate"
+        ],
+        "returncode": 0
+      },
+      "materialization_metadata": {
+        ".trellis/.template-hashes.json": {
+          "format": "trellis-template-hashes-v2",
+          "schema_version": 2
+        }
+      },
+      "overlay": {
+        ".agents/skills/trellis-loop-v1/SKILL.md": "018df636ee748205e1d1ac4f82efd6dec0f6c427e4aa30a676e39c5d4db62919",
+        ".agents/skills/trellis-loop-v1/agents/openai.yaml": "0cf80a09358c9c9a674a864e6f8a05025e019ddf6f13fb7e520654978b4891aa",
+        ".agents/skills/trellis-loop-v1/scripts/capture_transport.py": "db2559d89ac2fe91275d63dbe07f838caa2631b92a29968f5f84fe9becffa919",
+        ".codex/hooks/inject-subagent-context.py": "abffa237eb53f87ae6ffa434063b46b03d58a36a84cdb8fe88bfc5f243aab609",
+        ".trellis/scripts/common/__init__.py": "3d5e9347141f0296319a5beb29d69ae714c5a474b9078caeb3edd7c5f6562e22",
+        ".trellis/scripts/common/active_task.py": "3418afd45f5e85df6e2a1fc8beecd9dbaf2d9d35ba27c519345712f945f295ff",
+        ".trellis/scripts/common/archive_transaction.py": "e80c3e573b26a58d4b0f498e96553af99431fd11b421e763b8efe6645c77ea15",
+        ".trellis/scripts/common/cli_adapter.py": "14a0f87eb25e598e6798ccbf28036ec2432aa397ae52411e31d4c13f4c6888ad",
+        ".trellis/scripts/common/config.py": "7c22e44c986b55cb34211b8a5d048ad89bada006d7bbd4f8ca3de957ba4c0ef4",
+        ".trellis/scripts/common/developer.py": "5e6a6d080cb5ebd7f771a595e338bfcba34ced4545dae38e0aae71af952fdf1d",
+        ".trellis/scripts/common/done_gate.py": "92227d748268da7107d5a2797bfd11a6b9451beb33b7f9fd2d710df0289b949e",
+        ".trellis/scripts/common/git.py": "e14817be7de122d3a106f509c2825aeb9669d962ba73ba241642d2931cfdf1d6",
+        ".trellis/scripts/common/git_context.py": "fa30ced454f1a91ffc9f8b2abeb32225e3447cbdc90bad783797374eba07265d",
+        ".trellis/scripts/common/io.py": "276d8af04b963190754da4a22fa87f4a5319e60d06707b61a433d0559a938d27",
+        ".trellis/scripts/common/log.py": "471df6895cfac80f995edebbf9974f6b7440634b7a688f28b8331c868bc0f3cf",
+        ".trellis/scripts/common/packages_context.py": "efe158d7c99c2268851d0216fbb08de22836e418a8dbeb73575b8cc249eed7b7",
+        ".trellis/scripts/common/paths.py": "05898ef136cc7c4d861b05fbf2b16d53ddd3e6f311a231d4fcfcb81bde7c45ee",
+        ".trellis/scripts/common/safe_commit.py": "0347e10e554b2770abe710f990330019aa1d38a48a315d103c103de13f3178cf",
+        ".trellis/scripts/common/session_context.py": "df79c44efe3432811c32d145d57a66343a70e221ec087ed2bd28b76677bb4076",
+        ".trellis/scripts/common/task_activity.py": "68460ee148b2ffbe95d8466d7dde1383ff5da6be2b893b96dcc9c0d6ae975222",
+        ".trellis/scripts/common/task_context.py": "1676c8e5c727ffa5b3e1c3863c9d812e94b6c908d49423374992a52ff02b7158",
+        ".trellis/scripts/common/task_queue.py": "0be61f713462b1fe4574927c82fc4704e678afe72dcb9813543aedf2f9e9e0c5",
+        ".trellis/scripts/common/task_store.py": "d5180e84032c64d4df0754a41105b7b356bcdb31b12bff98fa243eed084cf238",
+        ".trellis/scripts/common/task_utils.py": "14e3712a775d9b7f0b608d61370a02395bf9ef2ee35d7c9c861bd9d99fd10848",
+        ".trellis/scripts/common/tasks.py": "ae95a48a3bdc08a2903dbe0244e416b1da3f9ad6215f8235e65081e3ad323ef9",
+        ".trellis/scripts/common/trellis_config.py": "0839dcf90ebbd77712c276930a89335b3313927051650c91d220fb51ca2a6a3c",
+        ".trellis/scripts/common/types.py": "9962081cc2608fb9d1deb32c6880e336f62cdca6b338e7ae813304701e155ee9",
+        ".trellis/scripts/common/workflow_phase.py": "e014a91879f607e6b32cd3354a60cef190de59f2dd5f00c78202a3326de450ce",
+        ".trellis/scripts/downstream_deployer/__init__.py": "45ba0eac0ad026ca7074a5fbaa9f08f24c2a64d0fb99b8d0d5734d9c9f2dd082",
+        ".trellis/scripts/downstream_deployer/authority.py": "22c98c3b95d7a1ee7bf5ce12cd5701676bc100d32746e501671dafe926b942e4",
+        ".trellis/scripts/downstream_deployer/cli.py": "6ffc2b9b357a99b15c490c381daedde88ffc4477ca64c25f4d6533be8926cd27",
+        ".trellis/scripts/downstream_deployer/planning.py": "9e9a18f2df09b096e7e1ee83326e986fb53bb21cf4e4eabccaff9b00e0620439",
+        ".trellis/scripts/downstream_deployer/transaction.py": "a94bddd3ac0cc10b79235c54641f93817be36ae052e08531794838b05ddbc614",
+        ".trellis/scripts/loop_v1/__init__.py": "9a507cb34008763797aaf6af65a2bfe4736ee3706db63a615ba1d5faa32bc629",
+        ".trellis/scripts/loop_v1/acceptance.py": "b92c2e15cb6e904078c8a5ad0ca844892b9361ca6a438800b85d678f868f7a5e",
+        ".trellis/scripts/loop_v1/context.py": "5ce0cd884de2397a88ed641501fc9c45157097961df4de0150bea26ac655fff4",
+        ".trellis/scripts/loop_v1/integration.py": "0b89203d28a9c5a750324c0e8c6fe3d3747f939ecd068a453327f298d606d5c6",
+        ".trellis/scripts/loop_v1/ledger.py": "e99ef347df0ec8eacafc611a30d925274cb82ed91716e3d633327f1882bfdf9b",
+        ".trellis/scripts/loop_v1/orchestrator.py": "7c0d7c5b936c2c4d430a04a16871d4702131b44bbf29337c57b32cd59bee0df0",
+        ".trellis/scripts/loop_v1/pre_admission.py": "0808f3bc6ce3ad9c26699b7911af7a77633d5bce99e853709e5f788e24cbb069",
+        ".trellis/scripts/loop_v1/qualification.py": "f8fe2d372adaff9fef97f599b1b9c1429388cfb2f712a9dd5f8df36fa1b80f5b",
+        ".trellis/scripts/loop_v1/scheduler.py": "273e8c90b66b1c86f96ffec27c7f3e47f1d46b6be70c45a9dc657728cc064993",
+        ".trellis/scripts/loop_v1/task_archive.py": "fcfb9b2edd51e5175abeea20321cd83501271dba677f836b0dcd1c0f3ae8bbb3",
+        ".trellis/scripts/loop_v1/task_projection.py": "c9ba9986290d2e21332512e82067fe110daacfbf9df83da5e9b903298df11b40",
+        ".trellis/scripts/loop_v1/worker_commit.py": "055ced737733a1bc10f86a6d9ecdcd18ac5b20903e57d2ad0fb3f20a66277de5",
+        ".trellis/scripts/state_machine.py": "04302629c1652792aee8405788cbe7f5bdbc183356b585cf954939da2db89be3",
+        ".trellis/scripts/task.py": "18ba345170f04563bc8ee697fb4883cd173bc95153bdc0dab6903b3d2f50fe15",
+        ".trellis/scripts/tests/fixtures/rag-v2-0.6.5/fixture.json": "9d8198f39ca140453be3cd4efac96dee8b086ed250ef034c2998558ee0b22c8a",
+        ".trellis/scripts/tests/fixtures/rag-v2-0.6.5/task_utils.py": "f5ef4af87ba3e11d8b19630c0c96d009de1811fc9be56c2027a9c96e21ed103e",
+        ".trellis/scripts/tests/test_codex_hooks.py": "a302f27d665d041d47660761a391ce1b5c8d2dda1f994d9bdb0ecfb19f9657f6",
+        ".trellis/scripts/tests/test_downstream_deployer_authority.py": "3c0b1ab88f63c3bd77becc1c86c4fa580ae22cf4a49f932d93a49a7190c44879",
+        ".trellis/scripts/tests/test_downstream_deployer_cli.py": "a9cb75fcdffe62d34cc10c88e2ae690822c45bbc754733a67934a010ec24a98d",
+        ".trellis/scripts/tests/test_downstream_deployer_plan.py": "c5bf411ea3e76b558c3512574612c0ffbfb827b3b163444312e28221a8ad5de2",
+        ".trellis/scripts/tests/test_downstream_deployer_transaction.py": "3c896336f620f53ce58845bc1a511f7a89e831660909085bd8306f870644cf60",
+        ".trellis/scripts/tests/test_loop_v1_acceptance.py": "acd4dfd6f1498f357aedf867b18543a1123e8d8729b057088a0c1cdd3a5a705c",
+        ".trellis/scripts/tests/test_loop_v1_admission.py": "020b1cc1dfd8e36250f740d9a030d3bc0378527551bd10e927cb30bcc6f083e2",
+        ".trellis/scripts/tests/test_loop_v1_context.py": "69f3c4c3508c1180ffbc69ee374d5e20c7f89ab690858b55cb495968e2376277",
+        ".trellis/scripts/tests/test_loop_v1_downstream_runtime.py": "62d6196c405213aeaa3a7283863bc544b4b0c5f1dc112f51957a54d4641a8633",
+        ".trellis/scripts/tests/test_loop_v1_integration.py": "e148bf82334f046a5412e78eba4a3e143771c781c12293e453b63e8f2841ca71",
+        ".trellis/scripts/tests/test_loop_v1_ledger.py": "78fa2f6d77e5679d79eae407786b6239ac031a4a9d12e917e665a24a8d4ec799",
+        ".trellis/scripts/tests/test_loop_v1_orchestrator.py": "54b4813daf5c25483d2e511d4543966fe43f4ddb6943751ab0ab178f6783dcea",
+        ".trellis/scripts/tests/test_loop_v1_qualification.py": "e4c383a8181f3685f96ddbe934112cba90cc1b3ef825cb1aad6942ea09478426",
+        ".trellis/scripts/tests/test_loop_v1_recovery.py": "26e62dc7fb99f1897a82927b9b0b38aa57a2641183677aa020cf418fe378eff6",
+        ".trellis/scripts/tests/test_loop_v1_scheduler.py": "b15580cc5f72a8165f2c4e3daab12756676e1e9db25646985b9b15d5f2248dee",
+        ".trellis/scripts/tests/test_loop_v1_skill.py": "a9544abb4142f50da20ce1dc631fd3c3d9d848ee1869bb9505871f683bc8c286",
+        ".trellis/scripts/tests/test_loop_v1_task_projection.py": "fb29b3670eec8bdbd3a46b5ca5e25d8e46c53bf2ed4872485d2336036fba3548",
+        ".trellis/scripts/tests/test_loop_v1_worker_commit.py": "d5aa21475be6b8e961506b0a4206e579776be8168083f309983c4ad0afa5fc60",
+        ".trellis/scripts/tests/test_single_target.py": "198a893c191a4fea41ca2542fb682e37b008122d64c78d6c9bf6a7ebf6f1ea2a",
+        ".trellis/scripts/tests/test_upstream_release.py": "58db4152ed20ea8f4c27c349e893dc6bdf0cf84c1fbc79d9d01bcbd50fa3b06a",
+        ".trellis/scripts/tests/test_wrapper.py": "33ca9766cc908b50b8ac165d9fe0f477f1d38213056706c1e552281a6f107eb0",
+        ".trellis/scripts/upstream_release/__init__.py": "399ddd5ae04d6eced8a8ccae0f896170cc285b7bd223c846a5046a2448efdbdf",
+        ".trellis/scripts/upstream_release/cli.py": "ce12e83a486288543d5089859f20945d5a4048454dc988f8fcaee6bda8a6f7ba",
+        ".trellis/scripts/upstream_release/core.py": "202e55107e03e697f86b02924181f4bb9f4d0ceca277c43a81307f5f1269bf39",
+        ".trellis/scripts/upstream_release/templates/trellis-upstream-wrapper.service.template": "39cc798c809f941fcb4cee958e47b25d30623cacc2f1c3b1f17d645e0daf5fe6",
+        ".trellis/scripts/upstream_release/templates/trellis-upstream-wrapper.timer.template": "77a8ba80b23e1bb11830316f99c0e8053dfec297258a4d643a0b5d737e0e464b",
+        ".trellis/scripts/upstream_release/trellis-upstream-wrapper.sh": "1e8b42f44bc997ee8d42b95bd61a871dee572bc1daea486e3493838d57029704",
+        ".trellis/scripts/upstream_release/wrapper.py": "f919518c46a04f494b542cb094f974d853c761ac056ee46eb75451ca6e301cfb",
+        ".trellis/spec/project/downstream-deployer.md": "80fb8a0c013e811499f89ccd58dc5b69a0bd04249394b28bc7f19706ba1c44df",
+        ".trellis/spec/project/loop-v1-admission.md": "4d4acdb3d5dea7b6de6e189cd6c38dd36effc4a67f65b0621026030bf2755358",
+        ".trellis/spec/project/loop-v1-overlay-manifest.json": "9189d881f7c0854efd18e91b90a688789833c9c775e2c2a189198e95d56e1f20",
+        ".trellis/spec/project/loop-v1-qualification.md": "3fc68a4a7eda39f08f9d11d7287b123f247996d7a9bc32e352478d4e9969c132",
+        ".trellis/spec/project/loop-v1-runtime.md": "4dc2bcdb9c058d022db06e8403721c4866759b8baf6a5ee21681102bdc1ff920",
+        ".trellis/spec/project/staged-delivery-overlay.md": "d549194d6ac78cbdd713d7c913684b459b18d058c576dab2ea065a3aad031b05",
+        ".trellis/spec/project/upstream-release.md": "129522af6c1eecdceaba3efac9455c6e7309d3191027660af4d275076bbbbc84",
+        ".trellis/templates/v3/child/prd.md": "8d2921e0590a28a8f4b2040eec826ba1f54955d709aa3066a4e84cef0186a383",
+        ".trellis/templates/v3/child/stage-report.md": "64720bce7ed4e3342ef7a61b814c65e84516505a81fad17684550be35d9418b3",
+        ".trellis/templates/v3/handoff/HANDOFF.md": "bf81eff1bc61aade05054532261f280dbac73164d009b9f451399e1475300548",
+        ".trellis/templates/v3/handoff/README.md": "7afa9fd06677bd818be57ff1189cc971d5d79f46cc1fa7bdacedb7bb990b3993",
+        ".trellis/templates/v3/handoff/docs/runbooks/hermes-skill-invocation.md": "da9583a2e4bc642152f4aa4003cf0fd7e79d782d26078e8585c2b229314c859c",
+        ".trellis/templates/v3/light/prd.md": "44f0c55adb450a6dbdb36dda52eba80885d65358f68e6452c7d02e71e3b511e4",
+        ".trellis/templates/v3/light/stage-report.md": "e7c15d103d84ecc000053b98b7dac4af7041554c4dfb61758a15e1c61fbfb81c",
+        ".trellis/templates/v3/parent/governance.md": "138b15c2b3c158aa7b6e29a8b0ff80bc4490af9f6e9b7747110a5ca97fe2db69",
+        ".trellis/templates/v3/parent/prd.md": "fa0a230b3020daec8c497d2d19f1633819bb53bb3c51905b2072d9127deb60f4",
+        ".trellis/workflow.md": "85f0c404e7f4cfdc93ae93782432b284023b482cb0ae173c3cf825b8138f9aae"
+      },
+      "restored_paths_digest": "033d6361b42c12cbc5fae40fd8ade4f87f72b86c8d4eb254f94134762b23c4f5",
+      "smoke_checks": [
+        {
+          "command_digest": "2bb7b2ceb37fff48828517d56fddd955776e626fc21fc643bd0cab0cbe2b934f",
+          "index": 0,
+          "output_digest": "sha256:2169c5f4663c401d2a3e86a683ed1340d1cc53a122c6a4a5204a1dd03397d697",
+          "returncode": 0
+        },
+        {
+          "command_digest": "e693c1c4226f9c3fd8b6c5e81cfee8aea3c7b707ed30e30d85315f77c30e5946",
+          "index": 1,
+          "output_digest": "sha256:6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d",
+          "returncode": 0
+        }
+      ],
+      "status": "passed"
+    },
+    "deployer_digest": "217570057af47d702174b65066234e8de7330390c29d849fbb3f390fe1bc4688",
+    "deployer_tests": [
+      {
+        "command": [
+          "/usr/bin/python3",
+          "-m",
+          "unittest",
+          "-q",
+          "test_downstream_deployer_authority.DownstreamAuthorityTests.test_ah_map_accepts_one_off_authority_but_not_grants"
+        ],
+        "returncode": 0,
+        "source_digest": "3c0b1ab88f63c3bd77becc1c86c4fa580ae22cf4a49f932d93a49a7190c44879",
+        "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+        "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "test_id": "test_downstream_deployer_authority.DownstreamAuthorityTests.test_ah_map_accepts_one_off_authority_but_not_grants"
+      },
+      {
+        "command": [
+          "/usr/bin/python3",
+          "-m",
+          "unittest",
+          "-q",
+          "test_downstream_deployer_plan.DownstreamDeployerPlanTests.test_private_candidate_is_deterministic_and_read_only"
+        ],
+        "returncode": 0,
+        "source_digest": "c5bf411ea3e76b558c3512574612c0ffbfb827b3b163444312e28221a8ad5de2",
+        "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+        "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "test_id": "test_downstream_deployer_plan.DownstreamDeployerPlanTests.test_private_candidate_is_deterministic_and_read_only"
+      },
+      {
+        "command": [
+          "/usr/bin/python3",
+          "-m",
+          "unittest",
+          "-q",
+          "test_downstream_deployer_plan.DownstreamDeployerPlanTests.test_ah_map_is_one_off_plan_eligible"
+        ],
+        "returncode": 0,
+        "source_digest": "c5bf411ea3e76b558c3512574612c0ffbfb827b3b163444312e28221a8ad5de2",
+        "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+        "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "test_id": "test_downstream_deployer_plan.DownstreamDeployerPlanTests.test_ah_map_is_one_off_plan_eligible"
+      },
+      {
+        "command": [
+          "/usr/bin/python3",
+          "-m",
+          "unittest",
+          "-q",
+          "test_downstream_deployer_plan.DownstreamDeployerPlanTests.test_candidate_checks_gate_artifact_persistence"
+        ],
+        "returncode": 0,
+        "source_digest": "c5bf411ea3e76b558c3512574612c0ffbfb827b3b163444312e28221a8ad5de2",
+        "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+        "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "test_id": "test_downstream_deployer_plan.DownstreamDeployerPlanTests.test_candidate_checks_gate_artifact_persistence"
+      },
+      {
+        "command": [
+          "/usr/bin/python3",
+          "-m",
+          "unittest",
+          "-q",
+          "test_downstream_deployer_plan.DownstreamDeployerPlanTests.test_planning_rejects_drift_and_ownership_conflicts"
+        ],
+        "returncode": 0,
+        "source_digest": "c5bf411ea3e76b558c3512574612c0ffbfb827b3b163444312e28221a8ad5de2",
+        "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+        "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "test_id": "test_downstream_deployer_plan.DownstreamDeployerPlanTests.test_planning_rejects_drift_and_ownership_conflicts"
+      },
+      {
+        "command": [
+          "/usr/bin/python3",
+          "-m",
+          "unittest",
+          "-q",
+          "test_downstream_deployer_cli.DownstreamDeployerCliTests.test_failed_plan_check_persists_no_candidate_plan_or_authority"
+        ],
+        "returncode": 0,
+        "source_digest": "a9cb75fcdffe62d34cc10c88e2ae690822c45bbc754733a67934a010ec24a98d",
+        "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+        "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "test_id": "test_downstream_deployer_cli.DownstreamDeployerCliTests.test_failed_plan_check_persists_no_candidate_plan_or_authority"
+      },
+      {
+        "command": [
+          "/usr/bin/python3",
+          "-m",
+          "unittest",
+          "-q",
+          "test_downstream_deployer_transaction.DownstreamDeployerTransactionTests.test_exact_promotion_receipt_and_local_commit"
+        ],
+        "returncode": 0,
+        "source_digest": "3c896336f620f53ce58845bc1a511f7a89e831660909085bd8306f870644cf60",
+        "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+        "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "test_id": "test_downstream_deployer_transaction.DownstreamDeployerTransactionTests.test_exact_promotion_receipt_and_local_commit"
+      },
+      {
+        "command": [
+          "/usr/bin/python3",
+          "-m",
+          "unittest",
+          "-q",
+          "test_loop_v1_downstream_runtime.DownstreamInstalledRuntimeTests.test_source_offline_runtime_advances_integrates_and_cancels"
+        ],
+        "returncode": 0,
+        "source_digest": "62d6196c405213aeaa3a7283863bc544b4b0c5f1dc112f51957a54d4641a8633",
+        "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+        "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "test_id": "test_loop_v1_downstream_runtime.DownstreamInstalledRuntimeTests.test_source_offline_runtime_advances_integrates_and_cancels"
+      },
+      {
+        "command": [
+          "/usr/bin/python3",
+          "-m",
+          "unittest",
+          "-q",
+          "test_single_target.SingleTargetTests.test_single_target_plan_is_source_and_target_read_only"
+        ],
+        "returncode": 0,
+        "source_digest": "198a893c191a4fea41ca2542fb682e37b008122d64c78d6c9bf6a7ebf6f1ea2a",
+        "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+        "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "test_id": "test_single_target.SingleTargetTests.test_single_target_plan_is_source_and_target_read_only"
+      }
+    ],
+    "matrix_digest": "bfa594eb9432bdd9c9eb9de6f632dcf4c1fe825f0d26131ee4cb940a3579e947",
+    "scenarios": [
+      {
+        "id": "Q01",
+        "negative": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_acceptance.LoopV1AcceptanceTests.test_two_child_path_rejects_incomplete_required_child"
+          ],
+          "returncode": 0,
+          "source_digest": "acd4dfd6f1498f357aedf867b18543a1123e8d8729b057088a0c1cdd3a5a705c",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_acceptance.LoopV1AcceptanceTests.test_two_child_path_rejects_incomplete_required_child"
+        },
+        "positive": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_acceptance.LoopV1AcceptanceTests.test_two_child_happy_path_qualifies_end_to_end"
+          ],
+          "returncode": 0,
+          "source_digest": "acd4dfd6f1498f357aedf867b18543a1123e8d8729b057088a0c1cdd3a5a705c",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_acceptance.LoopV1AcceptanceTests.test_two_child_happy_path_qualifies_end_to_end"
+        },
+        "status": "passed"
+      },
+      {
+        "id": "Q02",
+        "negative": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_admission.LoopV1AdmissionTests.test_historical_and_unknown_selectors_fail_closed"
+          ],
+          "returncode": 0,
+          "source_digest": "020b1cc1dfd8e36250f740d9a030d3bc0378527551bd10e927cb30bcc6f083e2",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_admission.LoopV1AdmissionTests.test_historical_and_unknown_selectors_fail_closed"
+        },
+        "positive": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_admission.LoopV1AdmissionTests.test_no_selector_keeps_current_trellis_modes"
+          ],
+          "returncode": 0,
+          "source_digest": "020b1cc1dfd8e36250f740d9a030d3bc0378527551bd10e927cb30bcc6f083e2",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "79a2155b4372a10c7a7623e44260d644234e47d60968134fd708cd39dfa409de",
+          "test_id": "test_loop_v1_admission.LoopV1AdmissionTests.test_no_selector_keeps_current_trellis_modes"
+        },
+        "status": "passed"
+      },
+      {
+        "id": "Q03",
+        "negative": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_scheduler.LoopV1SchedulerTests.test_graph_cycles_pause_and_satisfied_edges_repair"
+          ],
+          "returncode": 0,
+          "source_digest": "b15580cc5f72a8165f2c4e3daab12756676e1e9db25646985b9b15d5f2248dee",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_scheduler.LoopV1SchedulerTests.test_graph_cycles_pause_and_satisfied_edges_repair"
+        },
+        "positive": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_scheduler.LoopV1SchedulerTests.test_same_child_requirement_dependencies_are_co_delivered"
+          ],
+          "returncode": 0,
+          "source_digest": "b15580cc5f72a8165f2c4e3daab12756676e1e9db25646985b9b15d5f2248dee",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_scheduler.LoopV1SchedulerTests.test_same_child_requirement_dependencies_are_co_delivered"
+        },
+        "status": "passed"
+      },
+      {
+        "id": "Q04",
+        "negative": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_scheduler.LoopV1SchedulerTests.test_alias_path_exclusive_and_shared_capacity_conflicts"
+          ],
+          "returncode": 0,
+          "source_digest": "b15580cc5f72a8165f2c4e3daab12756676e1e9db25646985b9b15d5f2248dee",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_scheduler.LoopV1SchedulerTests.test_alias_path_exclusive_and_shared_capacity_conflicts"
+        },
+        "positive": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_scheduler.LoopV1SchedulerTests.test_ready_order_cap_three_and_replay_are_deterministic"
+          ],
+          "returncode": 0,
+          "source_digest": "b15580cc5f72a8165f2c4e3daab12756676e1e9db25646985b9b15d5f2248dee",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_scheduler.LoopV1SchedulerTests.test_ready_order_cap_three_and_replay_are_deterministic"
+        },
+        "status": "passed"
+      },
+      {
+        "id": "Q05",
+        "negative": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_context.LoopV1ContextTests.test_every_boundary_rejects_stale_context"
+          ],
+          "returncode": 0,
+          "source_digest": "69f3c4c3508c1180ffbc69ee374d5e20c7f89ab690858b55cb495968e2376277",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_context.LoopV1ContextTests.test_every_boundary_rejects_stale_context"
+        },
+        "positive": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_orchestrator.LoopV1OrchestratorTests.test_explicit_pause_resume_and_cancel_compose_existing_controls"
+          ],
+          "returncode": 0,
+          "source_digest": "54b4813daf5c25483d2e511d4543966fe43f4ddb6943751ab0ab178f6783dcea",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_orchestrator.LoopV1OrchestratorTests.test_explicit_pause_resume_and_cancel_compose_existing_controls"
+        },
+        "status": "passed"
+      },
+      {
+        "id": "Q06",
+        "negative": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_orchestrator.LoopV1OrchestratorTests.test_guided_replacement_rejects_missing_path_and_passing_branch"
+          ],
+          "returncode": 0,
+          "source_digest": "54b4813daf5c25483d2e511d4543966fe43f4ddb6943751ab0ab178f6783dcea",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_orchestrator.LoopV1OrchestratorTests.test_guided_replacement_rejects_missing_path_and_passing_branch"
+        },
+        "positive": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_orchestrator.LoopV1OrchestratorTests.test_guided_replacement_reopens_exact_path_closed_prerequisite_slice"
+          ],
+          "returncode": 0,
+          "source_digest": "54b4813daf5c25483d2e511d4543966fe43f4ddb6943751ab0ab178f6783dcea",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_orchestrator.LoopV1OrchestratorTests.test_guided_replacement_reopens_exact_path_closed_prerequisite_slice"
+        },
+        "status": "passed"
+      },
+      {
+        "id": "Q07",
+        "negative": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_orchestrator.LoopV1OrchestratorTests.test_q07_integration_and_final_check_negative_contract"
+          ],
+          "returncode": 0,
+          "source_digest": "54b4813daf5c25483d2e511d4543966fe43f4ddb6943751ab0ab178f6783dcea",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_orchestrator.LoopV1OrchestratorTests.test_q07_integration_and_final_check_negative_contract"
+        },
+        "positive": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_orchestrator.LoopV1OrchestratorTests.test_q07_integration_and_final_check_positive_contract"
+          ],
+          "returncode": 0,
+          "source_digest": "54b4813daf5c25483d2e511d4543966fe43f4ddb6943751ab0ab178f6783dcea",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_orchestrator.LoopV1OrchestratorTests.test_q07_integration_and_final_check_positive_contract"
+        },
+        "status": "passed"
+      },
+      {
+        "id": "Q08",
+        "negative": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_recovery.LoopV1RecoveryTests.test_prepared_candidate_recovers_as_no_effect_under_new_fence"
+          ],
+          "returncode": 0,
+          "source_digest": "26e62dc7fb99f1897a82927b9b0b38aa57a2641183677aa020cf418fe378eff6",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_recovery.LoopV1RecoveryTests.test_prepared_candidate_recovers_as_no_effect_under_new_fence"
+        },
+        "positive": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_acceptance.LoopV1AcceptanceTests.test_crash_after_merge_recovers_without_second_merge"
+          ],
+          "returncode": 0,
+          "source_digest": "acd4dfd6f1498f357aedf867b18543a1123e8d8729b057088a0c1cdd3a5a705c",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_acceptance.LoopV1AcceptanceTests.test_crash_after_merge_recovers_without_second_merge"
+        },
+        "status": "passed"
+      },
+      {
+        "id": "Q09",
+        "negative": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_qualification.LoopV1QualificationFixtureTests.test_disable_marker_blocks_new_admission_without_pausing_active_run"
+          ],
+          "returncode": 0,
+          "source_digest": "e4c383a8181f3685f96ddbe934112cba90cc1b3ef825cb1aad6942ea09478426",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_qualification.LoopV1QualificationFixtureTests.test_disable_marker_blocks_new_admission_without_pausing_active_run"
+        },
+        "positive": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_qualification.LoopV1QualificationFixtureTests.test_valid_receipt_allows_ledger_write"
+          ],
+          "returncode": 0,
+          "source_digest": "e4c383a8181f3685f96ddbe934112cba90cc1b3ef825cb1aad6942ea09478426",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_qualification.LoopV1QualificationFixtureTests.test_valid_receipt_allows_ledger_write"
+        },
+        "status": "passed"
+      },
+      {
+        "id": "Q10",
+        "negative": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_context.LoopV1ContextTests.test_start_request_is_immutable_and_direct_response_bound"
+          ],
+          "returncode": 0,
+          "source_digest": "69f3c4c3508c1180ffbc69ee374d5e20c7f89ab690858b55cb495968e2376277",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_context.LoopV1ContextTests.test_start_request_is_immutable_and_direct_response_bound"
+        },
+        "positive": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_recovery.LoopV1RecoveryTests.test_cancel_is_human_only_terminal_and_preserves_integrated_evidence"
+          ],
+          "returncode": 0,
+          "source_digest": "26e62dc7fb99f1897a82927b9b0b38aa57a2641183677aa020cf418fe378eff6",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_recovery.LoopV1RecoveryTests.test_cancel_is_human_only_terminal_and_preserves_integrated_evidence"
+        },
+        "status": "passed"
+      },
+      {
+        "id": "Q11",
+        "negative": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_acceptance.LoopV1AcceptanceTests.test_drift_after_approval_invalidates_gate_without_merging"
+          ],
+          "returncode": 0,
+          "source_digest": "acd4dfd6f1498f357aedf867b18543a1123e8d8729b057088a0c1cdd3a5a705c",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_acceptance.LoopV1AcceptanceTests.test_drift_after_approval_invalidates_gate_without_merging"
+        },
+        "positive": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_orchestrator.LoopV1OrchestratorTests.test_final_review_subset_replaces_complete_multi_requirement_child"
+          ],
+          "returncode": 0,
+          "source_digest": "54b4813daf5c25483d2e511d4543966fe43f4ddb6943751ab0ab178f6783dcea",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_orchestrator.LoopV1OrchestratorTests.test_final_review_subset_replaces_complete_multi_requirement_child"
+        },
+        "status": "passed"
+      },
+      {
+        "id": "Q12",
+        "negative": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_qualification.LoopV1QualificationFixtureTests.test_unknown_and_prohibited_effects_fail_closed"
+          ],
+          "returncode": 0,
+          "source_digest": "e4c383a8181f3685f96ddbe934112cba90cc1b3ef825cb1aad6942ea09478426",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_qualification.LoopV1QualificationFixtureTests.test_unknown_and_prohibited_effects_fail_closed"
+        },
+        "positive": {
+          "command": [
+            "/usr/bin/python3",
+            "-m",
+            "unittest",
+            "-q",
+            "test_loop_v1_qualification.LoopV1QualificationFixtureTests.test_local_qualification_requires_no_remote_ci_hooks_or_network"
+          ],
+          "returncode": 0,
+          "source_digest": "e4c383a8181f3685f96ddbe934112cba90cc1b3ef825cb1aad6942ea09478426",
+          "stderr_digest": "3fdb65c99499fd883a629816bb831b48bf642472259005e2b1708e13156e3fe5",
+          "stdout_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "test_id": "test_loop_v1_qualification.LoopV1QualificationFixtureTests.test_local_qualification_requires_no_remote_ci_hooks_or_network"
+        },
+        "status": "passed"
+      }
+    ],
+    "test_source_digests": {
+      ".trellis/scripts/tests/test_downstream_deployer_authority.py": "3c0b1ab88f63c3bd77becc1c86c4fa580ae22cf4a49f932d93a49a7190c44879",
+      ".trellis/scripts/tests/test_downstream_deployer_cli.py": "a9cb75fcdffe62d34cc10c88e2ae690822c45bbc754733a67934a010ec24a98d",
+      ".trellis/scripts/tests/test_downstream_deployer_plan.py": "c5bf411ea3e76b558c3512574612c0ffbfb827b3b163444312e28221a8ad5de2",
+      ".trellis/scripts/tests/test_downstream_deployer_transaction.py": "3c896336f620f53ce58845bc1a511f7a89e831660909085bd8306f870644cf60",
+      ".trellis/scripts/tests/test_loop_v1_acceptance.py": "acd4dfd6f1498f357aedf867b18543a1123e8d8729b057088a0c1cdd3a5a705c",
+      ".trellis/scripts/tests/test_loop_v1_admission.py": "020b1cc1dfd8e36250f740d9a030d3bc0378527551bd10e927cb30bcc6f083e2",
+      ".trellis/scripts/tests/test_loop_v1_context.py": "69f3c4c3508c1180ffbc69ee374d5e20c7f89ab690858b55cb495968e2376277",
+      ".trellis/scripts/tests/test_loop_v1_downstream_runtime.py": "62d6196c405213aeaa3a7283863bc544b4b0c5f1dc112f51957a54d4641a8633",
+      ".trellis/scripts/tests/test_loop_v1_integration.py": "e148bf82334f046a5412e78eba4a3e143771c781c12293e453b63e8f2841ca71",
+      ".trellis/scripts/tests/test_loop_v1_ledger.py": "78fa2f6d77e5679d79eae407786b6239ac031a4a9d12e917e665a24a8d4ec799",
+      ".trellis/scripts/tests/test_loop_v1_orchestrator.py": "54b4813daf5c25483d2e511d4543966fe43f4ddb6943751ab0ab178f6783dcea",
+      ".trellis/scripts/tests/test_loop_v1_qualification.py": "e4c383a8181f3685f96ddbe934112cba90cc1b3ef825cb1aad6942ea09478426",
+      ".trellis/scripts/tests/test_loop_v1_recovery.py": "26e62dc7fb99f1897a82927b9b0b38aa57a2641183677aa020cf418fe378eff6",
+      ".trellis/scripts/tests/test_loop_v1_scheduler.py": "b15580cc5f72a8165f2c4e3daab12756676e1e9db25646985b9b15d5f2248dee",
+      ".trellis/scripts/tests/test_loop_v1_skill.py": "a9544abb4142f50da20ce1dc631fd3c3d9d848ee1869bb9505871f683bc8c286",
+      ".trellis/scripts/tests/test_loop_v1_task_projection.py": "fb29b3670eec8bdbd3a46b5ca5e25d8e46c53bf2ed4872485d2336036fba3548",
+      ".trellis/scripts/tests/test_loop_v1_worker_commit.py": "d5aa21475be6b8e961506b0a4206e579776be8168083f309983c4ad0afa5fc60",
+      ".trellis/scripts/tests/test_single_target.py": "198a893c191a4fea41ca2542fb682e37b008122d64c78d6c9bf6a7ebf6f1ea2a"
+    }
+  },
+  "receipt_digest": "6e760bf39271f2f194ba87bc61b39229b55f3dc2ed0d49b63341ccafa540e6fa",
+  "receipt_id": "sha256:6e760bf39271f2f194ba87bc61b39229b55f3dc2ed0d49b63341ccafa540e6fa",
+  "receipt_schema_version": 4,
+  "runtime": {
+    "bundle_digest": "8508813a9c22ec7ff679db6f7bacc1465d7e3834c1a59600646785e6c5fb39ed",
+    "files": {
+      ".trellis/scripts/common/__init__.py": "3d5e9347141f0296319a5beb29d69ae714c5a474b9078caeb3edd7c5f6562e22",
+      ".trellis/scripts/common/active_task.py": "3418afd45f5e85df6e2a1fc8beecd9dbaf2d9d35ba27c519345712f945f295ff",
+      ".trellis/scripts/common/archive_transaction.py": "e80c3e573b26a58d4b0f498e96553af99431fd11b421e763b8efe6645c77ea15",
+      ".trellis/scripts/common/cli_adapter.py": "14a0f87eb25e598e6798ccbf28036ec2432aa397ae52411e31d4c13f4c6888ad",
+      ".trellis/scripts/common/config.py": "7c22e44c986b55cb34211b8a5d048ad89bada006d7bbd4f8ca3de957ba4c0ef4",
+      ".trellis/scripts/common/developer.py": "5e6a6d080cb5ebd7f771a595e338bfcba34ced4545dae38e0aae71af952fdf1d",
+      ".trellis/scripts/common/done_gate.py": "92227d748268da7107d5a2797bfd11a6b9451beb33b7f9fd2d710df0289b949e",
+      ".trellis/scripts/common/git.py": "e14817be7de122d3a106f509c2825aeb9669d962ba73ba241642d2931cfdf1d6",
+      ".trellis/scripts/common/git_context.py": "fa30ced454f1a91ffc9f8b2abeb32225e3447cbdc90bad783797374eba07265d",
+      ".trellis/scripts/common/io.py": "276d8af04b963190754da4a22fa87f4a5319e60d06707b61a433d0559a938d27",
+      ".trellis/scripts/common/log.py": "471df6895cfac80f995edebbf9974f6b7440634b7a688f28b8331c868bc0f3cf",
+      ".trellis/scripts/common/packages_context.py": "efe158d7c99c2268851d0216fbb08de22836e418a8dbeb73575b8cc249eed7b7",
+      ".trellis/scripts/common/paths.py": "05898ef136cc7c4d861b05fbf2b16d53ddd3e6f311a231d4fcfcb81bde7c45ee",
+      ".trellis/scripts/common/safe_commit.py": "0347e10e554b2770abe710f990330019aa1d38a48a315d103c103de13f3178cf",
+      ".trellis/scripts/common/session_context.py": "df79c44efe3432811c32d145d57a66343a70e221ec087ed2bd28b76677bb4076",
+      ".trellis/scripts/common/task_activity.py": "68460ee148b2ffbe95d8466d7dde1383ff5da6be2b893b96dcc9c0d6ae975222",
+      ".trellis/scripts/common/task_context.py": "1676c8e5c727ffa5b3e1c3863c9d812e94b6c908d49423374992a52ff02b7158",
+      ".trellis/scripts/common/task_queue.py": "0be61f713462b1fe4574927c82fc4704e678afe72dcb9813543aedf2f9e9e0c5",
+      ".trellis/scripts/common/task_store.py": "d5180e84032c64d4df0754a41105b7b356bcdb31b12bff98fa243eed084cf238",
+      ".trellis/scripts/common/task_utils.py": "14e3712a775d9b7f0b608d61370a02395bf9ef2ee35d7c9c861bd9d99fd10848",
+      ".trellis/scripts/common/tasks.py": "ae95a48a3bdc08a2903dbe0244e416b1da3f9ad6215f8235e65081e3ad323ef9",
+      ".trellis/scripts/common/trellis_config.py": "0839dcf90ebbd77712c276930a89335b3313927051650c91d220fb51ca2a6a3c",
+      ".trellis/scripts/common/types.py": "9962081cc2608fb9d1deb32c6880e336f62cdca6b338e7ae813304701e155ee9",
+      ".trellis/scripts/common/workflow_phase.py": "e014a91879f607e6b32cd3354a60cef190de59f2dd5f00c78202a3326de450ce",
+      ".trellis/scripts/downstream_deployer/__init__.py": "45ba0eac0ad026ca7074a5fbaa9f08f24c2a64d0fb99b8d0d5734d9c9f2dd082",
+      ".trellis/scripts/downstream_deployer/authority.py": "22c98c3b95d7a1ee7bf5ce12cd5701676bc100d32746e501671dafe926b942e4",
+      ".trellis/scripts/downstream_deployer/cli.py": "6ffc2b9b357a99b15c490c381daedde88ffc4477ca64c25f4d6533be8926cd27",
+      ".trellis/scripts/downstream_deployer/planning.py": "9e9a18f2df09b096e7e1ee83326e986fb53bb21cf4e4eabccaff9b00e0620439",
+      ".trellis/scripts/downstream_deployer/transaction.py": "a94bddd3ac0cc10b79235c54641f93817be36ae052e08531794838b05ddbc614",
+      ".trellis/scripts/loop_v1/__init__.py": "9a507cb34008763797aaf6af65a2bfe4736ee3706db63a615ba1d5faa32bc629",
+      ".trellis/scripts/loop_v1/acceptance.py": "b92c2e15cb6e904078c8a5ad0ca844892b9361ca6a438800b85d678f868f7a5e",
+      ".trellis/scripts/loop_v1/context.py": "5ce0cd884de2397a88ed641501fc9c45157097961df4de0150bea26ac655fff4",
+      ".trellis/scripts/loop_v1/integration.py": "0b89203d28a9c5a750324c0e8c6fe3d3747f939ecd068a453327f298d606d5c6",
+      ".trellis/scripts/loop_v1/ledger.py": "e99ef347df0ec8eacafc611a30d925274cb82ed91716e3d633327f1882bfdf9b",
+      ".trellis/scripts/loop_v1/orchestrator.py": "7c0d7c5b936c2c4d430a04a16871d4702131b44bbf29337c57b32cd59bee0df0",
+      ".trellis/scripts/loop_v1/pre_admission.py": "0808f3bc6ce3ad9c26699b7911af7a77633d5bce99e853709e5f788e24cbb069",
+      ".trellis/scripts/loop_v1/qualification.py": "f8fe2d372adaff9fef97f599b1b9c1429388cfb2f712a9dd5f8df36fa1b80f5b",
+      ".trellis/scripts/loop_v1/scheduler.py": "273e8c90b66b1c86f96ffec27c7f3e47f1d46b6be70c45a9dc657728cc064993",
+      ".trellis/scripts/loop_v1/task_archive.py": "fcfb9b2edd51e5175abeea20321cd83501271dba677f836b0dcd1c0f3ae8bbb3",
+      ".trellis/scripts/loop_v1/task_projection.py": "c9ba9986290d2e21332512e82067fe110daacfbf9df83da5e9b903298df11b40",
+      ".trellis/scripts/loop_v1/worker_commit.py": "055ced737733a1bc10f86a6d9ecdcd18ac5b20903e57d2ad0fb3f20a66277de5",
+      ".trellis/scripts/state_machine.py": "04302629c1652792aee8405788cbe7f5bdbc183356b585cf954939da2db89be3",
+      ".trellis/scripts/task.py": "18ba345170f04563bc8ee697fb4883cd173bc95153bdc0dab6903b3d2f50fe15",
+      ".trellis/scripts/tests/fixtures/rag-v2-0.6.5/fixture.json": "9d8198f39ca140453be3cd4efac96dee8b086ed250ef034c2998558ee0b22c8a",
+      ".trellis/scripts/tests/fixtures/rag-v2-0.6.5/task_utils.py": "f5ef4af87ba3e11d8b19630c0c96d009de1811fc9be56c2027a9c96e21ed103e"
+    },
+    "git_commit": "d1d066b2d9d09ecb518da9fba82c7defeafd1ddc",
+    "git_tree": "41cb3ec8bacd0948f7e3964ffb61eed09198179b"
+  },
+  "status": "qualified",
+  "tools": {
+    "filesystem_case_sensitive": true,
+    "git": "git version 2.43.0",
+    "node": "v24.14.0",
+    "os_release": "6.6.87.2-microsoft-standard-WSL2",
+    "platform": "Linux",
+    "python": "3.12.3",
+    "trellis": "0.6.11"
+  }
+}

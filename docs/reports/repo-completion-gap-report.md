@@ -1,316 +1,99 @@
 # Repo Completion And Production Gap Report
 
-Date: 2026-07-01
+Date: 2026-07-08
 
-## Target Interpreted From User Goal
+## Target Interpreted From Current v2.0 PRD
 
-The desired production state is:
+The current target is no longer "live Feishu writes first." v2.0 is a
+message-first real-analysis loop:
 
 ```text
-Hermes can call this repo as an independently deployed tool.
-The tool runs on a schedule.
-It tracks benchmark accounts, collects new content, transcribes it, lets Hermes decompose it,
-generates cards and topic-pool supplements, then updates Feishu benchmark/account tracking tables.
+Hermes skill / cron
+  -> hermes-benchmark CLI
+  -> handoff package
+  -> Hermes real analysis result
+  -> internal digest payload + message
+  -> human adopt/reject feedback
+  -> SQLite audit record
 ```
 
-This report uses that target, not the narrower child-task proof scope, as the completion bar.
+Live Bitable writes are deferred to the v2.0 M3 gate: only start them after the
+message flow runs for at least two weeks and the team confirms it needs
+structured filtering or lookup.
 
 ## Current Bottom Line
 
-The repo has completed a useful v1 proof layer, but it is not yet independently deployable.
-
-Current state:
-
-- Local contracts and fixture checks: mostly complete.
-- External runtime smoke boundary: partially complete.
-- End-to-end production runner: not complete.
-- Hermes invocation surface: not complete.
-- Live Feishu scheduled update: not complete.
-
-Overall completion against the target is roughly **40%**.
-
-The missing 60% is mostly integration and production operation work: stable CLI/MCP entrypoint, real account config, real collection runner, real Hermes call, live Feishu write, persistence, scheduler, deployment packaging, and operational recovery.
-
-## What Is Completed
-
-| Capability | Current implementation | Completion for proof | Completion for production |
-|---|---|---:|---:|
-| Shared data contracts | `hermes_benchmark/contracts.py` defines source/account/content/transcript/topic/RAG/health contracts and validation. | High | Medium |
-| Fixture loop | `hermes_benchmark/fixtures.py` proves no-credential object model. | High | Low |
-| Account registry | `hermes_benchmark/account_registry.py` defines 20 placeholder Douyin/Xiaohongshu accounts and daily plan. | Medium | Low |
-| MediaCrawler import | `hermes_benchmark/mediacrawler_import.py` imports MediaCrawler-style fixture rows and dedups exact duplicates. | High | Medium |
-| Transcript wrapper | `hermes_benchmark/transcript_pipeline.py` creates transcript records and handles failure/temp cleanup boundary. | Medium | Low-Medium |
-| Hermes decomposition shape | `hermes_benchmark/decomposition.py` validates decomposition, card, and topic supplement output shape. | High | Low-Medium |
-| Feishu mapping | `hermes_benchmark/feishu_dry_run.py` maps parent-1 tables and emits deterministic dry-run operations. | High | Low |
-| Daily digest/alerts | `hermes_benchmark/daily_digest.py` builds local digest and ops alert objects from child outputs. | Medium | Low-Medium |
-| External runtime smoke | `hermes_benchmark/external_runtime.py` adds path/cookie/process/redaction/cleanup guards and smoke proof helpers. | Medium-High | Medium |
-| Handoff docs | `docs/runbooks/external-runtime-smoke.md` and `docs/runbooks/production-deployment-handoff.md`. | Medium | Medium |
-
-## What Is Not Completed
-
-### 1. Hermes-callable tool surface
-
-Missing:
-
-- No MCP server.
-- No packaged production CLI.
-- No JSON input/output command contract.
-- No stable command names, arguments, exit codes, or error schema.
-
-Impact:
-
-- Hermes cannot reliably call this repo as a tool today.
-- `python3 -m hermes_benchmark.*` entries are self-checks, not production commands.
-
-### 2. Independent deployment
-
-Missing:
-
-- No `pyproject.toml`, requirements file, lock file, package metadata, install command, Dockerfile, systemd unit, or deployment script.
-- No environment variable contract.
-- No deployment health check command.
-
-Impact:
-
-- The repo can be run from source by a developer, but cannot yet be handed to Hermes as an installable/deployable runtime.
-
-### 3. Scheduled production run
-
-Missing:
-
-- No cron/systemd timer/scheduler.
-- No single `run daily` orchestration function.
-- No retry, no backoff, no resume state.
-- No run lock to prevent overlapping scheduled runs.
-
-Impact:
-
-- It cannot yet "定时在飞书更新追踪博主表".
-
-### 4. Real benchmark account source
-
-Missing:
-
-- Current account rows are placeholder fixtures.
-- No local-only production account config.
-- No Feishu-read account source.
-- No account verification/update workflow.
-
-Impact:
-
-- The system does not yet know which real bloggers/accounts to track in production.
-
-### 5. Real collection pipeline
-
-Partially present:
-
-- One external MediaCrawler smoke proved a target can produce importable output.
-
-Missing:
-
-- No multi-account MediaCrawler runner.
-- No daily incremental collection.
-- No per-platform credential/cookie loading contract.
-- No production artifact normalization from real MediaCrawler output beyond proof.
-
-Impact:
-
-- Real collection is proven once, but not automated for all benchmark accounts.
-
-### 6. Real transcription pipeline
-
-Partially present:
-
-- Transcript wrapper and one historical Whisper smoke proof exist; current production tests use FunASR.
-
-Missing:
-
-- No batch transcription runner.
-- No media download/copy orchestration tied to collected content.
-- No model/device selection policy for production.
-- No persisted transcript artifacts indexed by content ID.
-
-Impact:
-
-- The repo can represent transcript output, but does not yet produce transcripts for daily collected content.
-
-### 7. Real Hermes decomposition
-
-Partially present:
-
-- Output schema and validation exist.
-
-Missing:
-
-- Current decomposition uses deterministic mock output.
-- No Hermes LLM/Agent call.
-- No prompt/skill versioning.
-- No cost/rate/error handling.
-- No result persistence.
-
-Impact:
-
-- The repo cannot yet perform actual Hermes analysis. It only validates the shape of expected analysis.
-
-### 8. Cards and topic-pool supplement
-
-Partially present:
-
-- Card and topic-pool supplement fields exist in decomposition output.
-- Feishu dry-run maps table 7 and table 9 rows.
-
-Missing:
-
-- No real topic-pool state read from Feishu.
-- No "待 Hermes 补充" selection and version check loop.
-- No live card write to Feishu.
-- No external card publish state transition.
-
-Impact:
-
-- The data shape exists, but the actual Feishu card/topic-pool update loop does not.
-
-### 9. Live Feishu update
-
-Partially present:
-
-- Table mapping and dry-run operations exist.
-- `validate_live_readiness` checks table IDs and credentials presence.
-
-Missing:
-
-- No `lark-cli` invocation.
-- No official API fallback script.
-- No field type reconciliation against real Feishu Base.
-- No pagination/read-before-write.
-- No live create/update/no-op execution.
-- No idempotent write log.
-
-Impact:
-
-- Feishu remains dry-run only. This is the largest blocker for the user's final visible outcome.
-
-### 10. Persistence and idempotency
-
-Missing:
-
-- No SQLite/local DB.
-- No durable run table.
-- No processed content ledger.
-- No last-success cursor.
-- No write-audit table.
-
-Impact:
-
-- A scheduled production run cannot safely know what is new, what already succeeded, or what needs retry.
-
-## Gap By Desired End-To-End Flow
+The repo-side CLI bridge is now materially complete for M0/M1/M2 development,
+but the full production loop still depends on Hermes-owned execution and real
+runtime evidence.
+
+Approximate completion against the current v2.0 target: **55-60%**.
+
+What improved since the 2026-07-01 snapshot:
+
+- `pyproject.toml` now exposes an installable `hermes-benchmark` console script.
+- The CLI has stable command names, fail-closed v2 JSON envelopes, profile
+  validation, retryability, and bounded exit codes.
+- `run-daily --analysis-mode hermes-handoff` can emit a run-scoped handoff
+  package ref and marks empty runs as no-op instead of fake analysis success.
+- `record-analysis-result` can validate storage-scoped Hermes-owned result refs,
+  hash referenced result artifacts, and persist immutable result refs.
+- `build-internal-digest` can emit an internal digest payload ref without
+  sending messages itself.
+- `record-feedback` can persist idempotent adopt/reject refs in SQLite.
+
+What remains outside the repo or incomplete:
+
+- Hermes cron/skill still needs an end-to-end proof that it runs the CLI and
+  sends an internal-group message.
+- Real Hermes analysis is not performed by this repo; the repo only validates
+  and records result refs.
+- Real account source of truth and production multi-account collection remain
+  unfinished.
+- Live Feishu/Bitable writes remain conditional M3 work, not current default
+  production scope.
+
+## Capability Status
+
+| Capability | Current state | Production risk |
+|---|---|---|
+| CLI invocation | Implemented console script and fail-closed JSON contract. | Low for repo-side M0; external Hermes invocation still unproven. |
+| Profile/config safety | Local profile validation and redacted runtime status exist. | Medium; production profiles are local-only and must stay out of Git. |
+| Handoff package | Implemented for Hermes-owned analysis. | Medium; needs real Hermes consumer evidence. |
+| Analysis result intake | Implemented storage-scoped ref validation, artifact hashing, and immutable SQLite refs. | Medium; depends on real Hermes result shape staying within contract. |
+| Internal digest payload | Implemented payload artifact refs. | Medium; Hermes still owns message delivery. |
+| Human feedback | Implemented idempotent adopt/reject persistence. | Medium; needs live internal-group wiring. |
+| Collection/transcription | Proof surfaces exist; production multi-account run remains incomplete. | High. |
+| Live Feishu writes | Guarded/dry-run surface only; M3-gated. | High if prematurely enabled. |
+| Scheduling/deployment | Repo intentionally does not own scheduler. | Medium; Hermes cron or systemd fallback must be proven. |
+
+## Gap By Desired v2.0 Flow
 
 | Desired flow step | Current state | Gap |
 |---|---|---|
-| Hermes invokes tool | Not available | Add CLI first, MCP later if needed. |
-| Tool loads real benchmark accounts | Placeholder registry only | Add local account config or Feishu read path. |
-| Tool collects new blogger content | One smoke proof only | Add daily multi-account MediaCrawler runner. |
-| Tool dedups/imports content | Fixture import exists | Connect real output to import and persist dedup state. |
-| Tool transcribes videos | Wrapper/smoke exists | Add production batch FunASR runner. |
-| Hermes decomposes content | Mock output exists | Add real Hermes call and prompt/version contract. |
-| Tool creates cards | Dry-run field mapping exists | Add live Feishu card write. |
-| Tool supplements topic pool | Dry-run field mapping exists | Add state-machine read/write and version guards. |
-| Tool updates Feishu tracking tables | Dry-run only | Add `lark-cli` or official API live sync. |
-| Tool runs on schedule | Not available | Add cron/systemd timer after one-shot CLI is stable. |
+| Hermes invokes CLI | Repo-side command exists. | Prove Hermes skill/cron execution and message delivery. |
+| CLI loads real account config | Placeholder and local profile paths exist. | Provide real local-only account source. |
+| CLI collects new content | External runtime and import path exist. | Prove daily multi-account collection. |
+| CLI writes handoff package | Implemented. | Run against real collected content. |
+| Hermes analyzes package | Outside repo. | Produce one real result and feed it to `record-analysis-result`. |
+| Repo builds digest payload | Implemented. | Hermes must send the digest message. |
+| Humans adopt/reject | CLI persistence implemented. | Wire internal-group action refs into `record-feedback`. |
+| Bitable write decision | Deferred. | Wait for M3 gate evidence; do not build by default. |
 
 ## Recommended Completion Plan
 
-### Milestone 1: One-shot production CLI
-
-Goal:
-
-```bash
-hermes-benchmark run-daily --date YYYY-MM-DD --json
-```
-
-Deliver:
-
-- package/install metadata;
-- one CLI entrypoint;
-- JSON result output;
-- clear non-zero exit codes;
-- config/env validation;
-- no scheduler yet.
-
-Why first:
-
-- Hermes needs a stable call surface before MCP or automation matters.
-
-### Milestone 2: Real account and collection runner
-
-Deliver:
-
-- local-only real account config or Feishu account-table read;
-- multi-account MediaCrawler command generation;
-- real output normalization;
-- persisted imported content IDs.
-
-### Milestone 3: Transcription runner
-
-Deliver:
-
-- batch FunASR invocation;
-- transcript artifact path policy;
-- failed/blocked status handling;
-- no raw video retention.
-
-### Milestone 4: Real Hermes decomposition
-
-Deliver:
-
-- Hermes call boundary;
-- prompt/skill version;
-- response validation with current schema;
-- retry/failure records.
-
-### Milestone 5: Live Feishu sync
-
-Deliver:
-
-- official `lark-cli` live write path or thin official API script;
-- read-before-write;
-- idempotency log;
-- table 3/4/6/7/9 live update;
-- table field/type reconciliation.
-
-### Milestone 6: Schedule and deployment
-
-Deliver:
-
-- cron or systemd timer;
-- run lock;
-- log and artifact directory;
-- health check;
-- deployment runbook.
-
-## Completion Estimate
-
-Using the user's production goal as 100%:
-
-| Category | Weight | Current |
-|---|---:|---:|
-| Data contracts and local proof | 20% | 18% |
-| External runtime collection/transcription | 20% | 8% |
-| Hermes real analysis | 15% | 4% |
-| Feishu live sync | 20% | 5% |
-| Invocation/deployment/scheduling | 20% | 3% |
-| Ops, persistence, recovery | 5% | 1% |
-| **Total** | **100%** | **39%** |
-
-This is intentionally approximate. The main point: the repo has a solid proof skeleton, but production depends on live integration work that was deliberately kept out of earlier child tasks.
+1. Prove M0 outside the repo: Hermes skill or cron runs `hermes-benchmark` and
+   sends a redacted internal-group message.
+2. Feed one real Hermes result through `record-analysis-result`.
+3. Generate one digest payload through `build-internal-digest` and send it from
+   Hermes.
+4. Record one adopt/reject action through `record-feedback`.
+5. Only after that, decide whether M3 Bitable writes are still worth building.
 
 ## Immediate Next Decision
 
-The next task should not be "build everything". It should be:
+Pick the M0 runner:
 
-```text
-Create the smallest stable production CLI that Hermes can call for one daily run.
-```
-
-That CLI can initially run dry-run Feishu mode, but it must establish the durable input/output contract. Once that contract is stable, live Feishu sync and scheduler can attach without redesigning the whole repo.
+- Hermes cron, if it can execute the no-secret command and deliver redacted
+  JSON reliably.
+- `systemd --user` fallback, if Hermes cron cannot satisfy that gate.

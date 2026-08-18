@@ -1,0 +1,10 @@
+{
+  "check_ids": [
+    "trellis.task_cli.help",
+    "trellis.unittest.focused",
+    "trellis.diff.check"
+  ],
+  "from_version": "0.6.12",
+  "name": "rag-v2",
+  "to_version": "0.6.14"
+}

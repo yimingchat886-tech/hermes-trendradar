@@ -7,11 +7,16 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from hermes_benchmark.state import (
+    FeedbackConflictError,
+    SCHEMA_VERSION,
+    StateError,
     begin_run,
     connect,
     finish_run,
     init_schema,
     record_analysis_package_ref,
+    record_analysis_result_ref,
+    record_human_feedback_ref,
     record_operation_ref,
     record_error,
     record_transcript_state,
@@ -48,8 +53,29 @@ def test_schema_initializes_without_dependencies() -> None:
         row["name"]
         for row in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")
     }
-    assert {"runs", "content_ledger", "transcripts", "analysis_packages", "feishu_operations", "write_audit", "errors"} <= tables
-    assert conn.execute("PRAGMA user_version").fetchone()[0] == 1
+    assert {
+        "runs",
+        "content_ledger",
+        "transcripts",
+        "analysis_packages",
+        "analysis_results",
+        "human_feedback",
+        "feishu_operations",
+        "write_audit",
+        "errors",
+    } <= tables
+    assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
+
+
+def test_future_schema_version_fails_closed() -> None:
+    conn = connect()
+    conn.execute("PRAGMA user_version = 999")
+    try:
+        init_schema(conn)
+    except Exception as exc:
+        assert "unsupported future schema version" in str(exc)
+    else:
+        raise AssertionError("expected future schema version to fail")
 
 
 def test_same_scope_run_lock_and_terminal_noop() -> None:
@@ -132,15 +158,211 @@ def test_artifact_and_operation_helpers_are_idempotent_refs_only() -> None:
 
     transcript_id = record_transcript_state(conn, content["content_id"], "funasr-sensevoice", "done", artifact_ref="file:artifacts/t.json")
     package_id = record_analysis_package_ref(conn, run["run_id"], "hermes-handoff", "ready", "file:artifacts/package.json")
+    package_id = record_analysis_package_ref(
+        conn,
+        run["run_id"],
+        "hermes-handoff",
+        "ready",
+        "file:artifacts/package.json",
+        package_id="package_handoff_authoritative",
+    )
+    result_id = record_analysis_result_ref(
+        conn,
+        run_id=run["run_id"],
+        package_id=package_id,
+        content_id=content["content_id"],
+        transcript_artifact_ref="file:artifacts/t.json",
+        result_ref="file:analysis/results/content-1.json",
+        result_hash="sha256:result",
+        status="succeeded",
+    )
+    same_result_id = record_analysis_result_ref(
+        conn,
+        run_id=run["run_id"],
+        package_id=package_id,
+        content_id=content["content_id"],
+        transcript_artifact_ref="file:artifacts/t.json",
+        result_ref="file:analysis/results/content-1.json",
+        result_hash="sha256:result",
+        status="succeeded",
+    )
     operation_id = record_operation_ref(conn, run["run_id"], "status_update", "table_4", content["content_id"], "sha256:op", "pending")
     audit_id = record_write_audit(conn, operation_id, "sha256:op", content["content_id"], "noop")
 
     assert transcript_id.startswith("transcript_")
-    assert package_id.startswith("package_")
+    assert package_id == "package_handoff_authoritative"
+    assert result_id.startswith("analysis_result_")
+    assert same_result_id == result_id
     assert operation_id.startswith("op_")
     assert audit_id.startswith("audit_")
     assert conn.execute("SELECT artifact_ref FROM transcripts").fetchone()[0] == "file:artifacts/t.json"
+    result = conn.execute("SELECT * FROM analysis_results").fetchone()
+    assert result["result_ref"] == "file:analysis/results/content-1.json"
+    assert result["result_hash"] == "sha256:result"
     assert conn.execute("SELECT COUNT(*) FROM write_audit").fetchone()[0] == 1
+
+
+def test_analysis_result_ref_conflict_does_not_overwrite_existing_result() -> None:
+    conn = memory_db()
+    run = begin_run(conn, "2026-07-01", "sha256:profile")
+    content = upsert_content_ledger(conn, run["run_id"], content_item())
+    package_id = record_analysis_package_ref(conn, run["run_id"], "hermes-handoff", "ready", "file:artifacts/package.json")
+
+    result_id = record_analysis_result_ref(
+        conn,
+        run_id=run["run_id"],
+        package_id=package_id,
+        content_id=content["content_id"],
+        transcript_artifact_ref="file:artifacts/t.json",
+        result_ref="file:analysis/results/content-1.json",
+        result_hash="sha256:result",
+        status="succeeded",
+    )
+    repeat_id = record_analysis_result_ref(
+        conn,
+        run_id=run["run_id"],
+        package_id=package_id,
+        content_id=content["content_id"],
+        transcript_artifact_ref="file:artifacts/t.json",
+        result_ref="file:analysis/results/content-1.json",
+        result_hash="sha256:result",
+        status="succeeded",
+    )
+
+    assert repeat_id == result_id
+    try:
+        record_analysis_result_ref(
+            conn,
+            run_id=run["run_id"],
+            package_id=package_id,
+            content_id=content["content_id"],
+            transcript_artifact_ref="file:artifacts/t.json",
+            result_ref="file:analysis/results/content-1-v2.json",
+            result_hash="sha256:changed",
+            status="succeeded",
+        )
+    except StateError as exc:
+        assert "analysis result conflict" in str(exc)
+    else:
+        raise AssertionError("expected different analysis result to conflict")
+
+    row = conn.execute("SELECT * FROM analysis_results WHERE analysis_result_id = ?", (result_id,)).fetchone()
+    assert row["result_ref"] == "file:analysis/results/content-1.json"
+    assert row["result_hash"] == "sha256:result"
+
+
+def test_human_feedback_is_traceable_idempotent_and_conflict_safe() -> None:
+    conn = memory_db()
+    run = begin_run(conn, "2026-07-01", "sha256:profile")
+    content = upsert_content_ledger(conn, run["run_id"], content_item())
+    package_id = record_analysis_package_ref(conn, run["run_id"], "hermes-handoff", "ready", "file:artifacts/package.json")
+    result_id = record_analysis_result_ref(
+        conn,
+        run_id=run["run_id"],
+        package_id=package_id,
+        content_id=content["content_id"],
+        transcript_artifact_ref="file:artifacts/t.json",
+        result_ref="file:analysis/results/content-1.json",
+        result_hash="sha256:result",
+        status="succeeded",
+    )
+
+    first = record_human_feedback_ref(
+        conn,
+        run_id=run["run_id"],
+        content_id=content["content_id"],
+        analysis_result_id=result_id,
+        decision="adopt",
+        actor_ref="feishu:user/redacted-1",
+        source_message_ref="feishu:message/msg-1",
+        reason_code="good_topic",
+        now="2026-07-01T00:00:00+00:00",
+    )
+    second = record_human_feedback_ref(
+        conn,
+        run_id=run["run_id"],
+        content_id=content["content_id"],
+        analysis_result_id=result_id,
+        decision="adopt",
+        actor_ref="feishu:user/redacted-1",
+        source_message_ref="feishu:message/msg-1",
+        reason_code="good_topic",
+        now="2026-07-01T00:01:00+00:00",
+    )
+    row = conn.execute("SELECT * FROM human_feedback WHERE feedback_id = ?", (first,)).fetchone()
+
+    assert second == first
+    assert row["run_id"] == run["run_id"]
+    assert row["content_id"] == content["content_id"]
+    assert row["analysis_result_id"] == result_id
+    assert row["result_ref"] == "file:analysis/results/content-1.json"
+    assert row["result_hash"] == "sha256:result"
+    assert row["decision"] == "adopt"
+    assert row["actor_ref"] == "feishu:user/redacted-1"
+    assert row["source_message_ref"] == "feishu:message/msg-1"
+    assert row["reason_code"] == "good_topic"
+    assert row["created_at"] == "2026-07-01T00:00:00+00:00"
+    assert conn.execute("SELECT COUNT(*) FROM human_feedback").fetchone()[0] == 1
+
+    try:
+        record_human_feedback_ref(
+            conn,
+            run_id=run["run_id"],
+            content_id=content["content_id"],
+            analysis_result_id=result_id,
+            decision="reject",
+            actor_ref="feishu:user/redacted-1",
+            source_message_ref="feishu:message/msg-1",
+            reason_code="good_topic",
+        )
+    except FeedbackConflictError:
+        pass
+    else:
+        raise AssertionError("expected feedback conflict")
+    assert conn.execute("SELECT decision FROM human_feedback").fetchone()[0] == "adopt"
+
+
+def test_human_feedback_rejects_mismatched_trace_refs() -> None:
+    conn = memory_db()
+    run = begin_run(conn, "2026-07-01", "sha256:profile")
+    content = upsert_content_ledger(conn, run["run_id"], content_item())
+    package_id = record_analysis_package_ref(conn, run["run_id"], "hermes-handoff", "ready", "file:artifacts/package.json")
+    result_id = record_analysis_result_ref(
+        conn,
+        run_id=run["run_id"],
+        package_id=package_id,
+        content_id=content["content_id"],
+        transcript_artifact_ref="file:artifacts/t.json",
+        result_ref="file:analysis/results/content-1.json",
+        result_hash="sha256:result",
+        status="succeeded",
+    )
+
+    for overrides in (
+        {"run_id": "run-other"},
+        {"content_id": "content-other"},
+        {"analysis_result_id": "analysis_result_missing"},
+        {"actor_ref": "display name with spaces"},
+        {"source_message_ref": "raw message text"},
+        {"reason_code": "free text reason"},
+    ):
+        kwargs = {
+            "run_id": run["run_id"],
+            "content_id": content["content_id"],
+            "analysis_result_id": result_id,
+            "decision": "reject",
+            "actor_ref": "feishu:user/redacted-1",
+            "source_message_ref": "feishu:message/msg-1",
+            "reason_code": "not_relevant",
+        }
+        kwargs.update(overrides)
+        try:
+            record_human_feedback_ref(conn, **kwargs)
+        except StateError:
+            pass
+        else:
+            raise AssertionError(f"expected rejection for {overrides}")
+    assert conn.execute("SELECT COUNT(*) FROM human_feedback").fetchone()[0] == 0
 
 
 def test_record_error_is_deterministic_when_called_directly() -> None:
@@ -153,9 +375,12 @@ def test_record_error_is_deterministic_when_called_directly() -> None:
 
 if __name__ == "__main__":
     test_schema_initializes_without_dependencies()
+    test_future_schema_version_fails_closed()
     test_same_scope_run_lock_and_terminal_noop()
     test_failed_or_stale_run_reuses_run_id_for_resume()
     test_reingesting_existing_content_is_noop()
     test_dedup_conflict_writes_deterministic_error()
     test_artifact_and_operation_helpers_are_idempotent_refs_only()
+    test_human_feedback_is_traceable_idempotent_and_conflict_safe()
+    test_human_feedback_rejects_mismatched_trace_refs()
     test_record_error_is_deterministic_when_called_directly()

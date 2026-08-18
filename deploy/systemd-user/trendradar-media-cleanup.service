@@ -1,0 +1,9 @@
+[Unit]
+Description=Delete expired TrendRadar Agent media jobs
+
+[Service]
+Type=oneshot
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ExecStart=/usr/bin/env trendradar-media --profile %h/.config/trendradar/media.v2.0.json cleanup --expired

@@ -1,0 +1,44 @@
+{
+  "id": "workflow-v2-m5-2-ci",
+  "name": "workflow-v2-m5-2-ci",
+  "title": "M5-2 CI",
+  "description": "",
+  "status": "completed",
+  "dev_type": null,
+  "scope": null,
+  "tier": "child",
+  "owner": "codex",
+  "touches": [
+    ".github/workflows/ci.yml",
+    ".trellis/tasks/07-04-workflow-v2-m5-2-ci/**",
+    ".trellis/tasks/07-04-workflow-v2-m5-remote-ci-staging/governance.md",
+    "BOARD.md"
+  ],
+  "package": null,
+  "priority": "P2",
+  "creator": "jym",
+  "assignee": "jym",
+  "createdAt": "2026-07-04",
+  "completedAt": "2026-07-06",
+  "branch": "codex/workflow-v2-m4-board",
+  "base_branch": "codex/workflow-v2-m4-board",
+  "worktree_path": null,
+  "commit": "7dd14ba",
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "force-archive: user requested archiving completed soft-archived child; parent already closed",
+  "meta": {
+    "workflow_mode": "harness_state_machine",
+    "state_machine": {
+      "kind": "child",
+      "current_state": "child_archived",
+      "previous_state": "child_archive_ready",
+      "last_event": "child_archive_completed",
+      "blocked_from_state": null,
+      "updated_at": "2026-07-05T02:28:40Z"
+    }
+  }
+}

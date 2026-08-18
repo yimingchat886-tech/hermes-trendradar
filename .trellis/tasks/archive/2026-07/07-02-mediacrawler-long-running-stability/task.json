@@ -1,0 +1,68 @@
+{
+  "id": "mediacrawler-long-running-stability",
+  "name": "mediacrawler-long-running-stability",
+  "title": "MediaCrawler long-running stability",
+  "description": "Standalone v1.4-compatible MediaCrawler CDP stability foundation: runner-owned Chrome, runtime preflight, smoke report, and error layering.",
+  "status": "completed",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "jym",
+  "assignee": "jym",
+  "createdAt": "2026-07-02",
+  "completedAt": "2026-07-06",
+  "branch": "codex/mediacrawler-long-running-stability",
+  "base_branch": "codex/v1-4-child-6a-media-download-manifest",
+  "worktree_path": null,
+  "commit": "62b7270bf9ebdc548d997a9753b3a8fbda7027c0",
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [
+    "docs/PRD/releases/PRD_v1.4_split_index.md",
+    "docs/PRD/releases/PRD_v1.4_Codex_CLI_Implementation.md",
+    "docs/PRD/releases/PRD_v1.4_Hermes_Runtime_and_Profiles.md",
+    "/mnt/c/Users/Jym/Downloads/tele/mediacrawler_stability_plan.md"
+  ],
+  "notes": "Created as a standalone planning task. Implementation should use a fresh branch and must not touch unrelated child 6a untracked files unless scope is explicitly changed.",
+  "meta": {
+    "workflow_mode": "staged_overlay",
+    "staged_delivery": {
+      "phase": "soft_archived",
+      "plan_confirmed": true,
+      "implementation_task_submitted": true,
+      "completion_signal_received": true,
+      "commit_allowed": true,
+      "soft_archive_completed": true,
+      "trellis_archive_completed": false,
+      "latest_stage_report": "stage-report.md",
+      "completion_signal": "可以提交，告诉我有没有未完成的地方（对比Trellis task）",
+      "completion_signal_received_at": "2026-07-03T01:11:43-07:00",
+      "push_allowed": false,
+      "implementation_commit": "62b7270bf9ebdc548d997a9753b3a8fbda7027c0",
+      "merge_commit": "63a05e70f46be536c336b3804663928fa63dcd60",
+      "soft_archive_completed_at": "2026-07-04T23:36:18-07:00",
+      "final_smoke_runs": [
+        "run-mediacrawler-smoke-20260703T075545Z",
+        "run-mediacrawler-smoke-20260703T075650Z",
+        "run-mediacrawler-smoke-20260703T075753Z"
+      ]
+    },
+    "product": {
+      "parent_scope": "v1.4_benchmark_productionization",
+      "requirement_ids": [
+        "P14-REQ-040",
+        "P14-REQ-080"
+      ],
+      "slice": "mediacrawler_long_running_stability_foundation"
+    },
+    "oracle": {
+      "plan_review_required": true,
+      "reason": "External runtime, Chrome CDP lifecycle, login-state profile, and real Douyin smoke are high-risk.",
+      "plan_review_session": "mediacrawl-stability-plan-review-browser-3",
+      "plan_review_result": "completed"
+    }
+  }
+}

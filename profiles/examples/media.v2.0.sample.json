@@ -1,0 +1,46 @@
+{
+  "schema_version": "2.0",
+  "run_root": "/home/USER/trendradar-media-jobs",
+  "timeout_seconds": 600,
+  "max_bytes": 2147483648,
+  "backends": {
+    "douyin": {
+      "argv": [
+        "/absolute/path/to/douyin-download-adapter",
+        "--output",
+        "{output}",
+        "{url}"
+      ],
+      "probe_argv": [
+        "/absolute/path/to/douyin-download-adapter",
+        "--version"
+      ]
+    },
+    "youtube": {
+      "argv": [
+        "yt-dlp",
+        "--no-playlist",
+        "--no-progress",
+        "--output",
+        "{output}",
+        "{url}"
+      ],
+      "probe_argv": [
+        "yt-dlp",
+        "--version"
+      ]
+    },
+    "bilibili": {
+      "argv": [
+        "/absolute/path/to/bilibili-download-adapter",
+        "--output",
+        "{output}",
+        "{url}"
+      ],
+      "probe_argv": [
+        "/absolute/path/to/bilibili-download-adapter",
+        "--version"
+      ]
+    }
+  }
+}
