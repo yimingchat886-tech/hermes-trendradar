@@ -1,0 +1,30 @@
+{
+  "binding_generation": 1,
+  "checks": [
+    {
+      "action_id": "implement",
+      "argv_digest": "c15ca7b72dc443cac38d52296beff55ba27c0a5a708288ae79a27d5e8ccbbd9f",
+      "attempt_no": 1,
+      "check_id": "trellis.unittest.focused",
+      "output_digest": "756e5d621e80d910238aaa60648b6fcf148e7d3b3885d1388b21d995c1b3e586",
+      "return_code": 0
+    },
+    {
+      "action_id": "implement",
+      "argv_digest": "4f52a06f45cbf16520b8045533f643b165fc38a9b1e512e36c0ccb4d498be852",
+      "attempt_no": 1,
+      "check_id": "trellis.diff.check",
+      "output_digest": "6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d",
+      "return_code": 0
+    }
+  ],
+  "reviews": [
+    {
+      "candidate_digest": "f6f7cb9f89940d8a8ef4dbadd14d7e0f50bc06196dd4700297d6599fe665640e",
+      "findings_json": "[]",
+      "review_no": 1
+    }
+  ],
+  "run_id": "run-c223e4c1d2a6a881be77c8927d3eac57d984de71ea171790022fcf548847a011",
+  "task_id": "fix-pr-3-current-branch-review"
+}

@@ -193,6 +193,84 @@ def test_cli_emits_one_json_envelope(tmp_path: Path, monkeypatch: pytest.MonkeyP
     assert json.loads(output.out)["status"] == "succeeded"
 
 
+def test_direct_download_pins_each_redirect_to_its_validated_address(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    resolver_calls: list[tuple[str, int]] = []
+    addresses = {"first.example": "8.8.8.8", "second.example": "1.1.1.1"}
+
+    def resolve(host: str, port: int, *, type: int) -> list[tuple[object, ...]]:
+        resolver_calls.append((host, port))
+        return [(media_jobs.socket.AF_INET, type, 6, "", (addresses[host], port))]
+
+    responses = [
+        FakeHTTPResponse(302, {"Location": "http://second.example/video.mp4"}),
+        FakeHTTPResponse(200, {"Content-Type": "video/mp4", "Content-Length": "5"}, [b"video", b""]),
+    ]
+    connections: list[tuple[str, str, int]] = []
+
+    class FakeConnection:
+        def __init__(self, host: str, address: str, port: int, *, timeout: int):
+            connections.append((host, address, port))
+
+        def request(self, _method: str, _target: str, *, headers: dict[str, str]) -> None:
+            assert headers["User-Agent"] == "TrendRadarMedia/2.0"
+
+        def getresponse(self) -> FakeHTTPResponse:
+            return responses.pop(0)
+
+        def close(self) -> None:
+            pass
+
+    monkeypatch.setattr(media_jobs.socket, "getaddrinfo", resolve)
+    monkeypatch.setattr(media_jobs, "_PinnedHTTPConnection", FakeConnection)
+    output = tmp_path / "video.mp4"
+
+    media_jobs._download_direct("http://first.example/start", output, timeout=5, max_bytes=100)
+
+    assert output.read_bytes() == b"video"
+    assert resolver_calls == [("first.example", 80), ("second.example", 80)]
+    assert connections == [("first.example", "8.8.8.8", 80), ("second.example", "1.1.1.1", 80)]
+
+
+def test_pinned_https_connection_preserves_tls_hostname(monkeypatch: pytest.MonkeyPatch) -> None:
+    raw_socket = object()
+    wrapped_socket = object()
+    observed: dict[str, object] = {}
+
+    class FakeContext:
+        def wrap_socket(self, sock: object, *, server_hostname: str) -> object:
+            observed.update(sock=sock, server_hostname=server_hostname)
+            return wrapped_socket
+
+    monkeypatch.setattr(media_jobs, "_connect_pinned", lambda address, port, timeout: raw_socket)
+    connection = media_jobs._PinnedHTTPSConnection(
+        "media.example", "8.8.8.8", 443, timeout=5, context=FakeContext()
+    )
+
+    connection.connect()
+
+    assert connection.host == "media.example"
+    assert connection.sock is wrapped_socket
+    assert observed == {"sock": raw_socket, "server_hostname": "media.example"}
+
+
+class FakeHTTPResponse:
+    def __init__(self, status: int, headers: dict[str, str], chunks: list[bytes] | None = None):
+        self.status = status
+        self.headers = headers
+        self.chunks = list(chunks or [])
+
+    def getheader(self, name: str, default: str | None = None) -> str | None:
+        return self.headers.get(name, default)
+
+    def read(self, _size: int) -> bytes:
+        return self.chunks.pop(0) if self.chunks else b""
+
+    def close(self) -> None:
+        pass
+
+
 def profile_fixture(tmp_path: Path) -> tuple[dict[str, object], Path]:
     adapter = tmp_path / "adapter.py"
     calls = tmp_path / "adapter-calls.txt"

@@ -6,17 +6,17 @@ import argparse
 import contextlib
 import fcntl
 import hashlib
+import http.client
 import ipaddress
 import json
 import os
 import re
 import shutil
 import socket
+import ssl
 import subprocess
 import sys
-import urllib.error
 import urllib.parse
-import urllib.request
 from collections.abc import Iterator, Mapping, Sequence
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -33,6 +33,8 @@ TERMINAL_STATUSES = {"succeeded", "partial", "failed"}
 JOB_ID_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}\Z")
 DIRECT_SUFFIXES = {".mp4", ".m4v", ".mov", ".webm"}
 TOMBSTONE_RE = re.compile(r"\.deleting-([A-Za-z0-9][A-Za-z0-9._-]{0,63})-[0-9]+\Z")
+REDIRECT_STATUSES = {301, 302, 303, 307, 308}
+MAX_REDIRECTS = 5
 
 EXIT_OK = 0
 EXIT_CONTRACT = 2
@@ -55,10 +57,31 @@ class JsonArgumentParser(argparse.ArgumentParser):
         raise MediaJobError("contract_mismatch", message)
 
 
-class PublicRedirectHandler(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, req: Any, fp: Any, code: int, msg: str, headers: Any, newurl: str) -> Any:
-        _assert_public_http_url(newurl)
-        return super().redirect_request(req, fp, code, msg, headers, newurl)
+class _PinnedHTTPConnection(http.client.HTTPConnection):
+    def __init__(self, host: str, address: str, port: int, *, timeout: int):
+        super().__init__(host, port, timeout=timeout)
+        self._address = address
+
+    def connect(self) -> None:
+        self.sock = _connect_pinned(self._address, self.port, self.timeout)
+
+
+class _PinnedHTTPSConnection(http.client.HTTPSConnection):
+    def __init__(
+        self,
+        host: str,
+        address: str,
+        port: int,
+        *,
+        timeout: int,
+        context: ssl.SSLContext | None = None,
+    ):
+        super().__init__(host, port, timeout=timeout, context=context)
+        self._address = address
+
+    def connect(self) -> None:
+        raw_socket = _connect_pinned(self._address, self.port, self.timeout)
+        self.sock = self._context.wrap_socket(raw_socket, server_hostname=self.host)
 
 
 def load_media_profile(path: str | Path, *, repo_root: str | Path | None = None) -> dict[str, Any]:
@@ -354,30 +377,67 @@ def _download_external(profile: Mapping[str, Any], job_dir: Path, item: Mapping[
 
 
 def _download_direct(url: str, output: Path, timeout: int, max_bytes: int) -> None:
-    _assert_public_http_url(url)
-    request = urllib.request.Request(url, headers={"User-Agent": "TrendRadarMedia/2.0", "Accept": "video/*,*/*;q=0.8"})
-    opener = urllib.request.build_opener(PublicRedirectHandler())
+    current_url = url
     try:
-        with opener.open(request, timeout=timeout) as response, output.open("xb") as handle:
-            _assert_public_http_url(response.geturl())
-            content_type = str(response.headers.get("Content-Type", "")).lower()
-            if content_type.startswith("text/") or "json" in content_type or "html" in content_type:
-                raise MediaJobError("invalid_media", "direct URL returned a non-media response")
-            content_length = response.headers.get("Content-Length")
-            if content_length and int(content_length) > max_bytes:
-                raise MediaJobError("media_too_large", "media exceeds configured max_bytes")
-            total = 0
-            for chunk in iter(lambda: response.read(1024 * 1024), b""):
-                total += len(chunk)
-                if total > max_bytes:
+        for redirect_count in range(MAX_REDIRECTS + 1):
+            connection, response = _request_pinned(current_url, timeout)
+            try:
+                if response.status in REDIRECT_STATUSES:
+                    location = response.getheader("Location")
+                    if not location or redirect_count == MAX_REDIRECTS:
+                        raise MediaJobError("download_failed", "direct media redirect limit reached", retryable=True)
+                    next_url = urllib.parse.urljoin(current_url, location)
+                    if urllib.parse.urlsplit(current_url).scheme == "https" and urllib.parse.urlsplit(next_url).scheme != "https":
+                        raise MediaJobError("unsafe_source", "direct media redirect downgraded HTTPS")
+                    current_url = next_url
+                    continue
+                if not 200 <= response.status < 300:
+                    raise MediaJobError("download_failed", "direct media server returned an error", retryable=True)
+                content_type = str(response.getheader("Content-Type", "")).lower()
+                if content_type.startswith("text/") or "json" in content_type or "html" in content_type:
+                    raise MediaJobError("invalid_media", "direct URL returned a non-media response")
+                content_length = response.getheader("Content-Length")
+                if content_length and int(content_length) > max_bytes:
                     raise MediaJobError("media_too_large", "media exceeds configured max_bytes")
-                handle.write(chunk)
+                with output.open("xb") as handle:
+                    total = 0
+                    for chunk in iter(lambda: response.read(1024 * 1024), b""):
+                        total += len(chunk)
+                        if total > max_bytes:
+                            raise MediaJobError("media_too_large", "media exceeds configured max_bytes")
+                        handle.write(chunk)
+                return
+            finally:
+                response.close()
+                connection.close()
     except MediaJobError:
         output.unlink(missing_ok=True)
         raise
-    except (OSError, urllib.error.URLError, ValueError) as exc:
+    except (OSError, http.client.HTTPException, ValueError) as exc:
         output.unlink(missing_ok=True)
         raise MediaJobError("download_failed", "direct media download failed", retryable=True) from exc
+
+
+def _request_pinned(url: str, timeout: int) -> tuple[http.client.HTTPConnection, http.client.HTTPResponse]:
+    parsed = urllib.parse.urlsplit(url)
+    host, port, addresses = _assert_public_http_url(url)
+    target = urllib.parse.urlunsplit(("", "", parsed.path or "/", parsed.query, ""))
+    connection_type = _PinnedHTTPSConnection if parsed.scheme == "https" else _PinnedHTTPConnection
+    last_error: OSError | http.client.HTTPException | None = None
+    for address in addresses:
+        connection = connection_type(host, address, port, timeout=timeout)
+        try:
+            connection.request(
+                "GET",
+                target,
+                headers={"User-Agent": "TrendRadarMedia/2.0", "Accept": "video/*,*/*;q=0.8"},
+            )
+            return connection, connection.getresponse()
+        except (OSError, http.client.HTTPException) as exc:
+            last_error = exc
+            connection.close()
+    assert last_error is not None
+    raise last_error
 
 
 def _load_request(path: str | Path) -> dict[str, Any]:
@@ -662,20 +722,36 @@ def _sha256_file(path: Path) -> str:
     return "sha256:" + digest.hexdigest()
 
 
-def _assert_public_http_url(url: str) -> None:
+def _assert_public_http_url(url: str) -> tuple[str, int, list[str]]:
     parsed = urllib.parse.urlsplit(url)
     host = parsed.hostname or ""
     if parsed.scheme not in {"http", "https"} or not host or parsed.username or parsed.password:
         raise MediaJobError("request_invalid", "direct URL must be credential-free HTTP(S)")
     try:
         default_port = 443 if parsed.scheme == "https" else 80
-        addresses = {item[4][0] for item in socket.getaddrinfo(host, parsed.port or default_port, type=socket.SOCK_STREAM)}
+        addresses = list(dict.fromkeys(item[4][0] for item in socket.getaddrinfo(host, parsed.port or default_port, type=socket.SOCK_STREAM)))
     except socket.gaierror as exc:
         raise MediaJobError("download_failed", "direct URL host could not be resolved", retryable=True) from exc
     for address in addresses:
         ip = ipaddress.ip_address(address)
         if not ip.is_global:
             raise MediaJobError("unsafe_source", "direct URL resolved to a non-public address")
+    if not addresses:
+        raise MediaJobError("download_failed", "direct URL host returned no addresses", retryable=True)
+    return host, parsed.port or default_port, addresses
+
+
+def _connect_pinned(address: str, port: int, timeout: int) -> socket.socket:
+    family = socket.AF_INET6 if ipaddress.ip_address(address).version == 6 else socket.AF_INET
+    connection = socket.socket(family, socket.SOCK_STREAM)
+    try:
+        connection.settimeout(timeout)
+        endpoint: tuple[Any, ...] = (address, port, 0, 0) if family == socket.AF_INET6 else (address, port)
+        connection.connect(endpoint)
+        return connection
+    except OSError:
+        connection.close()
+        raise
 
 
 def _command(value: object, *, required_fields: set[str]) -> list[str]:
