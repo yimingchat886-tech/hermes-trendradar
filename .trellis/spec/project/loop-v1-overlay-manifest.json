@@ -1,7 +1,7 @@
 {
   "manifest_schema_version": 3,
   "release_model": "unified-intent-loop-v1",
-  "trellis_base_version": "0.6.14",
+  "trellis_base_version": "0.6.15",
   "entries": [
     {"owner": "overlay", "path": ".gitignore", "scope": "file"},
     {"owner": "overlay", "path": ".trellis/.gitignore", "scope": "file"},

@@ -327,8 +327,8 @@ def build_release(
     *,
     managed_paths: Sequence[str],
     intentional_deletions: Sequence[str] = (),
-    base_version: str = "0.6.14",
-    supported_versions: Sequence[str] = ("0.6.12", "0.6.14"),
+    base_version: str = "0.6.15",
+    supported_versions: Sequence[str] = ("0.6.12", "0.6.14", "0.6.15"),
     semantic_qualification: Mapping[str, object],
     write: bool = True,
 ) -> dict[str, Any]:
