@@ -12,6 +12,8 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from .authority import Authority, AuthorityError, canonical_json, digest, git, git_common_dir, utc_now
+from .downstream_registry import preflight_registry, registry_snapshot
+from .gitnexus_foundation import apply_gitnexus_assets, plan_gitnexus_assets, prove_gitnexus
 from .service import (
     _slug,
     _task_authorization_candidate_digest,
@@ -19,6 +21,7 @@ from .service import (
     _write_if_changed,
     touches_overlap,
 )
+from .upstream_candidate import CANDIDATE_SCHEMA_VERSION, candidate_status, load_candidate
 
 
 ENV_ALLOWLIST = ("HOME", "PATH", "PYTHONDONTWRITEBYTECODE", "TMPDIR")
@@ -37,14 +40,18 @@ def _safe_relative(root: Path, raw: str) -> Path:
     return Path(root) / relative
 
 
-def _write_immutable(path: Path, data: bytes) -> None:
+def _write_immutable(path: Path, data: bytes, *, mode: int | None = None) -> None:
     if path.is_symlink() or (path.exists() and not path.is_file()):
         raise AuthorityError(f"Immutable release path is unsafe: {path}")
     if path.is_file():
-        if path.read_bytes() != data:
+        if path.read_bytes() != data or (
+            mode is not None and path.stat().st_mode & 0o777 != mode
+        ):
             raise AuthorityError(f"Immutable release artifact drifted: {path}")
         return
     _write_if_changed(path, data)
+    if mode is not None:
+        path.chmod(mode)
 
 
 def _artifact_path(
@@ -59,7 +66,9 @@ def _artifact_path(
     )
 
 
-def repository_snapshot(repo_root: Path, *, exclude: Sequence[str] = ()) -> str:
+def repository_inventory(
+    repo_root: Path, *, exclude: Sequence[str] = ()
+) -> list[tuple[str, str]]:
     root = Path(repo_root).resolve()
     listing = git(root, "ls-files", "-co", "--exclude-standard", "-z").stdout.split("\0")
     rows: list[tuple[str, str]] = []
@@ -69,8 +78,18 @@ def repository_snapshot(repo_root: Path, *, exclude: Sequence[str] = ()) -> str:
         if path.is_symlink():
             rows.append((raw, f"symlink:{os.readlink(path)}"))
         elif path.is_file():
-            rows.append((raw, sha256(path.read_bytes()).hexdigest()))
-    return digest(rows)
+            rows.append(
+                (
+                    raw,
+                    f"{path.stat().st_mode & 0o777:o}:"
+                    f"{sha256(path.read_bytes()).hexdigest()}",
+                )
+            )
+    return rows
+
+
+def repository_snapshot(repo_root: Path, *, exclude: Sequence[str] = ()) -> str:
+    return digest(repository_inventory(repo_root, exclude=exclude))
 
 
 def load_catalog(repo_root: Path) -> dict[str, Any]:
@@ -211,7 +230,7 @@ def run_check(repo_root: Path, resolved: Mapping[str, object]) -> dict[str, Any]
     }
 
 
-def _expand_payload(repo_root: Path, managed_paths: Sequence[str]) -> list[dict[str, str]]:
+def _expand_payload(repo_root: Path, managed_paths: Sequence[str]) -> list[dict[str, object]]:
     root = Path(repo_root).resolve()
     visible = set(
         filter(
@@ -244,6 +263,7 @@ def _expand_payload(repo_root: Path, managed_paths: Sequence[str]) -> list[dict[
     return [
         {
             "digest": sha256(path.read_bytes()).hexdigest(),
+            "mode": path.stat().st_mode & 0o777,
             "path": path.relative_to(root).as_posix(),
         }
         for path in sorted(files)
@@ -253,7 +273,7 @@ def _expand_payload(repo_root: Path, managed_paths: Sequence[str]) -> list[dict[
 def _official_base_payload(
     version: str,
     owned_paths: Sequence[str],
-) -> tuple[list[dict[str, str]], dict[str, bytes], dict[str, str]]:
+) -> tuple[list[dict[str, object]], dict[str, bytes], dict[str, str]]:
     executable = shutil.which("trellis")
     if not executable:
         raise AuthorityError("TOOL_ARTIFACT_MISSING: Trellis CLI is unavailable")
@@ -269,6 +289,7 @@ def _official_base_payload(
             f"TOOL_ARTIFACT_MISSING: exact Trellis {version} CLI is unavailable"
         )
     contents: dict[str, bytes] = {}
+    modes: dict[str, int] = {}
     with tempfile.TemporaryDirectory(dir="/tmp", prefix="uil-trellis-base-") as temp:
         root = Path(temp)
         git(root, "init", "-b", "main")
@@ -308,8 +329,9 @@ def _official_base_payload(
                 if item.is_file() and "__pycache__" not in item.parts:
                     relative = item.relative_to(root).as_posix()
                     contents[relative] = item.read_bytes()
+                    modes[relative] = item.stat().st_mode & 0o777
     payload = [
-        {"digest": sha256(data).hexdigest(), "path": path}
+        {"digest": sha256(data).hexdigest(), "mode": modes[path], "path": path}
         for path, data in sorted(contents.items())
     ]
     return (
@@ -322,6 +344,204 @@ def _official_base_payload(
     )
 
 
+def _generated_relative(path: str, profile: str) -> str | None:
+    prefix = f"generated/{profile}/"
+    return path[len(prefix):] if path.startswith(prefix) else None
+
+
+def _path_owner(overlay: Mapping[str, object], path: str) -> str | None:
+    matches: list[str] = []
+    for entry in overlay["entries"]:  # type: ignore[index]
+        if entry["scope"] == "external":
+            continue
+        owned = str(entry["path"])
+        if path == owned or (entry["scope"] == "tree" and path.startswith(owned + "/")):
+            matches.append(str(entry["owner"]))
+    if len(matches) > 1:
+        raise AuthorityError(f"Upstream path has multiple owners: {path}")
+    return matches[0] if matches else None
+
+
+def build_adoption_report(
+    repo_root: Path,
+    candidate_id: str,
+    *,
+    profile: str = "claude-codex-native",
+    write: bool = True,
+) -> dict[str, object]:
+    root = Path(repo_root).resolve()
+    candidate = load_candidate(root, candidate_id)
+    overlay = load_overlay(root)
+    dispositions: list[dict[str, str]] = []
+    paths = {
+        str(row["path"]) for row in candidate["full_inventory"]  # type: ignore[index]
+    } | {
+        str(row["path"])
+        for row in candidate["delta"]  # type: ignore[index]
+        if row.get("status") == "delete"
+    }
+    for path in sorted(paths):
+        relative = _generated_relative(path, profile)
+        if path.startswith("packages/"):
+            disposition, reason = "inherit", "official-package-evidence"
+        elif relative is None:
+            raise AuthorityError(f"Upstream delta is outside the supported profile: {path}")
+        else:
+            owner = _path_owner(overlay, relative)
+            if owner == "overlay":
+                disposition, reason = "port", "local-uil-overlay"
+            elif owner in {"project", "generated"}:
+                disposition, reason = "project-owned", f"{owner}-ownership"
+            else:
+                disposition, reason = "inherit", "official-generated-base"
+        dispositions.append(
+            {"disposition": disposition, "path": path, "reason": reason}
+        )
+    body = {
+        "candidate_id": candidate_id,
+        "dispositions": dispositions,
+        "overlay_digest": digest(overlay),
+        "profile": profile,
+        "schema_version": 1,
+        "upstream_inventory_digest": candidate["identity"]["full_inventory_digest"],
+    }
+    report = {**body, "report_digest": digest(body)}
+    if write:
+        path = _safe_relative(
+            root,
+            f".trellis/releases/adoptions/{candidate_id}/{report['report_digest']}.json",
+        )
+        _write_immutable(path, (json.dumps(report, indent=2, sort_keys=True) + "\n").encode())
+    return report
+
+
+def _validate_adoption_report(
+    repo_root: Path,
+    candidate: Mapping[str, object],
+    report: Mapping[str, object],
+) -> str:
+    root = Path(repo_root).resolve()
+    body = {key: value for key, value in report.items() if key != "report_digest"}
+    report_digest = digest(body)
+    overlay = load_overlay(root)
+    if (
+        report.get("schema_version") != 1
+        or report.get("report_digest") != report_digest
+        or report.get("candidate_id") != candidate.get("candidate_id")
+        or report.get("upstream_inventory_digest")
+        != candidate["identity"]["full_inventory_digest"]  # type: ignore[index]
+        or report.get("overlay_digest") != digest(overlay)
+        or report.get("profile") != "claude-codex-native"
+    ):
+        raise AuthorityError("Upstream adoption report binding is invalid")
+    dispositions = report.get("dispositions")
+    if not isinstance(dispositions, list):
+        raise AuthorityError("Upstream adoption dispositions are unavailable")
+    expected = {str(row["path"]) for row in candidate["delta"]}  # type: ignore[index]
+    seen: set[str] = set()
+    for row in dispositions:
+        if (
+            not isinstance(row, Mapping)
+            or not isinstance(row.get("path"), str)
+            or row["path"] in seen
+            or row.get("disposition") not in {"inherit", "port", "reject", "project-owned"}
+            or not isinstance(row.get("reason"), str)
+            or not row["reason"]
+        ):
+            raise AuthorityError("Upstream adoption disposition is invalid")
+        path = str(row["path"])
+        relative = _generated_relative(path, str(report["profile"]))
+        if path.startswith("packages/"):
+            expected_disposition = "inherit"
+        elif relative is None:
+            raise AuthorityError(f"Upstream adoption path is unsupported: {path}")
+        else:
+            owner = _path_owner(overlay, relative)
+            expected_disposition = (
+                "port"
+                if owner == "overlay"
+                else "project-owned"
+                if owner in {"project", "generated"}
+                else "inherit"
+            )
+        if row["disposition"] == "reject":
+            if (
+                expected_disposition != "inherit"
+                or path.startswith("packages/")
+                or not isinstance(row.get("risk"), str)
+                or not row["risk"]
+                or not isinstance(row.get("verification"), str)
+                or not row["verification"]
+            ):
+                raise AuthorityError("Rejected upstream path lacks risk or verification")
+        elif row["disposition"] != expected_disposition:
+            raise AuthorityError(
+                f"Upstream disposition conflicts with ownership: {path}"
+            )
+        seen.add(row["path"])
+    if seen != expected:
+        missing = sorted(expected - seen)
+        extra = sorted(seen - expected)
+        raise AuthorityError(
+            f"Upstream adoption coverage is incomplete: missing={missing[:5]} extra={extra[:5]}"
+        )
+    return report_digest
+
+
+def _candidate_base_payload(
+    repo_root: Path,
+    candidate: Mapping[str, object],
+    overlay: Mapping[str, object],
+    report: Mapping[str, object],
+    profile: str,
+) -> tuple[list[dict[str, object]], dict[str, bytes], dict[str, str]]:
+    root = Path(repo_root).resolve()
+    common = git_common_dir(root)
+    contents: dict[str, bytes] = {}
+    dispositions = {
+        str(row["path"]): str(row["disposition"])
+        for row in report["dispositions"]  # type: ignore[index]
+    }
+    for row in candidate["full_inventory"]:  # type: ignore[index]
+        relative = _generated_relative(str(row["path"]), profile)
+        if (
+            relative is None
+            or dispositions.get(str(row["path"])) in {"project-owned", "reject"}
+            or _path_owner(overlay, relative) in {"project", "generated"}
+        ):
+            continue
+        source = common / "trellis/upstream/candidates" / str(candidate["candidate_id"]) / str(row["path"])
+        data = source.read_bytes()
+        if sha256(data).hexdigest() != row["digest"]:
+            raise AuthorityError(f"Upstream candidate base drifted: {row['path']}")
+        contents[relative] = data
+    payload = [
+        {
+            "digest": sha256(data).hexdigest(),
+            "mode": next(
+                int(row["mode"])
+                for row in candidate["full_inventory"]  # type: ignore[index]
+                if _generated_relative(str(row["path"]), profile) == path
+            ),
+            "path": path,
+        }
+        for path, data in sorted(contents.items())
+    ]
+    if not any(item["path"] == ".trellis/.version" for item in payload):
+        raise AuthorityError("Upstream candidate profile is missing .trellis/.version")
+    identity = candidate["identity"]  # type: ignore[assignment]
+    return (
+        payload,
+        contents,
+        {
+            "candidate_id": str(candidate["candidate_id"]),
+            "executable_digest": str(identity["cli_executable_digest"]),
+            "profile": profile,
+            "version": str(identity["package"]["version"]),
+        },
+    )
+
+
 def build_release(
     repo_root: Path,
     *,
@@ -330,6 +550,9 @@ def build_release(
     base_version: str = "0.6.15",
     supported_versions: Sequence[str] = ("0.6.12", "0.6.14", "0.6.15"),
     semantic_qualification: Mapping[str, object],
+    upstream_candidate_id: str | None = None,
+    adoption_report: Mapping[str, object] | None = None,
+    profile: str = "claude-codex-native",
     write: bool = True,
 ) -> dict[str, Any]:
     root = Path(repo_root).resolve()
@@ -362,10 +585,39 @@ def build_release(
     )
     if not cli_artifact:
         raise AuthorityError("Release payload must bind .trellis/scripts/task.py")
-    base_payload, base_contents, base_generator = _official_base_payload(
-        base_version,
-        [*managed_paths, *intentional_deletions],
-    )
+    if bool(upstream_candidate_id) != bool(adoption_report):
+        raise AuthorityError("Release needs both upstream candidate and adoption report")
+    upstream_binding: dict[str, object] | None = None
+    adoption_binding: dict[str, object] | None = None
+    if upstream_candidate_id and adoption_report:
+        candidate = load_candidate(root, upstream_candidate_id)
+        if candidate["identity"]["package"]["version"] != base_version:
+            raise AuthorityError("Release base version does not match the upstream candidate")
+        report_digest = _validate_adoption_report(root, candidate, adoption_report)
+        base_payload, base_contents, base_generator = _candidate_base_payload(
+            root, candidate, overlay, adoption_report, profile
+        )
+        upstream_binding = {
+            "candidate_id": upstream_candidate_id,
+            "inventory_digest": candidate["identity"]["full_inventory_digest"],
+            "schema_version": CANDIDATE_SCHEMA_VERSION,
+        }
+        adoption_binding = {
+            "path": (
+                f".trellis/releases/adoptions/{upstream_candidate_id}/"
+                f"{report_digest}.json"
+            ),
+            "report_digest": report_digest,
+        }
+        application_order = "official-candidate-base-then-overlay-v2"
+        schema_generation = 2
+    else:
+        base_payload, base_contents, base_generator = _official_base_payload(
+            base_version,
+            [*managed_paths, *intentional_deletions],
+        )
+        application_order = "official-base-then-overlay-v1"
+        schema_generation = 1
     body = {
         "capability_range": sorted(set(supported_versions)),
         "artifact_locator": {
@@ -380,16 +632,19 @@ def build_release(
         "minimum_capabilities": ["logical-check-adapter", "unified-intent-loop-v1"],
         "overlay_digest": digest(overlay),
         "ownership_policy": "unified-intent-loop-v1",
-        "schema_generation": 1,
+        "schema_generation": schema_generation,
         "semantic_qualification": dict(semantic_qualification),
         "trellis_base_artifact": {
-            "application_order": "official-base-then-overlay-v1",
+            "application_order": application_order,
             "generator": base_generator,
             "payload": base_payload,
             "payload_digest": digest(base_payload),
         },
         "trellis_base_version": base_version,
     }
+    if upstream_binding and adoption_binding:
+        body["upstream_candidate"] = upstream_binding
+        body["adoption_report"] = adoption_binding
     release_id = digest(body)
     manifest = {"release_id": release_id, **body}
     if write:
@@ -403,7 +658,9 @@ def build_release(
                 "overlay",
                 item["path"],
             )
-            _write_immutable(target, source.read_bytes())
+            _write_immutable(
+                target, source.read_bytes(), mode=int(item["mode"])
+            )
         for item in base_payload:
             target = _artifact_path(
                 common_dir,
@@ -412,7 +669,9 @@ def build_release(
                 "base",
                 item["path"],
             )
-            _write_immutable(target, base_contents[item["path"]])
+            _write_immutable(
+                target, base_contents[item["path"]], mode=int(item["mode"])
+            )
         path = _safe_relative(root, f".trellis/releases/{release_id}.json")
         _write_immutable(path, (json.dumps(manifest, indent=2, sort_keys=True) + "\n").encode())
     return manifest
@@ -444,10 +703,16 @@ def validate_release(repo_root: Path, manifest: Mapping[str, object]) -> str:
         if isinstance(base_artifact, Mapping)
         else None
     )
+    schema_generation = manifest.get("schema_generation")
+    expected_order = {
+        1: "official-base-then-overlay-v1",
+        2: "official-candidate-base-then-overlay-v2",
+    }.get(schema_generation)
     if (
-        not isinstance(base_payload, list)
+        expected_order is None
+        or not isinstance(base_payload, list)
         or base_artifact.get("application_order")
-        != "official-base-then-overlay-v1"
+        != expected_order
         or base_artifact.get("payload_digest") != digest(base_payload)
         or not isinstance(base_artifact.get("generator"), Mapping)
         or base_artifact["generator"].get("version")
@@ -464,13 +729,38 @@ def validate_release(repo_root: Path, manifest: Mapping[str, object]) -> str:
         ),
         None,
     )
-    if version_entry != {
-        "digest": sha256(
-            str(manifest.get("trellis_base_version")).encode()
-        ).hexdigest(),
-        "path": ".trellis/.version",
-    }:
+    if (
+        not isinstance(version_entry, Mapping)
+        or version_entry.get("digest")
+        != sha256(str(manifest.get("trellis_base_version")).encode()).hexdigest()
+        or version_entry.get("path") != ".trellis/.version"
+        or (
+            version_entry.get("mode") is not None
+            and version_entry.get("mode") != 0o644
+        )
+    ):
         raise AuthorityError("Release Trellis base version artifact is invalid")
+    upstream_binding = manifest.get("upstream_candidate")
+    adoption_binding = manifest.get("adoption_report")
+    if schema_generation == 2:
+        if (
+            not isinstance(upstream_binding, Mapping)
+            or upstream_binding.get("schema_version") != CANDIDATE_SCHEMA_VERSION
+            or not isinstance(upstream_binding.get("candidate_id"), str)
+            or not isinstance(upstream_binding.get("inventory_digest"), str)
+            or not isinstance(adoption_binding, Mapping)
+            or adoption_binding.get("path")
+            != (
+                f".trellis/releases/adoptions/{upstream_binding.get('candidate_id')}/"
+                f"{adoption_binding.get('report_digest')}.json"
+            )
+            or not isinstance(adoption_binding.get("report_digest"), str)
+            or base_artifact["generator"].get("candidate_id")
+            != upstream_binding.get("candidate_id")
+        ):
+            raise AuthorityError("Release upstream adoption binding is invalid")
+    elif upstream_binding is not None or adoption_binding is not None:
+        raise AuthorityError("Legacy release cannot contain an upstream adoption binding")
     deletions = manifest.get("intentional_deletions")
     if not isinstance(deletions, list) or not all(isinstance(raw, str) for raw in deletions):
         raise AuthorityError("Release deletion set is invalid")
@@ -486,10 +776,16 @@ def validate_release(repo_root: Path, manifest: Mapping[str, object]) -> str:
     for group, items in (("base", base_payload), ("overlay", payload)):
         seen: set[str] = set()
         for item in items:
+            mode = item.get("mode") if isinstance(item, Mapping) else None
             if (
                 not isinstance(item, Mapping)
                 or not isinstance(item.get("path"), str)
                 or item["path"] in seen
+                or (
+                    mode is not None
+                    and (not isinstance(mode, int) or not 0 <= mode <= 0o777)
+                )
+                or (schema_generation == 2 and mode is None)
             ):
                 raise AuthorityError("Release managed payload entry is invalid")
             seen.add(item["path"])
@@ -504,6 +800,10 @@ def validate_release(repo_root: Path, manifest: Mapping[str, object]) -> str:
                 raise AuthorityError(
                     f"Release {group} payload drifted: {item['path']}"
                 )
+            if mode is not None and path.stat().st_mode & 0o777 != mode:
+                raise AuthorityError(
+                    f"Release {group} payload mode drifted: {item['path']}"
+                )
     if manifest.get("check_catalog_digest") != digest(load_catalog(root)):
         raise AuthorityError("Release check catalog drifted")
     overlay = load_overlay(root)
@@ -515,6 +815,31 @@ def validate_release(repo_root: Path, manifest: Mapping[str, object]) -> str:
     return release_id
 
 
+def _validate_release_source_binding(
+    repo_root: Path, manifest: Mapping[str, object]
+) -> None:
+    if manifest.get("schema_generation") != 2:
+        return
+    root = Path(repo_root).resolve()
+    upstream = manifest["upstream_candidate"]
+    adoption = manifest["adoption_report"]
+    candidate = load_candidate(root, str(upstream["candidate_id"]))
+    if candidate["identity"]["full_inventory_digest"] != upstream["inventory_digest"]:
+        raise AuthorityError("Release upstream candidate inventory drifted")
+    path = _safe_relative(root, str(adoption["path"]))
+    if path.is_symlink() or not path.is_file():
+        raise AuthorityError("Release adoption report is unavailable")
+    report = json.loads(path.read_text(encoding="utf-8"))
+    if _validate_adoption_report(root, candidate, report) != adoption["report_digest"]:
+        raise AuthorityError("Release adoption report drifted")
+    payload, _, generator = _candidate_base_payload(
+        root, candidate, load_overlay(root), report, str(report["profile"])
+    )
+    base = manifest["trellis_base_artifact"]
+    if base["payload"] != payload or base["generator"] != generator:
+        raise AuthorityError("Release candidate base payload drifted")
+
+
 def qualify_release(
     repo_root: Path,
     manifest: Mapping[str, object],
@@ -523,6 +848,7 @@ def qualify_release(
 ) -> str:
     root = Path(repo_root).resolve()
     release_id = validate_release(root, manifest)
+    _validate_release_source_binding(root, manifest)
     commit_oid = _release_commit_oid(root, manifest)
     with Authority(root, create=True) as authority, authority.transaction():
         run = (
@@ -567,6 +893,10 @@ def _release_commit_oid(
         if (
             not path.is_file()
             or sha256(path.read_bytes()).hexdigest() != item["digest"]
+            or (
+                item.get("mode") is not None
+                and path.stat().st_mode & 0o777 != item["mode"]
+            )
             or git(
                 root,
                 "ls-files",
@@ -708,7 +1038,11 @@ def _install_release_material(
                 group,
                 str(item["path"]),
             )
-            _write_immutable(target_path, source_path.read_bytes())
+            _write_immutable(
+                target_path,
+                source_path.read_bytes(),
+                mode=(int(item["mode"]) if item.get("mode") is not None else None),
+            )
     validated_release_id = _validate_installed_release_material(
         target, worktree, release, base_payload, payload
     )
@@ -750,6 +1084,10 @@ def _validate_installed_release_material(
                 path.is_symlink()
                 or not path.is_file()
                 or sha256(path.read_bytes()).hexdigest() != item["digest"]
+                or (
+                    item.get("mode") is not None
+                    and path.stat().st_mode & 0o777 != item["mode"]
+                )
             ):
                 raise AuthorityError(
                     f"Target release {group} artifact is unavailable or drifted: "
@@ -766,6 +1104,9 @@ def sync_targets(
     release: Mapping[str, object] | None = None,
     check_ids: Sequence[str] = ("trellis.task_cli.help",),
     current_source: bool = False,
+    registry: Mapping[str, object] | None = None,
+    upstream_candidate_id: str | None = None,
+    adoption_report: Mapping[str, object] | None = None,
 ) -> dict[str, Any]:
     source = Path(source_root).resolve()
     if current_source and release:
@@ -817,6 +1158,8 @@ def sync_targets(
                 "passed": True,
                 "suite_digest": digest(stable_results),
             },
+            upstream_candidate_id=upstream_candidate_id,
+            adoption_report=adoption_report,
         )
         qualify_release(source, release, task_id=task_id)
     else:
@@ -854,6 +1197,45 @@ def sync_targets(
         *release.get("intentional_deletions", []),
         manifest_path,
     ]
+    registry_binding: dict[str, object] | None = None
+    registry_targets: dict[Path, Mapping[str, object]] = {}
+    if registry is not None:
+        current_registry = preflight_registry(source)
+        provided_targets = registry.get("targets")
+        if (
+            registry.get("digest") != current_registry["digest"]
+            or not isinstance(provided_targets, list)
+        ):
+            raise AuthorityError("Downstream registry snapshot drifted before target planning")
+        stable_targets = [
+            {
+                "expected_origin": target["expected_origin"],
+                "id": target["id"],
+                "root": target["root"],
+            }
+            for target in current_registry["targets"]
+        ]
+        provided_stable = [
+            {
+                "expected_origin": target["expected_origin"],
+                "id": target["id"],
+                "root": target["root"],
+            }
+            for target in provided_targets
+        ]
+        if provided_stable != stable_targets:
+            raise AuthorityError("Downstream registry members drifted before target planning")
+        registry_targets = {
+            Path(str(target["root"])).resolve(): target for target in stable_targets
+        }
+        requested = [Path(path).resolve() for path in targets]
+        if requested != list(registry_targets):
+            raise AuthorityError("Registered sync targets do not match the bound registry order")
+        registry_binding = {
+            "registry_digest": current_registry["digest"],
+            "snapshot_digest": digest(current_registry["targets"]),
+            "target_ids": [target["id"] for target in stable_targets],
+        }
     catalog = load_catalog(source)
     with Authority(source) as authority:
         qualified = authority.one(
@@ -864,7 +1246,9 @@ def sync_targets(
         run = authority.one("SELECT * FROM runs WHERE task_id=?", (task_id,))
         if not run:
             raise AuthorityError("Sync task has not been run")
-        prepared: list[tuple[str, Path, list[str]]] = []
+        prepared: list[
+            tuple[str, Path, list[str], dict[str, object] | None, list[str]]
+        ] = []
         target_ids: set[str] = set()
         for target_value in targets:
             target = Path(target_value).resolve()
@@ -881,16 +1265,61 @@ def sync_targets(
                         f"Target managed path is a symlink: {raw}"
                     )
             dirty = _dirty_paths(target)
-            overlap = [path for path in dirty if touches_overlap([path], planned_paths)]
+            target_id = (
+                str(registry_targets[target]["id"])
+                if registry_binding is not None
+                else _slug(target.name)
+            )
+            gitnexus_plan = (
+                plan_gitnexus_assets(source, target, target_id)
+                if registry_binding is not None
+                else None
+            )
+            target_planned_paths = sorted(
+                set(
+                    [
+                        *planned_paths,
+                        *(
+                            gitnexus_plan["assets"].keys()
+                            if gitnexus_plan is not None
+                            else []
+                        ),
+                    ]
+                )
+            )
+            overlap = [
+                path
+                for path in dirty
+                if touches_overlap([path], target_planned_paths)
+            ]
             if overlap:
                 raise AuthorityError(f"Target dirty paths overlap managed payload: {', '.join(overlap)}")
-            target_id = _slug(target.name)
             if target_id in target_ids:
                 raise AuthorityError(f"Duplicate target slot ID: {target_id}")
             target_ids.add(target_id)
-            prepared.append((target_id, target, dirty))
+            prepared.append(
+                (target_id, target, dirty, gitnexus_plan, target_planned_paths)
+            )
+        if registry_binding is not None:
+            if registry_snapshot(source)["digest"] != registry_binding["registry_digest"]:
+                raise AuthorityError("Downstream registry drifted before target writes")
+            with authority.transaction():
+                authority.record_event(
+                    f"sync:{run['run_id']}:registry:{registry_binding['registry_digest']}",
+                    "registry_snapshot_bound",
+                    registry_binding,
+                    task_id=task_id,
+                    run_id=run["run_id"],
+                    operation_input=registry_binding,
+                )
         results: dict[str, str] = {}
-        for target_id, target, dirty in prepared:
+        for target_id, target, dirty, gitnexus_plan, target_planned_paths in prepared:
+            if (
+                registry_binding is not None
+                and registry_snapshot(source)["digest"]
+                != registry_binding["registry_digest"]
+            ):
+                raise AuthorityError("Downstream registry drifted during target sync")
             with authority.transaction():
                 existing = authority.one(
                     "SELECT * FROM target_slots WHERE run_id=? AND target_id=?",
@@ -916,6 +1345,16 @@ def sync_targets(
                                 payload,
                             )
                             == release_id
+                            and (
+                                gitnexus_plan is None
+                                or (
+                                    prior.get("gitnexus_asset_digest")
+                                    == gitnexus_plan["asset_digest"]
+                                    and not plan_gitnexus_assets(
+                                        source, prior_worktree, target_id
+                                    )["changed_paths"]
+                                )
+                            )
                         )
                     except AuthorityError:
                         unchanged = False
@@ -960,7 +1399,7 @@ def sync_targets(
                         "DELETE FROM closeout_steps WHERE task_id=? AND partition_id=?",
                         (task_id, f"target:{target_id}"),
                     )
-                slot_managed_paths = set(planned_paths)
+                slot_managed_paths = set(target_planned_paths)
                 if existing:
                     slot_managed_paths.update(
                         json.loads(existing["managed_paths_json"])
@@ -1019,6 +1458,11 @@ def sync_targets(
                     run_id=run["run_id"],
                     operation_input={
                         "release_id": release_id,
+                        "registry_digest": (
+                            registry_binding["registry_digest"]
+                            if registry_binding is not None
+                            else None
+                        ),
                         "sync_attempt": attempt,
                         "target_base": git(target, "rev-parse", "HEAD^{commit}").stdout.strip(),
                         "target_id": target_id,
@@ -1075,6 +1519,8 @@ def sync_targets(
                         )
                     target_path.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(source_path, target_path)
+                if gitnexus_plan is not None:
+                    apply_gitnexus_assets(worktree, gitnexus_plan)
                 release_material = _install_release_material(
                     source_common,
                     locator_root,
@@ -1094,6 +1540,17 @@ def sync_targets(
                     check_results.append(run_check(worktree, resolved))
                 if not all(item["passed"] for item in check_results):
                     raise AuthorityError("Target logical checks failed")
+                gitnexus_proof = (
+                    prove_gitnexus(
+                        worktree,
+                        target_id,
+                        branch=branch,
+                    )
+                    if gitnexus_plan is not None
+                    else None
+                )
+                if gitnexus_proof is not None and not gitnexus_proof["verified"]:
+                    raise AuthorityError(str(gitnexus_proof["degraded"]))
                 candidate_tree = digest(
                     {
                         "repository": repository_snapshot(
@@ -1109,7 +1566,7 @@ def sync_targets(
                     "dirty_preimage_digest": digest(dirty),
                     "index_preimage_digest": _index_digest(target),
                     "managed_preimage_digest": _managed_preimage_digest(
-                        target, planned_paths
+                        target, target_planned_paths
                     ),
                     "managed_payload_digest": release["managed_payload_digest"],
                     "release_id": release_id,
@@ -1122,6 +1579,18 @@ def sync_targets(
                         "payload_digest"
                     ],
                 }
+                if gitnexus_plan is not None and gitnexus_proof is not None:
+                    receipt.update(
+                        {
+                            "gitnexus_asset_digest": gitnexus_plan["asset_digest"],
+                            "gitnexus_changed_paths": gitnexus_plan["changed_paths"],
+                            "gitnexus_proof": gitnexus_proof,
+                            "registry_digest": registry_binding["registry_digest"],
+                            "registry_snapshot_digest": registry_binding[
+                                "snapshot_digest"
+                            ],
+                        }
+                    )
                 adoption = worktree / ".trellis/deploy/adoption.json"
                 receipt["working_candidate_digest"] = _working_candidate_digest(
                     worktree,
@@ -1131,6 +1600,17 @@ def sync_targets(
                 state, error = "verified", None
             except Exception as exc:
                 receipt = {"sync_attempt": attempt}
+                if gitnexus_plan is not None:
+                    receipt.update(
+                        {
+                            "gitnexus_asset_digest": gitnexus_plan["asset_digest"],
+                            "gitnexus_changed_paths": gitnexus_plan["changed_paths"],
+                            "registry_digest": registry_binding["registry_digest"],
+                            "registry_snapshot_digest": registry_binding[
+                                "snapshot_digest"
+                            ],
+                        }
+                    )
                 state, error = "failed", str(exc)
             with authority.transaction():
                 authority.execute(
@@ -1177,3 +1657,32 @@ def sync_targets(
                 ),
             )
         return {"aggregate": aggregate, "release_id": release_id, "slots": results}
+
+
+def sync_registered_targets(
+    source_root: Path,
+    task_id: str,
+    *,
+    current_source: bool = False,
+    check_ids: Sequence[str] = ("trellis.task_cli.help",),
+) -> dict[str, Any]:
+    source = Path(source_root).resolve()
+    snapshot = preflight_registry(source)
+    candidate_id: str | None = None
+    report: Mapping[str, object] | None = None
+    if current_source:
+        status = candidate_status(source)
+        candidate_id = status.get("latest_available")  # type: ignore[assignment]
+        if not candidate_id:
+            raise AuthorityError("No AVAILABLE stable upstream candidate is bound")
+        report = build_adoption_report(source, candidate_id)
+    return sync_targets(
+        source,
+        task_id,
+        [Path(str(target["root"])) for target in snapshot["targets"]],
+        check_ids=check_ids,
+        current_source=current_source,
+        registry=snapshot,
+        upstream_candidate_id=candidate_id,
+        adoption_report=report,
+    )

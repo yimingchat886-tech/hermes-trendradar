@@ -1,28 +1,55 @@
 {
-  "candidate_tree": "3c8b352204a114d31c982f794361f176f5774519168e7eb02a5b6a9648bfc408",
+  "candidate_tree": "9f445c7a303ac8d2ccd242c9b1d07156425313ae0b7d8c6fd40d464fddb5b5d0",
   "check_ids": [
     "trellis.task_cli.help"
   ],
-  "check_results_digest": "d9de3095918faa441e1dd9803eb786de89f80174fc6575008cdeadc6eaff6f38",
+  "check_results_digest": "04a55e777cbed1553bdb5f22198529ba4a539c48ef84de52eb89992cba1ce709",
   "dirty_closeout_digest": "81f89f25ebe716f8f79f7034429199db1733edb47715639c2483255af2000573",
   "dirty_preimage_digest": "81f89f25ebe716f8f79f7034429199db1733edb47715639c2483255af2000573",
-  "index_closeout_digest": "fa111b78dfe653f0dcbffeef1d478b510bb5afbafdf51e4272bbcc3d0da6a1dd",
-  "index_preimage_digest": "fa111b78dfe653f0dcbffeef1d478b510bb5afbafdf51e4272bbcc3d0da6a1dd",
-  "managed_payload_digest": "5fceac09ceb878f353e2ecfd0b30393f793962baa6379cd0ad4b421052659459",
-  "managed_preimage_digest": "c4e4ec34fa347e55f53157b1cde1b06a79fb72095071b2f99dbdb34e090c60b0",
-  "release_id": "7fceaf518b40978aedd1a2847b2de393bb3dfea2da09132cb1e74ca190d6ff6e",
+  "gitnexus_asset_digest": "8e1b2b958aa8356ece89a8528abb85f57b8b0acca8a62dda265d0f39d43589d6",
+  "gitnexus_changed_paths": [
+    ".agents/skills/gitnexus/gitnexus-cli/SKILL.md",
+    ".agents/skills/gitnexus/gitnexus-debugging/SKILL.md",
+    ".agents/skills/gitnexus/gitnexus-exploring/SKILL.md",
+    ".agents/skills/gitnexus/gitnexus-guide/SKILL.md",
+    ".agents/skills/gitnexus/gitnexus-impact-analysis/SKILL.md",
+    ".agents/skills/gitnexus/gitnexus-refactoring/SKILL.md",
+    ".claude/skills/gitnexus/gitnexus-cli/SKILL.md",
+    ".claude/skills/gitnexus/gitnexus-debugging/SKILL.md",
+    ".claude/skills/gitnexus/gitnexus-exploring/SKILL.md",
+    ".claude/skills/gitnexus/gitnexus-guide/SKILL.md",
+    ".claude/skills/gitnexus/gitnexus-impact-analysis/SKILL.md",
+    ".claude/skills/gitnexus/gitnexus-refactoring/SKILL.md",
+    ".gitignore",
+    ".gitnexusrc",
+    "AGENTS.md",
+    "CLAUDE.md"
+  ],
+  "gitnexus_proof": {
+    "output_digest": "a1171145485157c99b75bc3911d32d5edb9b00d2524e9cec116f9ae5b6bcafc8",
+    "target_id": "hermes-trendradar",
+    "tracked_tree_clean": true,
+    "verified": true
+  },
+  "index_closeout_digest": "6ab4d125206459115dadc9c20ecfecc468f41716465235f22fe622e8610534e7",
+  "index_preimage_digest": "6ab4d125206459115dadc9c20ecfecc468f41716465235f22fe622e8610534e7",
+  "managed_payload_digest": "9193a5f943d81b8ee840ea1a08676641381a9dc56e0c5af7fe6d8232bb7b0135",
+  "managed_preimage_digest": "ddd5382d8d7f4c40ffbccd70b9d12795dea3ce30cce96d66dd79fc73b7acf855",
+  "registry_digest": "1582d76a760899c8e4950a3d66d9b4fc0f6d0b623818c727b9bd9d2c00ca05a5",
+  "registry_snapshot_digest": "16bb6ac6864fa5323205dee7aec10f96c394c99a0c9c428e47d5e0255b06d3d3",
+  "release_id": "c3c7831f225bdbd5ba7cde67b58d01c65ab3b830bc7724b3f00f2ebbf3ebfeb6",
   "release_material": {
     "artifact_locator": {
       "root": "trellis/releases/artifacts",
       "scheme": "git-common-dir-v2"
     },
-    "manifest_path": ".trellis/releases/7fceaf518b40978aedd1a2847b2de393bb3dfea2da09132cb1e74ca190d6ff6e.json",
-    "validated_release_id": "7fceaf518b40978aedd1a2847b2de393bb3dfea2da09132cb1e74ca190d6ff6e"
+    "manifest_path": ".trellis/releases/c3c7831f225bdbd5ba7cde67b58d01c65ab3b830bc7724b3f00f2ebbf3ebfeb6.json",
+    "validated_release_id": "c3c7831f225bdbd5ba7cde67b58d01c65ab3b830bc7724b3f00f2ebbf3ebfeb6"
   },
   "sync_attempt": 1,
-  "target_base": "1f9d744ff6326e3f13087c03ba41a989ea0858ab",
+  "target_base": "c90d03d7ed9780888c2328d140ac3556d54ed2b9",
   "target_branch": "codex/workflow-v2-m4-board",
   "target_id": "hermes-trendradar",
-  "trellis_base_payload_digest": "e4a189c8563bd7067851fa8ffda33612f8a3b1a449cf6138ff7d4d3f6c26a49e",
-  "working_candidate_digest": "0ddd22175758dcafdbad8a91b5b64c1ee0d5f9ab60cec1722e45f9fcb524c60f"
+  "trellis_base_payload_digest": "80cfacf0a95550c18b737e3c7b3c9c60955a0cb7ea41de0693478b2568875704",
+  "working_candidate_digest": "49878b06ad00788b447e6d7b87363b736f3d8d99909c68e75dcf20d88e79a6a8"
 }

@@ -9,6 +9,7 @@ from .release import (
     qualify_release,
     resolve_check,
     run_check,
+    sync_registered_targets,
     sync_targets,
 )
 from .service import (
@@ -55,6 +56,7 @@ __all__ = [
     "resolve_check",
     "run_check",
     "run_task",
+    "sync_registered_targets",
     "sync_targets",
     "task_status",
     "touches_overlap",
