@@ -14,7 +14,7 @@ DIST_ROOT = ROOT / "hermes_benchmark" / "collector_distribution"
 PROFILE_ROOT = DIST_ROOT / "profile"
 REPO_PATH = "/home/jym/workspace/Hermes trendradar"
 OLD_REPO_PATH = "/home/jym/workspace/Hermes stock"
-PREFILL_PATH = f"{REPO_PATH}/hermes_benchmark/collector_distribution/profile/prefill/collector-prefill.json"
+PREFILL_PATH = "/home/jym/.hermes/profiles/collector/prefill/collector-prefill.json"
 EXPECTED_TOOLS = tuple(STOCK_TOOL_SCHEMAS)
 GENERIC_DISABLED_TOOLSETS = {
     "terminal",
@@ -30,6 +30,10 @@ GENERIC_DISABLED_TOOLSETS = {
     "vision",
     "image_gen",
     "tts",
+    "skills",
+    "clarify",
+    "moa",
+    "homeassistant",
 }
 PLATFORM_ENV_PREFIXES = ("FEISHU_", "WEIXIN_", "API_SERVER_")
 CREDENTIAL_KEY_PARTS = ("TOKEN", "SECRET", "KEY", "COOKIE", "PASSWORD", "PROXY")
@@ -119,8 +123,20 @@ def _distribution_texts() -> dict[Path, str]:
     return {path: path.read_text(encoding="utf-8") for path in paths}
 
 
+def _assert_real_toolset_contract(config: dict[str, Any], text: str) -> None:
+    assert config["plugins"]["enabled"] == ["stock-runtime"]
+    assert config["toolsets"] == ["stock_runtime"]
+    assert config["platform_toolsets"]["cli"] == ["stock_runtime"]
+    disabled = set(config["agent"]["disabled_toolsets"])
+    assert disabled >= GENERIC_DISABLED_TOOLSETS
+    assert "stock_runtime" not in disabled
+    assert "tools" not in config
+    assert "enabled_toolsets" not in text
+
+
 def test_collector_profile_templates_parse_and_pin_blank_local_profile_contract() -> None:
-    config = _parse_simple_yaml((PROFILE_ROOT / "config.template.yaml").read_text(encoding="utf-8"))
+    text = (PROFILE_ROOT / "config.template.yaml").read_text(encoding="utf-8")
+    config = _parse_simple_yaml(text)
 
     assert not (PROFILE_ROOT / "SOUL.md").exists()
     assert config["profile"]["name"] == "collector"
@@ -131,21 +147,17 @@ def test_collector_profile_templates_parse_and_pin_blank_local_profile_contract(
     assert config["terminal"]["cwd"] == REPO_PATH
     assert config["memory"]["memory_enabled"] is False
     assert config["memory"]["user_profile_enabled"] is False
-    assert config["plugins"]["enabled"] == ["stock-runtime"]
-    assert config["tools"]["enabled_toolsets"] == ["stock_runtime"]
-    assert set(config["tools"]["disabled_toolsets"]) >= GENERIC_DISABLED_TOOLSETS
-    assert "stock_runtime" not in set(config["tools"]["disabled_toolsets"])
+    _assert_real_toolset_contract(config, text)
     assert config["platforms"]["feishu"]["enabled"] is False
     assert config["platforms"]["weixin"]["enabled"] is False
     assert config["platforms"]["api_server"]["enabled"] is False
 
 
 def test_collector_runtime_fragment_uses_trendradar_paths_and_stock_runtime_only() -> None:
-    config = _parse_simple_yaml((DIST_ROOT / "collector_config.template.yaml").read_text(encoding="utf-8"))
+    text = (DIST_ROOT / "collector_config.template.yaml").read_text(encoding="utf-8")
+    config = _parse_simple_yaml(text)
 
-    assert config["plugins"]["enabled"] == ["stock-runtime"]
-    assert config["tools"]["enabled_toolsets"] == ["stock_runtime"]
-    assert set(config["tools"]["disabled_toolsets"]) >= GENERIC_DISABLED_TOOLSETS
+    _assert_real_toolset_contract(config, text)
     assert config["platforms"]["feishu"]["enabled"] is False
     assert config["platforms"]["weixin"]["enabled"] is False
     assert config["platforms"]["api_server"]["enabled"] is False
@@ -225,7 +237,8 @@ def test_distribution_docs_capture_deployment_validation_and_deferred_boundaries
     readme = (DIST_ROOT / "README.md").read_text(encoding="utf-8")
 
     assert "06:00 America/Denver" in readme
-    assert "fixed:300/max2" in readme
+    assert "runner-authorized `fixed:300`" in readme
+    assert "current v1.4 manifest is max2" in readme
     assert "RAG adopted-content outbox" in readme
     assert "planned, not implemented" in readme
     assert "Case 4D" in readme

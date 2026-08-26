@@ -16,6 +16,12 @@ from hermes_benchmark.collector_distribution.scripts import hermes_benchmark_han
 
 PROFILE_HASH = "sha256:" + "a" * 64
 RUN_ID = "run_20260825_success"
+VALID_RETRY_MANIFEST = {
+    "max_attempts": 2,
+    "retryable_exit_codes": [1, 3, 4, 5, 6, 8, 9],
+    "non_retryable_exit_codes": [2, 7, 10],
+    "backoff_policy_ref": "env:HERMES_V14_RETRY_BACKOFF_POLICY",
+}
 
 
 def _envelope(command: str, *, ok: bool = True, exit_code: int = 0, data: dict[str, Any] | None = None, error_code: str | None = None, retryable: bool = False) -> bytes:
@@ -65,13 +71,14 @@ def _ok_run(status: str = "success", extra: dict[str, Any] | None = None) -> byt
     return _envelope("run-daily", data=data)
 
 
-def _invoke(argv: list[str], command_runner, tmp_path: Path, clock=None) -> tuple[int, dict[str, Any], str]:
+def _invoke(argv: list[str], command_runner, tmp_path: Path, clock=None, manifest_loader=None) -> tuple[int, dict[str, Any], str]:
     stdout = io.StringIO()
     stderr = io.StringIO()
     with contextlib.redirect_stderr(stderr):
         code = runner.main(
             argv,
             command_runner=command_runner,
+            manifest_loader=manifest_loader or (lambda: VALID_RETRY_MANIFEST),
             clock=clock or (lambda: datetime(2026, 8, 25, 12, 0, tzinfo=timezone.utc)),
             sleeper=lambda _seconds: None,
             lock_dir=tmp_path,
@@ -194,6 +201,7 @@ def test_retry_is_fixed_300_max2_and_only_for_retryable_envelope(tmp_path: Path)
     code = runner.main(
         [],
         command_runner=fake,
+        manifest_loader=lambda: VALID_RETRY_MANIFEST,
         clock=lambda: datetime(2026, 8, 25, 12, 0, tzinfo=timezone.utc),
         sleeper=lambda seconds: sleeps.append(seconds),
         lock_dir=tmp_path,
@@ -293,25 +301,113 @@ def test_allowed_field_secret_or_path_leaks_fail_closed_without_leaking_value(tm
         assert "token" not in encoded
 
 
-def test_manifest_policy_and_max_attempts_fail_closed(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    calls: list[list[str]] = []
+def test_manifest_loader_projects_retry_block_from_bounded_profile_json(tmp_path: Path) -> None:
+    profile_path = tmp_path / "profile.json"
+    profile_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "1.4",
+                "retry": VALID_RETRY_MANIFEST,
+                "secret_like_extra": "token=hidden",
+                "path_like_extra": "/home/jym/hidden-profile.json",
+            }
+        ),
+        encoding="utf-8",
+    )
 
-    def fake(argv: list[str], _cwd: Path, _timeout_seconds: float) -> tuple[int, bytes, bytes]:
-        calls.append(argv)
-        return 0, _ok_validate(), b""
+    assert runner._load_manifest_retry(profile_path) == VALID_RETRY_MANIFEST
+
+
+def test_manifest_validation_uses_retry_contract_fields_and_boundaries() -> None:
+    retry = runner._validate_manifest(VALID_RETRY_MANIFEST)
+
+    assert retry["delay_seconds"] == 300
+    assert retry["max_attempts"] == 2
+    assert retry["retryable_exit_codes"] == {1, 3, 4, 5, 6, 8, 9}
+    assert retry["non_retryable_exit_codes"] == {2, 7, 10}
+    assert retry["backoff_policy_ref"] == "env:HERMES_V14_RETRY_BACKOFF_POLICY"
+
+    for max_attempts in (1, 5):
+        assert runner._validate_manifest({**VALID_RETRY_MANIFEST, "max_attempts": max_attempts})["max_attempts"] == max_attempts
 
     invalid_manifests = [
-        {**runner.MANIFEST, "retry_policy": "exponential:300"},
-        {**runner.MANIFEST, "retry_policy": "fixed:0"},
-        {**runner.MANIFEST, "max_attempts": 3},
-        {**runner.MANIFEST, "retryable_exit_codes": ["4"]},
+        {**VALID_RETRY_MANIFEST, "max_attempts": 0},
+        {**VALID_RETRY_MANIFEST, "max_attempts": 6},
+        {**VALID_RETRY_MANIFEST, "backoff_policy_ref": ""},
+        {**VALID_RETRY_MANIFEST, "backoff_policy_ref": "env:BAD;rm -rf"},
+        {**VALID_RETRY_MANIFEST, "retryable_exit_codes": ["4"]},
+        {**VALID_RETRY_MANIFEST, "retryable_exit_codes": [1, 1]},
+        {**VALID_RETRY_MANIFEST, "non_retryable_exit_codes": []},
+        {**VALID_RETRY_MANIFEST, "retryable_exit_codes": [1, 2]},
     ]
+    missing_nonretry = dict(VALID_RETRY_MANIFEST)
+    missing_nonretry.pop("non_retryable_exit_codes")
+    invalid_manifests.append(missing_nonretry)
     for manifest in invalid_manifests:
-        monkeypatch.setattr(runner, "MANIFEST", manifest)
-        code, receipt, _stderr = _invoke([], fake, tmp_path)
+        with pytest.raises(runner.RunnerError) as exc:
+            runner._validate_manifest(manifest)
+        assert exc.value.code == "manifest_invalid"
+
+
+def test_all_manifest_retryable_exit_codes_retry_once(tmp_path: Path) -> None:
+    for retry_exit_code in VALID_RETRY_MANIFEST["retryable_exit_codes"]:
+        attempts: list[str] = []
+        sleeps: list[int] = []
+        stdout = io.StringIO()
+
+        def fake(argv: list[str], _cwd: Path, _timeout_seconds: float) -> tuple[int, bytes, bytes]:
+            command = argv[1]
+            attempts.append(command)
+            if command == "validate-config":
+                return 0, _ok_validate(), b""
+            if command == "healthcheck":
+                return 0, _ok_health(), b""
+            if command == "run-daily" and attempts.count("run-daily") == 1:
+                return retry_exit_code, _envelope("run-daily", ok=False, exit_code=retry_exit_code, error_code="collection_failed", retryable=True), b""
+            return 0, _ok_run(), b""
+
+        code = runner.main(
+            [],
+            command_runner=fake,
+            manifest_loader=lambda: VALID_RETRY_MANIFEST,
+            clock=lambda: datetime(2026, 8, 25, 12, 0, tzinfo=timezone.utc),
+            sleeper=lambda seconds: sleeps.append(seconds),
+            lock_dir=tmp_path / str(retry_exit_code),
+            stdout=stdout,
+        )
+        receipt = json.loads(stdout.getvalue())
+
+        assert code == 0
+        assert attempts == ["validate-config", "healthcheck", "run-daily", "run-daily"]
+        assert sleeps == [300]
+        assert receipt["ok"] is True
+
+
+def test_manifest_load_failures_fail_closed_without_profile_path_or_content(tmp_path: Path) -> None:
+    cases = [
+        ("invalid", b'{"retry": "/home/jym/profile Cookie=secret"', "manifest_invalid"),
+        ("oversize", b"{" + b"x" * (runner.PROFILE_CAP_BYTES + 1), "manifest_oversize"),
+        ("missing", json.dumps({"retry": {"max_attempts": 2}}).encode(), "manifest_invalid"),
+    ]
+    for name, payload, error_code in cases:
+        profile_path = tmp_path / f"{name}.json"
+        profile_path.write_bytes(payload)
+        calls: list[list[str]] = []
+
+        def fake(argv: list[str], _cwd: Path, _timeout_seconds: float) -> tuple[int, bytes, bytes]:
+            calls.append(argv)
+            return 0, _ok_validate(), b""
+
+        code, receipt, stderr = _invoke([], fake, tmp_path, manifest_loader=lambda path=profile_path: runner._load_manifest_retry(path))
         assert code == 2
-        assert receipt["error"] == {"code": "manifest_invalid"}
-    assert calls == []
+        assert stderr == ""
+        assert calls == []
+        assert receipt["error"] == {"code": error_code}
+        encoded = json.dumps(receipt, sort_keys=True).lower()
+        assert str(profile_path).lower() not in encoded
+        assert "/home/jym/profile" not in encoded
+        assert "cookie" not in encoded
+        assert "secret" not in encoded
 
 
 def test_default_subprocess_runner_uses_shell_false_and_rejects_runtime_overrides(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

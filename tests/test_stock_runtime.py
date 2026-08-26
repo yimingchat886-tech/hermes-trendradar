@@ -183,7 +183,11 @@ def test_collector_distribution_assets_pin_tool_allowlist_and_generic_denies() -
         "profile/prefill/collector-prefill.json",
     ]
     assert package_data["hermes_benchmark.collector_distribution.stock_runtime_plugin"] == ["plugin.yaml"]
-    assert "enabled_toolsets:\n    - stock_runtime\n" in config
+    assert "toolsets:\n  - stock_runtime\n" in config
+    assert "platform_toolsets:\n  cli:\n    - stock_runtime\n" in config
+    assert "agent:\n  disabled_toolsets:\n" in config
+    assert "enabled_toolsets" not in config
+    assert "\ntools:\n" not in config
     for toolset in ("terminal", "file", "code_execution"):
         assert f"    - {toolset}\n" in config
     assert "plugins:\n  enabled:\n    - stock-runtime\n" in config

@@ -29,14 +29,11 @@ TIMEZONE = "America/Denver"
 TIMEOUT_SECONDS = 60.0
 STDOUT_CAP_BYTES = 64 * 1024
 STDERR_CAP_BYTES = 16 * 1024
+PROFILE_CAP_BYTES = 256 * 1024
 EXIT_CONTRACT = 2
 EXIT_RUNTIME = 3
 EXIT_RUN_LOCK_CONFLICT = 9
-MANIFEST: dict[str, Any] = {
-    "retry_policy": "fixed:300",
-    "max_attempts": 2,
-    "retryable_exit_codes": [3, 4, 6],
-}
+AUTHORIZED_RETRY_POLICY = "fixed:300"
 RECEIPT_STATUS = {
     "tracking_status": "blocked",
     "blocking_reason": "multi_account_collection_not_wired",
@@ -64,9 +61,11 @@ URL_OR_ENDPOINT_RE = re.compile(
 SECRET_VALUE_RE = re.compile(
     r"(?i)(?:\b(?:authorization|bearer|cookie|password|secret|session|token)\b\s*[:=]?\s*\S+|\b(?:sk-[A-Za-z0-9_-]{12,}|xox[baprs]-[A-Za-z0-9-]{8,}))"
 )
+SAFE_BACKOFF_REF_RE = re.compile(r"^env:[A-Z0-9_]{1,128}$")
 CommandRunner = Callable[[list[str], Path, float], tuple[int, bytes, bytes]]
 Clock = Callable[[], datetime]
 Sleeper = Callable[[int], None]
+ManifestLoader = Callable[[], Mapping[str, Any]]
 
 
 class RunnerError(Exception):
@@ -116,6 +115,7 @@ def main(
     argv: Sequence[str] | None = None,
     *,
     command_runner: CommandRunner | None = None,
+    manifest_loader: ManifestLoader | None = None,
     clock: Clock | None = None,
     sleeper: Sleeper | None = None,
     lock_dir: Path | None = None,
@@ -126,7 +126,7 @@ def main(
     try:
         args = list(sys.argv[1:] if argv is None else argv)
         check_only = _parse_args(args)
-        retry = _validate_manifest(MANIFEST)
+        retry = _validate_manifest((manifest_loader or _load_manifest_retry)())
         run_date = _run_date(clock or _default_clock)
         command_runner = command_runner or _run_subprocess
         sleeper = sleeper or time.sleep
@@ -177,8 +177,34 @@ def _run_date(clock: Clock) -> str:
     return now.astimezone(zone).date().isoformat()
 
 
+def _load_manifest_retry(profile_path: str | Path = PROFILE) -> dict[str, Any]:
+    path = Path(profile_path)
+    try:
+        with path.open("rb") as handle:
+            raw = handle.read(PROFILE_CAP_BYTES + 1)
+    except OSError as exc:
+        raise RunnerError("manifest_unavailable") from exc
+    if len(raw) > PROFILE_CAP_BYTES:
+        raise RunnerError("manifest_oversize")
+    try:
+        profile = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RunnerError("manifest_invalid") from exc
+    if not isinstance(profile, Mapping):
+        raise RunnerError("manifest_invalid")
+    retry = profile.get("retry")
+    if not isinstance(retry, Mapping):
+        raise RunnerError("manifest_invalid")
+    return {
+        "max_attempts": retry.get("max_attempts"),
+        "retryable_exit_codes": retry.get("retryable_exit_codes"),
+        "non_retryable_exit_codes": retry.get("non_retryable_exit_codes"),
+        "backoff_policy_ref": retry.get("backoff_policy_ref"),
+    }
+
+
 def _validate_manifest(manifest: Mapping[str, Any]) -> dict[str, Any]:
-    policy = manifest.get("retry_policy")
+    policy = AUTHORIZED_RETRY_POLICY
     if not isinstance(policy, str) or not policy.startswith("fixed:"):
         raise RunnerError("manifest_invalid")
     raw_delay = policy.removeprefix("fixed:")
@@ -187,17 +213,36 @@ def _validate_manifest(manifest: Mapping[str, Any]) -> dict[str, Any]:
     delay = int(raw_delay)
     if not 1 <= delay <= 3600:
         raise RunnerError("manifest_invalid")
+    backoff_policy_ref = manifest.get("backoff_policy_ref")
+    if not isinstance(backoff_policy_ref, str) or not SAFE_BACKOFF_REF_RE.fullmatch(backoff_policy_ref):
+        raise RunnerError("manifest_invalid")
     max_attempts = manifest.get("max_attempts")
-    if not isinstance(max_attempts, int) or isinstance(max_attempts, bool) or max_attempts != 2:
+    if not isinstance(max_attempts, int) or isinstance(max_attempts, bool) or not 1 <= max_attempts <= 5:
         raise RunnerError("manifest_invalid")
-    retryable_exit_codes = manifest.get("retryable_exit_codes")
-    if (
-        not isinstance(retryable_exit_codes, list)
-        or not retryable_exit_codes
-        or any(not isinstance(code, int) or isinstance(code, bool) or code < 1 or code > 255 for code in retryable_exit_codes)
-    ):
+    retryable_exit_codes = _validate_exit_code_list(manifest.get("retryable_exit_codes"))
+    non_retryable_exit_codes = _validate_exit_code_list(manifest.get("non_retryable_exit_codes"))
+    if retryable_exit_codes & non_retryable_exit_codes:
         raise RunnerError("manifest_invalid")
-    return {"delay_seconds": delay, "max_attempts": max_attempts, "retryable_exit_codes": set(retryable_exit_codes)}
+    return {
+        "delay_seconds": delay,
+        "max_attempts": max_attempts,
+        "retryable_exit_codes": retryable_exit_codes,
+        "non_retryable_exit_codes": non_retryable_exit_codes,
+        "backoff_policy_ref": backoff_policy_ref,
+    }
+
+
+def _validate_exit_code_list(raw_codes: Any) -> set[int]:
+    if not isinstance(raw_codes, list) or not raw_codes:
+        raise RunnerError("manifest_invalid")
+    codes: list[int] = []
+    for code in raw_codes:
+        if not isinstance(code, int) or isinstance(code, bool) or not 1 <= code <= 255:
+            raise RunnerError("manifest_invalid")
+        codes.append(code)
+    if len(set(codes)) != len(codes):
+        raise RunnerError("manifest_invalid")
+    return set(codes)
 
 
 def _run_command(
@@ -218,6 +263,7 @@ def _run_command(
         should_retry = (
             retryable
             and exit_code in retry["retryable_exit_codes"]
+            and exit_code not in retry["non_retryable_exit_codes"]
             and error_code != "run_lock_conflict"
             and attempt < retry["max_attempts"]
         )

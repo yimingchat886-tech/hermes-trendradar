@@ -5,10 +5,14 @@ plugins:
   enabled:
     - stock-runtime
 
-tools:
-  # Expose only the profile-local stock_runtime toolset from the stock-runtime plugin.
-  enabled_toolsets:
+toolsets:
+  - stock_runtime
+
+platform_toolsets:
+  cli:
     - stock_runtime
+
+agent:
   disabled_toolsets:
     - terminal
     - file
@@ -23,6 +27,10 @@ tools:
     - vision
     - image_gen
     - tts
+    - skills
+    - clarify
+    - moa
+    - homeassistant
 
 platforms:
   feishu:
