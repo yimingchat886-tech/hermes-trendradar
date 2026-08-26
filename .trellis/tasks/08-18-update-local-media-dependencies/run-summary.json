@@ -1,0 +1,30 @@
+{
+  "binding_generation": 1,
+  "checks": [
+    {
+      "action_id": "implement",
+      "argv_digest": "c15ca7b72dc443cac38d52296beff55ba27c0a5a708288ae79a27d5e8ccbbd9f",
+      "attempt_no": 1,
+      "check_id": "trellis.unittest.focused",
+      "output_digest": "922a98cb768fd8df1c1510289cd73ca4ddea710120eb0e7d775de1afa80661e5",
+      "return_code": 0
+    },
+    {
+      "action_id": "implement",
+      "argv_digest": "4f52a06f45cbf16520b8045533f643b165fc38a9b1e512e36c0ccb4d498be852",
+      "attempt_no": 1,
+      "check_id": "trellis.diff.check",
+      "output_digest": "6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d",
+      "return_code": 0
+    }
+  ],
+  "reviews": [
+    {
+      "candidate_digest": "07ae8cb39a33493488470da9ebe9fb63fcf672331dd097d6050de037568cb257",
+      "findings_json": "[]",
+      "review_no": 1
+    }
+  ],
+  "run_id": "run-3fcb8c5952d5c60bdc15cabbd835e6301ca62d8b218812d0474ab33df7d098d4",
+  "task_id": "update-local-media-dependencies"
+}
