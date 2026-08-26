@@ -193,7 +193,11 @@ def test_collector_distribution_assets_pin_tool_allowlist_and_generic_denies() -
     assert "plugins:\n  enabled:\n    - stock-runtime\n" in config
     assert "profile_ref: /home/jym/workspace/Hermes trendradar/profiles/local/hermes.v1.4.douyin.local.json" in config
     assert "cwd: /home/jym/workspace/Hermes trendradar" in config
-    assert "does not deploy anything to `~/.hermes/profiles`" in readme
+    assert "executable:\n    - /home/jym/.local/bin/hermes-benchmark\n" in config
+    assert "prepared-not-activated" in readme
+    assert "live collector profile" in readme
+    assert "paused cron draft" in readme
+    assert "does not deploy anything to `~/.hermes/profiles`" not in readme
     assert "profile/SOUL.md" not in readme
 
     expected_tools = tuple(STOCK_TOOL_SCHEMAS)

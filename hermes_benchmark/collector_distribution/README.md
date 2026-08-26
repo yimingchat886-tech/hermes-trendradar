@@ -1,12 +1,12 @@
 # Collector profile distribution
 
-This directory is the versioned source-of-truth for the future blank Hermes `collector` profile. Case 4A prepared source templates; Case 4C adds the deterministic no-agent cron handoff runner. It still does not deploy anything to `~/.hermes/profiles`, does not create a live profile, does not activate cron, and does not run `run-daily` during deployment validation.
+This directory is the versioned source-of-truth for the prepared-not-activated Hermes `collector` profile. Case 4A prepared source templates; Case 4C adds the deterministic no-agent cron handoff runner. A live collector profile and a paused cron draft may already exist from separate authorization; that is still profile preparation, not activation. This source can be deployed only to keep that prepared state aligned. It does not resume or activate cron, start gateway, perform platform login, write RAG/outbox state, send externally, or run `run-daily` during validation.
 
 Included assets:
 
 - `stock_runtime_plugin/` — Hermes plugin directory source for the profile-local `stock_runtime` toolset.
 - `collector_config.template.yaml` — config fragment for the fixed runtime adapter and the real Hermes toolset keys (`toolsets`, `platform_toolsets`, and `agent.disabled_toolsets`).
-- `scripts/hermes_benchmark_handoff.py` — deterministic no-agent cron runner source for a future collector profile script.
+- `scripts/hermes_benchmark_handoff.py` — deterministic no-agent cron runner source for a prepared collector profile script.
 - `profile/config.template.yaml` — source template for a blank local collector profile.
 - `profile/prefill/collector-prefill.json` — valid JSON prefill message array.
 - `profile/env.guardrails.example` — blank/false environment guardrail overrides for local deployment.
@@ -19,16 +19,18 @@ Runtime contract:
 4. Package/result/digest refs must be `file:` refs under the configured runtime storage root and scoped to the run id.
 5. Feishu, Weixin, and API server surfaces are disabled in config and blanked/false in the env guardrail example. No real platform values or credentials belong in this distribution.
 
-Deployment boundary:
+Prepared-not-activated boundary:
 
-- Case 4A only prepares committed source templates.
-- Case 4C only commits the runner source. It does not create the live collector profile, does not create a live cron job, and does not run production `run-daily`.
-- To deploy the runner in a later activation case, copy `scripts/hermes_benchmark_handoff.py` to `~/.hermes/profiles/collector/scripts/hermes_benchmark_handoff.py`, place the prefill JSON at live path `/home/jym/.hermes/profiles/collector/prefill/collector-prefill.json`, and configure a no-agent cron/script job at `0 6 * * *` with timezone `America/Denver`.
-- The runner itself is not a scheduler: it computes `RUN_DATE` with `ZoneInfo("America/Denver")`, validates config, takes a non-blocking `run_date + profile_hash` lock, healthchecks, and only then calls `run-daily --analysis-mode hermes-handoff`.
+- Case 4A prepares committed source templates.
+- Case 4C commits the runner source for profile preparation. It does not activate cron and must not run production `run-daily`.
+- A live collector profile and a paused cron draft may be present after separate preparation authorization. They remain prepared-not-activated until a separate Case 4D activation authorization.
+- Preparation must not resume or activate cron, start gateway, perform platform login, run production `run-daily` or `stock_run_daily`, write RAG adopted-content outbox data, create the outbox, or send/publish externally.
+- Safe validation paths are `validate-config`, `healthcheck`, `scripts/hermes_benchmark_handoff.py --check-only`, source/config readback, and structured read-only reconciliation of emitted JSON envelopes and `file:` refs.
+- To prepare source files in an authorized blank local `collector` profile, copy `scripts/hermes_benchmark_handoff.py` to `~/.hermes/profiles/collector/scripts/hermes_benchmark_handoff.py`, place the prefill JSON at live path `/home/jym/.hermes/profiles/collector/prefill/collector-prefill.json`, and keep any no-agent cron/script job paused at `0 6 * * *` with timezone `America/Denver`.
+- The runner itself is not a scheduler: it computes `RUN_DATE` with `ZoneInfo("America/Denver")`, validates config, takes a non-blocking `run_date + profile_hash` lock, healthchecks, and only then calls `run-daily --analysis-mode hermes-handoff` when activation later permits production flow.
 - `--check-only` is the safe validation path: it runs only `validate-config` and `healthcheck`, emits a redacted receipt, and must not call `run-daily` or write business state.
-- To deploy later, copy `profile/` into a new blank local `collector` profile and copy `profile/env.guardrails.example` to that profile's `.env` after reviewing every blank/false value.
 - The live collector SOUL must be created only in Case 4B at `~/.hermes/profiles/collector/SOUL.md`; this repository intentionally has no SOUL template asset. Profile SOUL content belongs only in the live Hermes profile, not in repo source.
-- Local scheduling is only planned here: 06:00 America/Denver, runner-authorized `fixed:300` backoff, and manifest-projected max attempts (the current v1.4 manifest is max2).
+- Local scheduling is only planned/prepared here: 06:00 America/Denver, runner-authorized `fixed:300` backoff, and manifest-projected max attempts (the current v1.4 manifest is max2).
 - The RAG adopted-content outbox is planned, not implemented. Do not write RAG, create the outbox, activate cron, or run collector production flow before a separate Case 4D.
 
 Validation commands:

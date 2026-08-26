@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DIST_ROOT = ROOT / "hermes_benchmark" / "collector_distribution"
 PROFILE_ROOT = DIST_ROOT / "profile"
 REPO_PATH = "/home/jym/workspace/Hermes trendradar"
+EXPECTED_EXECUTABLE = "/home/jym/.local/bin/hermes-benchmark"
 OLD_REPO_PATH = "/home/jym/workspace/Hermes stock"
 PREFILL_PATH = "/home/jym/.hermes/profiles/collector/prefill/collector-prefill.json"
 EXPECTED_TOOLS = tuple(STOCK_TOOL_SCHEMAS)
@@ -161,6 +162,8 @@ def test_collector_runtime_fragment_uses_trendradar_paths_and_stock_runtime_only
     assert config["platforms"]["feishu"]["enabled"] is False
     assert config["platforms"]["weixin"]["enabled"] is False
     assert config["platforms"]["api_server"]["enabled"] is False
+    assert config["stock_runtime"]["executable"] == [EXPECTED_EXECUTABLE]
+    assert Path(config["stock_runtime"]["executable"][0]).is_absolute()
     assert config["stock_runtime"]["cwd"] == REPO_PATH
     assert config["stock_runtime"]["profile_ref"] == f"{REPO_PATH}/profiles/local/hermes.v1.4.douyin.local.json"
 
@@ -192,12 +195,27 @@ def test_prefill_is_valid_json_message_array_and_pins_pre_activation_boundaries(
     assert all(isinstance(message["content"], str) and message["content"].strip() for message in prefill)
 
     content = "\n".join(message["content"] for message in prefill)
+    normalized = content.lower()
     assert "source-of-truth" in content
-    assert "do not run" in content.lower()
-    assert "do not activate" in content.lower()
+    assert "pre-activation preparation state" in normalized
+    assert "profile_prepared" in content
+    assert "cron_prepared_not_activated" in content
+    assert "live collector profile" in normalized
+    assert "paused cron draft" in normalized
+    assert "do not run run-daily" in normalized
+    assert "stock_run_daily" in content
+    assert "do not resume or activate cron" in normalized
+    assert "do not start gateway" in normalized
+    assert "platform login" in normalized
     assert "do not write RAG adopted-content outbox data" in content
-    assert "do not send or publish externally" in content.lower()
+    assert "do not send or publish externally" in normalized
+    assert "validate" in normalized
+    assert "health" in normalized
+    assert "check-only" in normalized
+    assert "structured read-only" in normalized
     assert "Case 4D" in content
+    assert "case 4a template state" not in normalized
+    assert "do not activate a live profile" not in normalized
 
 
 def test_env_guardrails_parse_and_leave_platform_credentials_blank_or_false() -> None:
@@ -241,6 +259,14 @@ def test_distribution_docs_capture_deployment_validation_and_deferred_boundaries
     assert "current v1.4 manifest is max2" in readme
     assert "RAG adopted-content outbox" in readme
     assert "planned, not implemented" in readme
+    assert "prepared-not-activated" in readme
+    assert "profile preparation" in readme
+    assert "live collector profile" in readme
+    assert "paused cron draft" in readme
+    assert "resume or activate cron" in readme
+    assert "start gateway" in readme
+    assert "platform login" in readme
+    assert "structured read-only" in readme
     assert "Case 4D" in readme
     assert "Case 4B" in readme
     assert "~/.hermes/profiles/collector/SOUL.md" in readme
@@ -248,6 +274,7 @@ def test_distribution_docs_capture_deployment_validation_and_deferred_boundaries
     assert "git check-ignore" in readme
     assert "run-daily" in readme
     assert "not run" in readme.lower()
+    assert "does not create a live profile" not in readme
 
 
 def test_old_repo_path_is_absent_from_distribution_templates() -> None:

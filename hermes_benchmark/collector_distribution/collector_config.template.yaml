@@ -1,5 +1,5 @@
-# Collector Hermes profile distribution template (source only; do not deploy live in Case 4A).
-# Copy into a blank collector profile only after a separate Case 4D activation review.
+# Collector Hermes profile distribution template (profile preparation deployable).
+# Activation requires separate authorization; keep cron paused and gateway/platforms disabled.
 
 plugins:
   enabled:
@@ -42,7 +42,7 @@ platforms:
 
 stock_runtime:
   executable:
-    - hermes-benchmark
+    - /home/jym/.local/bin/hermes-benchmark
   cwd: /home/jym/workspace/Hermes trendradar
   profile_ref: /home/jym/workspace/Hermes trendradar/profiles/local/hermes.v1.4.douyin.local.json
   # storage_root may be omitted; the plugin resolves it from the fixed profile.
