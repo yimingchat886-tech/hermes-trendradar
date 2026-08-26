@@ -15,9 +15,10 @@ Runtime contract:
 
 1. The plugin manifest registers exactly seven tools: `stock_validate_config`, `stock_healthcheck`, `stock_run_daily`, `stock_read_analysis_package`, `stock_record_analysis_result`, `stock_build_internal_digest`, and `stock_record_feedback`.
 2. The collector profile exposes only the `stock_runtime` toolset from `stock-runtime` through the Hermes-supported `toolsets` and `platform_toolsets.cli` keys; generic toolsets such as terminal, file, code_execution, web, browser, memory, session_search, and cronjob stay disabled through `agent.disabled_toolsets`.
-3. All CLI adapter calls use fixed argv lists, fixed cwd `/home/jym/workspace/Hermes trendradar`, fixed profile ref `/home/jym/workspace/Hermes trendradar/profiles/local/hermes.v1.4.douyin.local.json`, no shell, a minimal subprocess env allowlist, timeout, stdout/stderr caps, JSON envelope validation, and allowlisted result fields.
-4. Package/result/digest refs must be `file:` refs under the configured runtime storage root and scoped to the run id.
-5. Feishu, Weixin, and API server surfaces are disabled in config and blanked/false in the env guardrail example. No real platform values or credentials belong in this distribution.
+3. The profile plugin has a fixed repo-source dependency: before importing `hermes_benchmark`, it bootstraps `/home/jym/workspace/Hermes trendradar` onto `sys.path` after verifying that root and its `hermes_benchmark` package exist. It never reads repo paths from env vars, args, or model-provided input.
+4. All CLI adapter calls use fixed argv lists, fixed cwd `/home/jym/workspace/Hermes trendradar`, fixed profile ref `/home/jym/workspace/Hermes trendradar/profiles/local/hermes.v1.4.douyin.local.json`, no shell, a minimal subprocess env allowlist, timeout, stdout/stderr caps, JSON envelope validation, and allowlisted result fields.
+5. Package/result/digest refs must be `file:` refs under the configured runtime storage root and scoped to the run id.
+6. Feishu, Weixin, and API server surfaces are disabled in config and blanked/false in the env guardrail example. No real platform values or credentials belong in this distribution.
 
 Prepared-not-activated boundary:
 

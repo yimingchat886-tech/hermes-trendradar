@@ -1,11 +1,16 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
+import sys
+import textwrap
 import tomllib
 from pathlib import Path
 from typing import Any
+
+import pytest
 
 from hermes_benchmark.stock_runtime import STOCK_TOOL_SCHEMAS
 
@@ -185,6 +190,86 @@ def test_stock_runtime_plugin_manifest_matches_the_seven_schema_tools() -> None:
         assert tool in prefill
 
 
+def test_stock_runtime_distribution_plugin_loads_from_non_repo_cwd_with_isolated_sys_path(tmp_path: Path) -> None:
+    plugin_init = DIST_ROOT / "stock_runtime_plugin" / "__init__.py"
+    code = textwrap.dedent(
+        f"""
+        import importlib.util
+        import json
+        import sys
+        from pathlib import Path
+
+        repo_root = {str(ROOT)!r}
+        sys.path = [
+            path
+            for path in sys.path
+            if path
+            and repo_root not in path
+            and "site-packages" not in path
+            and "dist-packages" not in path
+        ]
+
+        module_path = Path({str(plugin_init)!r})
+        spec = importlib.util.spec_from_file_location(
+            "stock_runtime_plugin_under_test",
+            module_path,
+            submodule_search_locations=[str(module_path.parent)],
+        )
+        assert spec is not None and spec.loader is not None
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = module
+        spec.loader.exec_module(module)
+
+        class Ctx:
+            def __init__(self):
+                self.tools = []
+
+            def register_tool(self, **kwargs):
+                self.tools.append(kwargs)
+
+        ctx = Ctx()
+        module.register(ctx)
+        print(json.dumps({{
+            "cwd": str(Path.cwd()),
+            "repo_root_on_sys_path": sys.path[0] == repo_root,
+            "tools": [tool["name"] for tool in ctx.tools],
+            "toolsets": sorted({{tool["toolset"] for tool in ctx.tools}}),
+        }}, sort_keys=True))
+        """
+    )
+    result = subprocess.run(
+        [sys.executable, "-I", "-c", code],
+        cwd=tmp_path,
+        env={"PATH": os.environ.get("PATH", ""), "PYTHONNOUSERSITE": "1"},
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["cwd"] == str(tmp_path)
+    assert payload["repo_root_on_sys_path"] is True
+    assert tuple(payload["tools"]) == EXPECTED_TOOLS
+    assert payload["toolsets"] == ["stock_runtime"]
+
+
+def test_stock_runtime_plugin_bootstrap_fails_closed_without_fixed_repo_root_or_package(tmp_path: Path) -> None:
+    from hermes_benchmark.collector_distribution.stock_runtime_plugin import _bootstrap_repo_source
+
+    missing_root = tmp_path / "missing-repo"
+    empty_root = tmp_path / "empty-repo"
+    empty_root.mkdir()
+
+    for invalid_root in (missing_root, empty_root):
+        original_sys_path = list(sys.path)
+        with pytest.raises(ModuleNotFoundError, match="hermes_benchmark"):
+            _bootstrap_repo_source(invalid_root)
+
+        assert sys.path == original_sys_path
+        assert str(invalid_root) not in sys.path
+
+
 def test_prefill_is_valid_json_message_array_and_pins_pre_activation_boundaries() -> None:
     prefill = json.loads((PROFILE_ROOT / "prefill" / "collector-prefill.json").read_text(encoding="utf-8"))
 
@@ -274,6 +359,7 @@ def test_distribution_docs_capture_deployment_validation_and_deferred_boundaries
     assert "git check-ignore" in readme
     assert "run-daily" in readme
     assert "not run" in readme.lower()
+    assert "fixed repo-source dependency" in readme
     assert "does not create a live profile" not in readme
 
 

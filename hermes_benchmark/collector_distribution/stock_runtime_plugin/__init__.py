@@ -3,10 +3,31 @@
 from __future__ import annotations
 
 import json
+import sys
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
-from hermes_benchmark.stock_runtime import (
+_OPERATOR_REPO_ROOT = Path("/home/jym/workspace/Hermes trendradar")
+_OPERATOR_PACKAGE = "hermes_benchmark"
+
+
+def _bootstrap_repo_source(repo_root: Path = _OPERATOR_REPO_ROOT) -> Path:
+    """Make the fixed operator-owned repo source importable, or fail closed."""
+    root = Path(repo_root)
+    package_root = root / _OPERATOR_PACKAGE
+    if not root.is_dir() or not package_root.is_dir() or not (package_root / "__init__.py").is_file():
+        raise ModuleNotFoundError(f"No module named '{_OPERATOR_PACKAGE}' from fixed repo source")
+
+    root_text = str(root)
+    sys.path[:] = [path for path in sys.path if path != root_text]
+    sys.path.insert(0, root_text)
+    return root
+
+
+_bootstrap_repo_source()
+
+from hermes_benchmark.stock_runtime import (  # noqa: E402 - requires fixed sys.path bootstrap
     STOCK_TOOL_SCHEMAS,
     StockRuntimeError,
     settings_from_hermes_config,
