@@ -7,7 +7,10 @@
 - prd-governance.md: draft, acceptance, immutable binding generations, and
   requirement ownership.
 - downstream-deployer.md: immutable release, target slots, dirty overlap,
-  apply/verify, partial retry, and receipts.
+  exact registry binding, GitNexus foundation, apply/verify, partial retry, and
+  receipts.
+- upstream-release.md: AVAILABLE, ADOPTED, and INSTALLED state boundaries for
+  immutable npm base plus local overlay.
 - protocol-phrases.md: start, closeout, limits, and external-effect authority.
 - git-commit-push-policy.md: scoped local commits and separate push gate.
 - task-cancel-lifecycle.md: in-place cancellation and cleanup.

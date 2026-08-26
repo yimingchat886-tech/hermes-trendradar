@@ -39,9 +39,11 @@ for a complete deterministic candidate or high-risk boundary. Findings have
 stable IDs and closure evidence. Only correctness, security, data loss,
 accepted REQ, public compatibility, and invalid proof may block VERIFIED.
 
-One candidate family gets at most two semantic model reviews. A third request
-is rejected and the run becomes human_blocked. Evidence-only fixes use checks
-and delta closure without model re-review.
+One candidate family gets at most two semantic model reviews. An accepted
+binding generation starts a new family; evidence-only fixes inside that
+generation stay in the same family and use checks plus delta closure instead
+of another model review. A third review in one family is rejected and the run
+becomes human_blocked.
 
 ## Projections
 
@@ -61,6 +63,11 @@ retry begins at the first incomplete step.
 
 Non-overlapping base/projection/environment drift continues. Code conflicts,
 managed overlap, accepted semantics, public API, or behavior changes pause.
+An accepted binding revision may discard pre-effect closeout evidence only
+before source scoped commit has a commit plan, staged change, commit, or later
+effect. It then requires a new candidate verification and closeout signal.
+Target partitions or any started Git effect reject the revision without
+rewriting history.
 After completion, cleanup failure retains completed with cleanup_pending.
 Closeout never pushes, publishes, deploys, or activates.
 

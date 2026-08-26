@@ -22,7 +22,8 @@ SQLite.
 4. Harness stores action scope, claims, results, checks, reviews, and findings.
    Codex owns any actual sub-agent dispatch.
 5. Deterministic checks run before model review. A complete high-risk candidate
-   gets one read-only review, with at most one semantic re-review.
+   gets one read-only review, with at most one semantic re-review per accepted
+   binding generation.
 6. Push, remote deletion, publication, deployment, activation, timers, and real
    downstream sync require separate explicit authority.
 
@@ -31,7 +32,7 @@ SQLite.
     python3 ./.trellis/scripts/task.py plan --title "..." --request "..."
     python3 ./.trellis/scripts/task.py run --task <task-id>
     python3 ./.trellis/scripts/task.py run --task <task-id> --single
-    python3 ./.trellis/scripts/task.py status --task <task-id> --json
+    python3 ./.trellis/scripts/task.py status --task <task-id>
     python3 ./.trellis/scripts/task.py resume --task <task-id>
     python3 ./.trellis/scripts/task.py close --task <task-id> --authorization-ref <ref>
     python3 ./.trellis/scripts/task.py cancel --task <task-id> --authorization-ref <ref>
@@ -103,12 +104,25 @@ merged local task branch. It never authorizes push or an external effect.
 Failures replay the same persisted step. Product work stays completed when
 post-commit cleanup enters cleanup_pending.
 
+An accepted binding revision can restart a source closeout only before scoped
+commit has a commit plan, staged change, commit, or later effect. The old
+closeout authorization is discarded; reverify the new candidate and wait for a
+new closeout signal. Target closeout partitions and post-effect history remain
+fail-closed.
+
 ## Release And Sync
 
-A Harness release is an immutable content-addressed manifest. Qualification
-binds managed payload, Trellis base, capability range, logical check catalog,
-and semantic suite evidence. Task, BOARD, host, path, stdout, and runtime drift
-do not invalidate it.
+Upstream adoption uses immutable npm base plus local UIL overlay, never a Git
+fork/rebase. `task.py upstream-refresh` captures one complete stable
+CLI/Core/generated-tree candidate as AVAILABLE without worktree mutation.
+`task.py upstream-status` reads candidates. ADOPTED begins only when full path
+classification and qualification bind the candidate, adoption report, overlay,
+logical catalog, and semantic evidence.
+
+A tracked source-only registry at `.trellis/deploy/targets.json` owns registered
+target ids, exact roots, and normalized origins. `task.py registry-status
+--preflight` validates the whole snapshot before any write. Directory scans,
+cwd, siblings, and old TaskRuns are never target authority.
 
 One named multi-target sync request creates one source Sync TaskRun and one slot
 per target. Qualification completes before target writes. Each target uses one
@@ -119,6 +133,17 @@ wait for closeout. Push remains separate.
 Use `task.py sync --task <task-id> --target <path> --current-source` only when
 the request explicitly names current source; otherwise sync selects the latest
 qualified immutable release.
+
+“更新所有注册下游” maps to `task.py sync --task <task-id> --registered
+--current-source`: bind the latest AVAILABLE candidate and exact registry
+snapshot, qualify, then plan/apply/verify each slot. It does not authorize
+commit, merge, cleanup, push, publication, deployment, or activation.
+
+Registered slots receive target-specific GitNexus config, stable marker blocks,
+on-demand skills, and ignore rules. Candidate verification uses an ignored
+branch-scoped index. Authorized closeout rebuilds the primary-root index after
+local merge; missing or failed GitNexus proof blocks instead of degrading into
+zero-risk evidence.
 
 ## Legacy
 

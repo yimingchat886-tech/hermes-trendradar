@@ -180,7 +180,7 @@ class ReleaseSyncTests(unittest.TestCase):
                 "class FixtureUpgradeSmoke(unittest.TestCase):\n"
                 "    def test_full_base_overlay_and_preservation(self):\n"
                 "        root = pathlib.Path.cwd()\n"
-                "        self.assertEqual((root / '.trellis/.version').read_text().strip(), '0.6.14')\n"
+                "        self.assertEqual((root / '.trellis/.version').read_text().strip(), '0.6.15')\n"
                 "        self.assertTrue((root / '.trellis/scripts/taskrun/service.py').is_file())\n"
                 "        self.assertFalse((root / '.trellis/scripts/loop_v1').exists())\n"
                 "        self.assertEqual((root / 'project-owned.txt').read_text(), 'preserve\\n')\n\n"
@@ -189,7 +189,7 @@ class ReleaseSyncTests(unittest.TestCase):
             )
             catalog_path = source / ".trellis/releases/check-catalog.json"
             catalog = json.loads(catalog_path.read_text())
-            catalog["versions"]["0.6.14"]["trellis.unittest.focused"] = {
+            catalog["versions"]["0.6.15"]["trellis.unittest.focused"] = {
                 "environment": {
                     "PYTHONDONTWRITEBYTECODE": "1",
                     "PYTHONPATH": ".trellis/scripts:.trellis/scripts/tests",
@@ -527,7 +527,7 @@ class ReleaseSyncTests(unittest.TestCase):
             write(overlay_path, json.dumps(overlay, indent=2, sort_keys=True) + "\n")
             catalog_path = source / ".trellis/releases/check-catalog.json"
             catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
-            catalog["versions"]["0.6.14"]["trellis.unittest.focused"]["argv"] = [
+            catalog["versions"]["0.6.15"]["trellis.unittest.focused"]["argv"] = [
                 "python3",
                 "-c",
                 "raise SystemExit(1)",
@@ -563,7 +563,7 @@ class ReleaseSyncTests(unittest.TestCase):
                 1,
             )
 
-            catalog["versions"]["0.6.14"]["trellis.unittest.focused"]["argv"] = [
+            catalog["versions"]["0.6.15"]["trellis.unittest.focused"]["argv"] = [
                 "python3",
                 "-c",
                 "pass",

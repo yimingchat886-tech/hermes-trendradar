@@ -5,7 +5,15 @@ import unittest
 from pathlib import Path
 
 from _uil_helpers import git, make_repo, mark_verified, write
-from taskrun import Authority, AuthorityError, CLOSEOUT_STEPS, close_task, plan_task, run_task
+from taskrun import (
+    Authority,
+    AuthorityError,
+    CLOSEOUT_STEPS,
+    append_binding,
+    close_task,
+    plan_task,
+    run_task,
+)
 from taskrun.service import _discard_cancelled_paths, _scoped_commit_paths
 
 
@@ -126,6 +134,67 @@ class CloseoutTests(unittest.TestCase):
                     handlers=handlers,
                 )
 
+    def test_binding_revision_resets_only_pre_effect_closeout(self) -> None:
+        with tempfile.TemporaryDirectory(dir="/tmp") as temp:
+            root = make_repo(Path(temp) / "repo")
+            task_id = plan_task(
+                root,
+                title="Revise pre-effect closeout",
+                request="Restart closeout for an accepted revision.",
+            )["task"]["task_id"]
+            run_task(root, task_id)
+            mark_verified(root, task_id)
+            handlers = {
+                step: (lambda step=step: {"step": step})
+                for step in CLOSEOUT_STEPS
+            }
+            with self.assertRaisesRegex(AuthorityError, "Injected closeout fault"):
+                close_task(
+                    root,
+                    task_id,
+                    authorization_ref="user:complete-task",
+                    handlers=handlers,
+                    fault_step="scoped_commit",
+                )
+            revision = Path(temp) / "revision.md"
+            write(
+                revision,
+                "# Revision\n\n## Requirements\n\n"
+                "- `REVISE-CLOSEOUT-REQ-002` [owner: codex]: Restart safely.\n",
+            )
+            write(root / "src/staged.py", "staged = True\n")
+            git(root, "add", "src/staged.py")
+            with self.assertRaisesRegex(AuthorityError, "with staged changes"):
+                append_binding(
+                    root,
+                    task_id,
+                    prd_source=revision,
+                    accepted_commit=git(root, "rev-parse", "HEAD").stdout.strip(),
+                    operation_id="binding:staged-closeout",
+                )
+            git(root, "restore", "--staged", "src/staged.py")
+            self.assertEqual(
+                append_binding(
+                    root,
+                    task_id,
+                    prd_source=revision,
+                    accepted_commit=git(root, "rev-parse", "HEAD").stdout.strip(),
+                    operation_id="binding:pre-effect-closeout",
+                ),
+                2,
+            )
+            with Authority(root) as authority:
+                task = authority.one("SELECT * FROM tasks WHERE task_id=?", (task_id,))
+                self.assertEqual(task["closeout_state"], "not_started")
+                self.assertEqual(task["work_state"], "human_blocked")
+                self.assertEqual(
+                    authority.one(
+                        "SELECT COUNT(*) AS count FROM closeout_steps WHERE task_id=?",
+                        (task_id,),
+                    )["count"],
+                    0,
+                )
+
     def test_commit_effect_without_outer_receipt_is_recovered_exactly_once(self) -> None:
         with tempfile.TemporaryDirectory(dir="/tmp") as temp:
             root = make_repo(Path(temp) / "repo")
@@ -147,6 +216,20 @@ class CloseoutTests(unittest.TestCase):
                     task_id,
                     authorization_ref="user:complete-task",
                     fault_step="scoped_commit:after",
+                )
+            revision = Path(temp) / "revision.md"
+            write(
+                revision,
+                "# Revision\n\n## Requirements\n\n"
+                "- `REVISE-COMMITTED-REQ-002` [owner: codex]: Do not rewrite.\n",
+            )
+            with self.assertRaisesRegex(AuthorityError, "after Git effects begin"):
+                append_binding(
+                    task_root,
+                    task_id,
+                    prd_source=revision,
+                    accepted_commit=git(task_root, "rev-parse", "HEAD").stdout.strip(),
+                    operation_id="binding:post-effect-closeout",
                 )
             committed = git(task_root, "rev-parse", "HEAD").stdout.strip()
             closed = close_task(

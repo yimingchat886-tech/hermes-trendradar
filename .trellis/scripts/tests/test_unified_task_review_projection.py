@@ -4,10 +4,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from _uil_helpers import candidate_digest, make_repo, record_green_checks, write
+from _uil_helpers import candidate_digest, git, make_repo, record_green_checks, write
 from taskrun import (
     Authority,
     AuthorityError,
+    append_binding,
     claim_actions,
     close_finding,
     plan_task,
@@ -131,6 +132,136 @@ class ReviewProjectionTests(unittest.TestCase):
             )
             self.assertEqual(third["rejected"], "third_review_prohibited")
             self.assertEqual(task_status(root, task_id)["task"]["work_state"], "human_blocked")
+
+    def test_binding_revision_starts_a_new_review_family(self) -> None:
+        with tempfile.TemporaryDirectory(dir="/tmp") as temp:
+            root = make_repo(Path(temp) / "repo", catalog=True)
+            task_id, candidate = self._candidate(root, "Review revised binding")
+            for review_no in (1, 2):
+                reviewed = record_review(
+                    root,
+                    task_id,
+                    candidate_digest=candidate,
+                    reviewer_id=f"reviewer-{review_no}",
+                    findings=[],
+                    semantic=True,
+                    operation_id=f"review:g1:{review_no}",
+                )
+                self.assertEqual(reviewed["review_no"], review_no)
+
+            revision = Path(temp) / "revision.md"
+            write(
+                revision,
+                "# Revision\n\n## Requirements\n\n"
+                "- `REVIEW-REVISED-BINDING-REQ-002` [owner: codex]: Review again.\n",
+            )
+            self.assertEqual(
+                append_binding(
+                    root,
+                    task_id,
+                    prd_source=revision,
+                    accepted_commit=git(root, "rev-parse", "HEAD").stdout.strip(),
+                    operation_id="binding:review-family",
+                ),
+                2,
+            )
+            run_task(
+                root,
+                task_id,
+                actions=[{
+                    "action_id": "core",
+                    "kind": "implement",
+                    "dependencies": [],
+                    "requirement_ids": ["REVIEW-REVISED-BINDING-REQ-002"],
+                    "touches": ["core/**"],
+                    "check_ids": ["trellis.diff.check"],
+                    "risk": "high",
+                }],
+            )
+            claim_actions(root, task_id, "worker-g2")
+            record_green_checks(
+                root,
+                task_id,
+                "g2:core",
+                ["trellis.diff.check"],
+            )
+            revised_candidate = candidate_digest(root)
+            record_attempt(
+                root,
+                task_id,
+                "g2:core",
+                passed=True,
+                root_cause_fingerprint=None,
+                candidate_digest=revised_candidate,
+                result={"passed": True},
+                operation_id="attempt:g2:core",
+            )
+            reviewed = record_review(
+                root,
+                task_id,
+                candidate_digest=revised_candidate,
+                reviewer_id="reviewer-g2",
+                findings=[],
+                semantic=True,
+                operation_id="review:g2:1",
+            )
+            self.assertEqual(reviewed["review_no"], 1)
+            self.assertEqual(reviewed["work_state"], "verified")
+
+    def test_finding_delta_uses_the_review_candidate_as_baseline(self) -> None:
+        with tempfile.TemporaryDirectory(dir="/tmp") as temp:
+            root = make_repo(Path(temp) / "repo", catalog=True)
+            write(root / "existing-candidate.py", "before review\n")
+            task_id, candidate = self._candidate(root, "Review delta baseline")
+            record_review(
+                root,
+                task_id,
+                candidate_digest=candidate,
+                reviewer_id="reviewer",
+                findings=[
+                    {
+                        "category": "correctness",
+                        "severity": "blocking",
+                        "scope": ["core/**"],
+                    }
+                ],
+                semantic=True,
+                operation_id="review:baseline",
+            )
+            write(root / "core/fix.py", "fixed = True\n")
+            record_green_checks(
+                root,
+                task_id,
+                "core",
+                ["trellis.diff.check"],
+                attempt_no=2,
+                phase="finding_closure",
+            )
+            record_green_checks(
+                root,
+                task_id,
+                "core",
+                ["trellis.diff.check"],
+                attempt_no=3,
+                phase="finding_closure",
+            )
+            with Authority(root) as authority:
+                finding_id = authority.one("SELECT finding_id FROM findings")[
+                    "finding_id"
+                ]
+            close_finding(
+                root,
+                finding_id,
+                targeted_checks=[
+                    f"check:{task_id}:core:2:trellis.diff.check"
+                ],
+                full_regression=f"check:{task_id}:core:3:trellis.diff.check",
+                delta_paths=["core/fix.py"],
+            )
+            with Authority(root) as authority:
+                self.assertEqual(
+                    authority.one("SELECT status FROM findings")["status"], "fixed"
+                )
 
     def test_each_later_finding_requires_a_fresh_full_regression(self) -> None:
         with tempfile.TemporaryDirectory(dir="/tmp") as temp:

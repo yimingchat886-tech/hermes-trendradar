@@ -1,0 +1,791 @@
+{
+  "artifact_locator": {
+    "root": "trellis/releases/artifacts",
+    "scheme": "git-common-dir-v2"
+  },
+  "capability_range": [
+    "0.6.12",
+    "0.6.14",
+    "0.6.15"
+  ],
+  "check_catalog_digest": "0d7eadaaf186a00908bac41fc3a5d2bbf47aaba85b6f046cd0513bee9d1ffa97",
+  "cli_artifact": {
+    "digest": "8a249cdfa6d7a08cbb8e791998a155c7d7f7bb54375389689d910d08c040913a",
+    "path": ".trellis/scripts/task.py"
+  },
+  "intentional_deletions": [
+    ".agents/skills/trellis-before-dev",
+    ".agents/skills/trellis-brainstorm",
+    ".agents/skills/trellis-check",
+    ".agents/skills/trellis-continue",
+    ".agents/skills/trellis-finish-work",
+    ".agents/skills/trellis-loop-v1",
+    ".agents/skills/trellis-meta",
+    ".agents/skills/trellis-session-insight",
+    ".agents/skills/trellis-start",
+    ".claude/hooks/claim_guard.py",
+    ".codex/agents",
+    ".codex/hooks",
+    ".trellis/scripts/add_session.py",
+    ".trellis/scripts/board.py",
+    ".trellis/scripts/common",
+    ".trellis/scripts/conflict_checklist.py",
+    ".trellis/scripts/downstream_deployer",
+    ".trellis/scripts/get_context.py",
+    ".trellis/scripts/legacy_importer.py",
+    ".trellis/scripts/loop_v1",
+    ".trellis/scripts/merge_protocol.md",
+    ".trellis/scripts/migrate_active_task_b_pilot_cancellations.py",
+    ".trellis/scripts/migrate_legacy_task_b_cancellations.py",
+    ".trellis/scripts/state_cli.py",
+    ".trellis/scripts/state_machine.py",
+    ".trellis/scripts/taskrun",
+    ".trellis/scripts/tests",
+    ".trellis/scripts/upstream_release",
+    ".trellis/spec/guides",
+    ".trellis/spec/project",
+    ".trellis/templates/v3"
+  ],
+  "managed_payload": [
+    {
+      "digest": "a9ff618a446e9e7cc2290b62bf2eeb8746ac64c50029b0de706b35cb39e52daa",
+      "path": ".agents/skills/trellis-before-dev/SKILL.md"
+    },
+    {
+      "digest": "b05286c230cfdd85281b76a870429897dd08977aaa007b415d21b678f76de042",
+      "path": ".agents/skills/trellis-brainstorm/SKILL.md"
+    },
+    {
+      "digest": "cb40e4a638227f7996dfdfe3071ba2c46f8522f561cc6943e7a383553b9d7c39",
+      "path": ".agents/skills/trellis-check/SKILL.md"
+    },
+    {
+      "digest": "eddbd0c255f8509ae4d9726358d07aae54b9c660fa9f3ece612c9f5f25b36f3a",
+      "path": ".agents/skills/trellis-continue/SKILL.md"
+    },
+    {
+      "digest": "a836c7b8a6a1c6c0bd7e4a1591dd812481fb38b3aaa713cb70213c442b00d4c2",
+      "path": ".agents/skills/trellis-finish-work/SKILL.md"
+    },
+    {
+      "digest": "192fb8e27532e99203056c0db22cfc211eaa6046a15307f8ed14cd751748f6a5",
+      "path": ".agents/skills/trellis-loop-v1/SKILL.md"
+    },
+    {
+      "digest": "c3f7bad3e276334968b25f3e7e82e0de3bbd1352bac987691c999503f72bf2cd",
+      "path": ".agents/skills/trellis-meta/SKILL.md"
+    },
+    {
+      "digest": "690b1871daae19ead40b610be93f2e7e02885d97ce197a526957f18abda917f7",
+      "path": ".agents/skills/trellis-session-insight/SKILL.md"
+    },
+    {
+      "digest": "17ec6f0f0ccd0ab887e7f3999d000250ff38836a2b26fe0aa7ec142f6321d45f",
+      "path": ".agents/skills/trellis-session-insight/references/cli-quick-reference.md"
+    },
+    {
+      "digest": "e2cb3d48a7f3e81687b3e8b99fbf0b38f9c4a509c0199f8f0083b4642aafd8c5",
+      "path": ".agents/skills/trellis-session-insight/references/triggering-patterns.md"
+    },
+    {
+      "digest": "36905d5a31dea5f3a0762e97b045fad41d74a3a492d20895766c4f085cc6585b",
+      "path": ".agents/skills/trellis-start/SKILL.md"
+    },
+    {
+      "digest": "b81bc54e25f695ac3c5d1e3e270f4fc31e662927d82c6eab6651d56171e28c68",
+      "path": ".claude/hooks/impact_gate.py"
+    },
+    {
+      "digest": "a81e99043b35b195c1b43017f4cc41b6d8b3ff9323eb54c7b2622489f769bed9",
+      "path": ".claude/hooks/impact_marker.py"
+    },
+    {
+      "digest": "6e602a78562c8bf473b75f18cf9299070f09ed6d5dd86461d525e3df928759d0",
+      "path": ".claude/hooks/scope_gate.py"
+    },
+    {
+      "digest": "c7864d3788d75b62c46a26b80f3b9d322d9a28c01d672fccb5d2aa9338e14f57",
+      "path": ".claude/hooks/session_start.py"
+    },
+    {
+      "digest": "3d74ce5dcbf5c46710c326deda467751fc284eae73e78474db336b45fee6b6cc",
+      "path": ".claude/settings.json"
+    },
+    {
+      "digest": "e2707d11ee108d10208460c6719998fa845cf73d4ac8d81c0535f5be0eeda920",
+      "path": ".codex/agents/trellis-check.toml"
+    },
+    {
+      "digest": "68983b9ea36872a661e48bcfb19e0b01aa1c2117f2da149952936facb6309198",
+      "path": ".codex/agents/trellis-implement.toml"
+    },
+    {
+      "digest": "1f63b29c5b9b44e3fcb62a1de2a09644f7f959243d16b483e8a0f59d5d0646da",
+      "path": ".codex/agents/trellis-research.toml"
+    },
+    {
+      "digest": "2c6ccb3abeaef6f0d87c133999ec8e169c1c9b120e39565b0e15cfdc47734db2",
+      "path": ".codex/hooks/inject-workflow-state.py"
+    },
+    {
+      "digest": "7ce17fdc748af097889e78ab159d07531d29f2bb96d625c3fdb3646594a0388a",
+      "path": ".codex/hooks/uil_context.py"
+    },
+    {
+      "digest": "ac1d04f5fe888a2dffabdf38ea5beac3078792a959848adbdedbce014faec310",
+      "path": ".gitignore"
+    },
+    {
+      "digest": "1857e3af1a3035b9176fe42f96905a471d9c28e8eb2d2d9977e4eef41241a018",
+      "path": ".trellis/.gitignore"
+    },
+    {
+      "digest": "b5fe3f1158d0cca7346c8164c6639119742eb2f0bc4fb15a9e0cea0719a05f11",
+      "path": ".trellis/releases/check-catalog.json"
+    },
+    {
+      "digest": "20e0606f6625456643a1fcfab6a9a963c9e3a923205fb9f63f82072101d1bd69",
+      "path": ".trellis/scripts/common/__init__.py"
+    },
+    {
+      "digest": "d9912319ee187232b94bd3ced1e9f330433bb37d903574e8869a4d81f3af4b7f",
+      "path": ".trellis/scripts/common/developer.py"
+    },
+    {
+      "digest": "e14817be7de122d3a106f509c2825aeb9669d962ba73ba241642d2931cfdf1d6",
+      "path": ".trellis/scripts/common/git.py"
+    },
+    {
+      "digest": "276d8af04b963190754da4a22fa87f4a5319e60d06707b61a433d0559a938d27",
+      "path": ".trellis/scripts/common/io.py"
+    },
+    {
+      "digest": "9bcb0e7847689b925f2c5347db6869fc9534647fe5c51565d4ba322f169fa0c9",
+      "path": ".trellis/scripts/common/paths.py"
+    },
+    {
+      "digest": "8d4aab5b0e6695999e1e8b69d62dfe7ce8185da96861f5e21689b2be8f2867f8",
+      "path": ".trellis/scripts/prd.py"
+    },
+    {
+      "digest": "8a249cdfa6d7a08cbb8e791998a155c7d7f7bb54375389689d910d08c040913a",
+      "path": ".trellis/scripts/task.py"
+    },
+    {
+      "digest": "3b9836bb2f4fa863c837235590b3331e13b289fd1f22ed4c45d17fcc11f64502",
+      "path": ".trellis/scripts/taskrun/__init__.py"
+    },
+    {
+      "digest": "21fcaecbb708155731cae23ef23a0997db603d2ba6a91daa7f483c2670b795d1",
+      "path": ".trellis/scripts/taskrun/authority.py"
+    },
+    {
+      "digest": "44463119f20aa69684c3da67bb8f75acf24b7bed5f99b0aca7ad2734bdc6eab4",
+      "path": ".trellis/scripts/taskrun/legacy_reader.py"
+    },
+    {
+      "digest": "09aa4e233ae7c1819e645bc89e3d1006831ed670fcb7395c274dc6b0e0e83a67",
+      "path": ".trellis/scripts/taskrun/migration.py"
+    },
+    {
+      "digest": "623c8a2ceb5b3ca802137dddadee9aba2ec6e8f680d3a27fe7f028e65548aa53",
+      "path": ".trellis/scripts/taskrun/release.py"
+    },
+    {
+      "digest": "edb367bb969fd4e146e9c4cbf005373dec085a4a02bd8d2b105e049bb43582d2",
+      "path": ".trellis/scripts/taskrun/service.py"
+    },
+    {
+      "digest": "5468e48211adf0a70928e23d8fe546d2bd5dcc00933868d155796ccdfdd1a538",
+      "path": ".trellis/scripts/tests/_uil_helpers.py"
+    },
+    {
+      "digest": "ff85a290f43d645890181b1dd5771a706bc3257d9ce955055014e60524e54e2c",
+      "path": ".trellis/scripts/tests/fixtures/rag-v2-0.6.12/fixture.json"
+    },
+    {
+      "digest": "68569afa4e28a51032c376be19c0927a78dcb71eb131a5e08e42b03dd2f7c08b",
+      "path": ".trellis/scripts/tests/test_agent_surface.py"
+    },
+    {
+      "digest": "dd49d6850065a6d1a3f229897954c9a27046235731ddc642d4403717ecc44be4",
+      "path": ".trellis/scripts/tests/test_harness_release_and_sync.py"
+    },
+    {
+      "digest": "5d010909624e526fa0c89fcfb4197554b1ad667346d4d9f57b839556356926ec",
+      "path": ".trellis/scripts/tests/test_unified_task_authority.py"
+    },
+    {
+      "digest": "15dd228194caca9a3ac1e43068d8d161384c186c2b692f7f7c94e25d47a35f97",
+      "path": ".trellis/scripts/tests/test_unified_task_closeout.py"
+    },
+    {
+      "digest": "eb161dbaff7df9032ec85e7964275891e845308d85be339ce48a51f27dba8b6f",
+      "path": ".trellis/scripts/tests/test_unified_task_loop.py"
+    },
+    {
+      "digest": "811b882558f56f3ea405035f00f302fefba98ec7e01885b8edbd37bc3c841801",
+      "path": ".trellis/scripts/tests/test_unified_task_migration_surface.py"
+    },
+    {
+      "digest": "735705f79034546e7f496a7f43498d69223f1551502ed1794ae7c3f0d5b0876d",
+      "path": ".trellis/scripts/tests/test_unified_task_review_projection.py"
+    },
+    {
+      "digest": "abe92915e6b3fdbdb181d37d7f300e32b12b4ae38ecee938e7954d63e7154c0d",
+      "path": ".trellis/spec/guides/index.md"
+    },
+    {
+      "digest": "ff9fde34abb45bf27e260db87c4aa09fd0e876af1eeac45e5426a3656a25ded5",
+      "path": ".trellis/spec/guides/project-development.md"
+    },
+    {
+      "digest": "e0567de490846d508819899e22388498e7c1e2fdaa5aadc1e2e4ec6197162aee",
+      "path": ".trellis/spec/project/downstream-deployer.md"
+    },
+    {
+      "digest": "31dd669aa7e118e85388531dd21c967fbbb632c26c605ef79dd21b5e597896c6",
+      "path": ".trellis/spec/project/git-commit-push-policy.md"
+    },
+    {
+      "digest": "469785ab0c104632f377616fc1d37fd98f5d0734efaa380cdb32d97015c4eb08",
+      "path": ".trellis/spec/project/index.md"
+    },
+    {
+      "digest": "3dffbd7dee3f362518719c92844a769e679bd71438c6b5b8f236356159984a3c",
+      "path": ".trellis/spec/project/loop-v1-admission.md"
+    },
+    {
+      "digest": "fe5d5000c19223e1920ba0e85e8802bf53340c2164b10dd11f0bf8563af9b069",
+      "path": ".trellis/spec/project/loop-v1-overlay-manifest.json"
+    },
+    {
+      "digest": "625008da7ce1687758472db1773f82cc63ac0067518762600f318c6f8f11a8af",
+      "path": ".trellis/spec/project/loop-v1-qualification.md"
+    },
+    {
+      "digest": "2113eacff9854df071af43b53c4fb06f0c6d037d5b8069558c78ca1649ef7230",
+      "path": ".trellis/spec/project/loop-v1-runtime.md"
+    },
+    {
+      "digest": "8fa34037d5fca640860b174229e169767e0117dda0ef4103070221f7555460a2",
+      "path": ".trellis/spec/project/oracle-review-policy.md"
+    },
+    {
+      "digest": "e741fca3da6a27cbafea87c46415e5000e32c11e330b82017d0f681014baae8f",
+      "path": ".trellis/spec/project/pm-intake-protocol.md"
+    },
+    {
+      "digest": "3b3c09d595573842561bddb181d3ec4cf1c569e16c518de686c717e21957423d",
+      "path": ".trellis/spec/project/ponytail-boundary.md"
+    },
+    {
+      "digest": "0e8b741747c18a471afcdee48be48ffce1adad9778c40ae139ae842cd8eb64f6",
+      "path": ".trellis/spec/project/prd-governance.md"
+    },
+    {
+      "digest": "9611a9fe5c7ad742ec21a7c98fa98c107f89d2beaca4e07022e88d1e5883407e",
+      "path": ".trellis/spec/project/protocol-phrases.md"
+    },
+    {
+      "digest": "5dde2794f596d5099b477add9c2765421fc0bd04158f73419cce8fb913150b87",
+      "path": ".trellis/spec/project/receipts/loop-v1/00a4417ea32ae0955bbd99813197d9a51ec0a3573320c640716110d5e3e59c99.json"
+    },
+    {
+      "digest": "f984ab2911283ba215daf78e35e0036e74a6c074cd7080bdcf8bd83179037f71",
+      "path": ".trellis/spec/project/receipts/loop-v1/0751b539007054a4939c9c8892d9612d43c880744601d912e4a8d0dafbb92adc.json"
+    },
+    {
+      "digest": "fa3096e1f2557853bbd158a57f537314d37979cfeae7ac6d9ef526d356f13d1d",
+      "path": ".trellis/spec/project/receipts/loop-v1/09138771f9255c9b83e276be97d2e83630bf81cd45da557c252f428b1e4a879f.json"
+    },
+    {
+      "digest": "6c80732dff7cb61518e01a0b5c005610122369e896b4f356345d388a7bee8f76",
+      "path": ".trellis/spec/project/receipts/loop-v1/0a412167a2dedcb1dc2bf7428fe3926d3dd1fd5b67bf9fbc912638d5359c0612.json"
+    },
+    {
+      "digest": "6514b99d0e6d24f201339af7dc41e3574ae8ea752675eac5d41dfdbdb6484ddc",
+      "path": ".trellis/spec/project/receipts/loop-v1/0dec9c1b02939c2eb02752391cf58ee8912fc79047708fb682fc9185307d132f.json"
+    },
+    {
+      "digest": "2a4b0d5c0c28088d9021863cda3d7d823f1789523b7423016017b2220686b4ea",
+      "path": ".trellis/spec/project/receipts/loop-v1/0f1064baf32a7cc11b9cdab0d75d64886efc77dc99dc2339560507403f8ba780.json"
+    },
+    {
+      "digest": "160841dce53648c3de4f28356fdaefac01420b967f3a1c8303b1b3f6336a8da3",
+      "path": ".trellis/spec/project/receipts/loop-v1/22008e4f5aab4ef0a17663f69a4bd3605a64fa1719aa9195b81be05bde0a57d5.json"
+    },
+    {
+      "digest": "4e36696b95fdf115cf8250511da3c903eae3ce7e88f54dcbc2c7907c212970e8",
+      "path": ".trellis/spec/project/receipts/loop-v1/29e1ae17cbae8b18fa16ef8738f1f1fd0d645d93c58a9038801b564031846524.json"
+    },
+    {
+      "digest": "185d2d230b5b3ba7a8751109f2196434f4f5b30e843b1b1ff418cd968893d6ee",
+      "path": ".trellis/spec/project/receipts/loop-v1/39171ab76e4e708c2e87caaad5d817d80a38cf884d3f05a6296ed010bb6a8bfc.json"
+    },
+    {
+      "digest": "07c2101cac56006e8977f903af6aec73fc0611c81906ac544aaf270941dff982",
+      "path": ".trellis/spec/project/receipts/loop-v1/39274bd4b57342b9d50e3f6688d68ab116257f7243f8079eb1e9c31efa12bfe1.json"
+    },
+    {
+      "digest": "c4b74ce3ea22a964e4fd39ec74c3236d9e64482ad9e27b813ace7370cf9a4d2a",
+      "path": ".trellis/spec/project/receipts/loop-v1/48f68a3c018c5be879a67a13431f14c3ec23b84263ff868cdad6a4b51d1ec4aa.json"
+    },
+    {
+      "digest": "c3112184adea23916c212d9129d74376bbd981b4bb11bfdde7846744450b3918",
+      "path": ".trellis/spec/project/receipts/loop-v1/4bb40ab56c14bb95a0399895402cf05252d3edbd95c832805fc5b04f58bfa572.json"
+    },
+    {
+      "digest": "e75a485aa67818db8560bf977f293cf0604bcd2ed7a353371c36ff7bfd84cb25",
+      "path": ".trellis/spec/project/receipts/loop-v1/51114b752f01f06d04f0c1621b042069193a33b7f1d04a0c7cd7dbb9c30fc800.json"
+    },
+    {
+      "digest": "6958f954d3b417771ee621ede9e63daf6df9580e1645a1bd992a6fa25265d06b",
+      "path": ".trellis/spec/project/receipts/loop-v1/54c06d0a06b05f45f087907309382126176c6505af6dcbc1eb48603bba3aafbb.json"
+    },
+    {
+      "digest": "2853818b450abc29f9f01b17c5b4044d058c68cb796d62c094d63b1fde98d47e",
+      "path": ".trellis/spec/project/receipts/loop-v1/54e68cce46ab4aad02006b854751d819a1350e4e94253b2e51c12c6b6e271f46.json"
+    },
+    {
+      "digest": "7b728d21e0bf75b97c509fc41c51ffa6b93cafa00beb13fdade94465699468a0",
+      "path": ".trellis/spec/project/receipts/loop-v1/55d03ecbc6ee2a32fc39f2d7eef7e1bc603a5d67b891d428b714201a5119efff.json"
+    },
+    {
+      "digest": "2d871728e99079d393e99e8ddc07d173a63ade922bfd37707c2bc31a384f8bad",
+      "path": ".trellis/spec/project/receipts/loop-v1/5a68aeb7dfc416da1274608fd13fd37cc7d374e790fbde8f3678cd308086858a.json"
+    },
+    {
+      "digest": "ef61b61122b95ffe9b21ae426a8d73460f581977cf6eea7ec0b276deb2d553a0",
+      "path": ".trellis/spec/project/receipts/loop-v1/5ff88f68fe8bd08253182d666e51878301a827cd4e934e2ddc3272c562f48267.json"
+    },
+    {
+      "digest": "acd1afa5425c13588c5ee20369a58f84813feac2b0841f4bb5c423b55063388a",
+      "path": ".trellis/spec/project/receipts/loop-v1/6398437919d75b60ad743a44f170039449e9102d59f8fcc2d54f4da3af253403.json"
+    },
+    {
+      "digest": "5679444600945006f7870879e73a79be5b0e504fabfa16f87bf5c1bc1560dcf3",
+      "path": ".trellis/spec/project/receipts/loop-v1/6e760bf39271f2f194ba87bc61b39229b55f3dc2ed0d49b63341ccafa540e6fa.json"
+    },
+    {
+      "digest": "8b05a2ce3dcb2c4d6d4e86fdf182d97b7f0e876adbbe43247c5b0cfb919e1221",
+      "path": ".trellis/spec/project/receipts/loop-v1/73c53408d2650b841727950ac8c6d02c9a4894d7cec6249bb905bfc9b029064f.json"
+    },
+    {
+      "digest": "f52c4c1d7512fe2330108a336ac3cfb4075273ea6e4f78100505379a041e648b",
+      "path": ".trellis/spec/project/receipts/loop-v1/781482e8d74c3c6c779ca114810a5dbe77721a8371dc5fbaadc25a37f780ba9b.json"
+    },
+    {
+      "digest": "1168c81a07a0a92b5940c754bc069031c41e5fd5dea835961e927dbab8882c35",
+      "path": ".trellis/spec/project/receipts/loop-v1/853cc1e5bc1007d0a708d947e503236963cc8803176b271f4099bec200ad2815.json"
+    },
+    {
+      "digest": "a46cf38e7dd010a1b0e47e22f35c59ec389ac2d28edb4993c46b05a02837ec8b",
+      "path": ".trellis/spec/project/receipts/loop-v1/8bb11b76fc5d8691bafc5ff92d9d1cdbb4008f11100a19ec443ec0034a81ac81.json"
+    },
+    {
+      "digest": "957a2d35bee15248187eecbf9bf699156d12252d5c6b11a234850f1db10388e8",
+      "path": ".trellis/spec/project/receipts/loop-v1/96538ca56ac00da2a476c8b9960e056889e8059b849b0b443a6031c920ea4c90.json"
+    },
+    {
+      "digest": "c3fb35f37139e98456901a95e1aef2ef44ce8485b7c92b253a46c4caf61edac9",
+      "path": ".trellis/spec/project/receipts/loop-v1/9f3e68b7794652498607f9be2a2add8833745c1615e2e599229e38094e98048f.json"
+    },
+    {
+      "digest": "b34c99199bd0522e42e3ecf20e440d1745c1e546882081e3d65968cdf0db10bc",
+      "path": ".trellis/spec/project/receipts/loop-v1/a12bc750de54389c9b40ef17603c769b21cd7b33adf09e4267b4fc41c86d56c1.json"
+    },
+    {
+      "digest": "158651d3dac3aed880121d4092fe220c4cc7604f3984a6e923fc3a9c970a7a2b",
+      "path": ".trellis/spec/project/receipts/loop-v1/a49c4e2636c805fcac49c8f10793d6266ae1b0efde4d5053aa58e0d885090028.json"
+    },
+    {
+      "digest": "69606fbee27f9f419d3ad953ee8859a1a3173043f926b82570b2410b80984b48",
+      "path": ".trellis/spec/project/receipts/loop-v1/aacc18da605b62fd1b16dda748d6abae2b61c4d34257ab25fba1d83257daf83f.json"
+    },
+    {
+      "digest": "bee235269750101dfd37201080e8601e4648d46a1b675e466e1c376587bfd9dd",
+      "path": ".trellis/spec/project/receipts/loop-v1/af410226b9dcc8e4e2702eb7535d3cb9b448c68c89f4b6134d65de6705dee5d7.json"
+    },
+    {
+      "digest": "74584d227abb40b74357fc18d1cced225f7b2f3db1004bac1df00b84134a5c26",
+      "path": ".trellis/spec/project/receipts/loop-v1/b6dc40c070f2c2bdf9b72e4210fb858b03170fa82d60ff7a853b31eab5873576.json"
+    },
+    {
+      "digest": "f47da602962ad9248db4256e998a9f169f9a31b64a0c97ff86c1a098112cfe41",
+      "path": ".trellis/spec/project/receipts/loop-v1/ba63f371e15911f24203be367d2ea7b14d6814184eb0444822eda3f55032c6fc.json"
+    },
+    {
+      "digest": "0c304fd90a165154f8703a23a13c20728cb3298129f0420522478eecc72f33b3",
+      "path": ".trellis/spec/project/receipts/loop-v1/c19075d9ba2a79b3530731a21b73edde1bdcbe454005748937778812a759e76a.json"
+    },
+    {
+      "digest": "3538204eade1bb882b8cb8839146fa484a9e15fbaeb37ba98bea3faa22c614d3",
+      "path": ".trellis/spec/project/receipts/loop-v1/cc9ec0afb2e1e5f8ae91cc4cf0a67f3833775e342486c55f05131c5b2949ec8f.json"
+    },
+    {
+      "digest": "d15fa67658d0b5bddb32656dbc549968f98089df1cb7c2be8d7490219f28305e",
+      "path": ".trellis/spec/project/receipts/loop-v1/d121f47d8f9266dfe76bf10389184d4cda349c91b3edd457eeee84d98cc8b134.json"
+    },
+    {
+      "digest": "672f887d77dc75ac924450ad514b49fb89756474cf769f72a15b55ed050f2538",
+      "path": ".trellis/spec/project/receipts/loop-v1/d1c61866ebff21f11bb4cc8465b9e52be55375e3b2a9b2af5466b23255b77f09.json"
+    },
+    {
+      "digest": "53eeee9fc9a81becf926cd2311c87d196b437d6baa6a332b6b9e55b100faee1a",
+      "path": ".trellis/spec/project/receipts/loop-v1/d4c97ce5c8c2a4c1b478e43aea7a528d470761e4a2c6b5233d80f6d10cdf3ea9.json"
+    },
+    {
+      "digest": "c11ac52e64847031cfcd5a02da4d58a6f9ffc013e79b77d023cf8bd01495bb9d",
+      "path": ".trellis/spec/project/receipts/loop-v1/d79f0b0bf9abf4bb6b63a8478152d27383c2efea6564c2283c49f3c771681d5f.json"
+    },
+    {
+      "digest": "5bdbb447a159cedb082e369f7a88a4c043887fb8c1e14cb6d7ab7175e1991016",
+      "path": ".trellis/spec/project/receipts/loop-v1/dc8b18141749a128f1c80c147df4825409ef64b1a3a63a8366bdc27dd943ccd9.json"
+    },
+    {
+      "digest": "6db5ee2e54f19486069f93d8e31c942677aaef8e4f2ec93479efd58c7bb12efd",
+      "path": ".trellis/spec/project/receipts/loop-v1/eefa2a19d900c9d45b3495ab00fb72aec9a1d97b1e26a4bc8c89f01842853de1.json"
+    },
+    {
+      "digest": "0ba633f4aaceae29d47beece2a2831539f9aec6e55df6286561eaba0c22d8d7d",
+      "path": ".trellis/spec/project/receipts/loop-v1/f43532a15ab8ad8188fa1f2d824032c3956429b5c3795dc4b48460785ca8632a.json"
+    },
+    {
+      "digest": "9d523bd5bea9be8ea65b25edb5ddaebec1b03a5dd612cbae06ea9e965615094e",
+      "path": ".trellis/spec/project/receipts/loop-v1/f79fe2710779ca16794fffae947bfc2594f3329e63f8b03a7460cdf8f642db7c.json"
+    },
+    {
+      "digest": "e436d501e2d0194a59d90a1dd4c3a8b76073bfc9d376fa8b05d8ebcf68dd4130",
+      "path": ".trellis/spec/project/receipts/loop-v1/f7fc3fc1e32a3c999f054ed3917aa1049ec41a97a2dff672228242ef6e8faadb.json"
+    },
+    {
+      "digest": "190e9617b217ac164dde0f2df01d5873298b2be60a78d18f26406e63f517c3aa",
+      "path": ".trellis/spec/project/staged-delivery-overlay.md"
+    },
+    {
+      "digest": "20dffc1ca3568b6b6b0b652dd0cc07b3a6b97f552816e29a5c51b47f1f972a74",
+      "path": ".trellis/spec/project/task-cancel-lifecycle.md"
+    },
+    {
+      "digest": "4f89982521e3774d5b22abd9602c5dc52de49ce0aafa3c4fce9e48ff3724dc0e",
+      "path": ".trellis/spec/project/task-sizing.md"
+    },
+    {
+      "digest": "9ad949bbb00d64e449288215a8ee2a22381fb9431a31566498a51310e59b5d9d",
+      "path": ".trellis/spec/project/taskrun-runtime.md"
+    },
+    {
+      "digest": "a92f5554aeb30aaed18989640208eee4fc069605d6884c0a8d241d3e09d1899d",
+      "path": ".trellis/spec/project/upstream-release.md"
+    },
+    {
+      "digest": "85f57c5b0647d73fdac89f2e05516f305ccedc818427911bf2273eb00b0cad7c",
+      "path": ".trellis/workflow.md"
+    }
+  ],
+  "managed_payload_digest": "5fceac09ceb878f353e2ecfd0b30393f793962baa6379cd0ad4b421052659459",
+  "minimum_capabilities": [
+    "logical-check-adapter",
+    "unified-intent-loop-v1"
+  ],
+  "overlay_digest": "48e97150eead237496e35a2050b61af80c7b990b9eb0170c2bd9e27261d6c7a0",
+  "ownership_policy": "unified-intent-loop-v1",
+  "release_id": "7fceaf518b40978aedd1a2847b2de393bb3dfea2da09132cb1e74ca190d6ff6e",
+  "schema_generation": 1,
+  "semantic_qualification": {
+    "passed": true,
+    "suite_digest": "76ede9828337ece2f21b01430b636654fc9ee2ae094b6976378d0573b26bba6e"
+  },
+  "trellis_base_artifact": {
+    "application_order": "official-base-then-overlay-v1",
+    "generator": {
+      "executable_digest": "dba1db2ed1d34f7d1e151d69303f14ce54aeb9f9e5dab60dc125aca692ab519a",
+      "version": "0.6.15"
+    },
+    "payload": [
+      {
+        "digest": "00c9d1c83bc318e91b27a019bc954c2957cfad907ff20d854b596f16cad2c0f3",
+        "path": ".agents/skills/trellis-before-dev/SKILL.md"
+      },
+      {
+        "digest": "a0f226ddcb8a3e846acd2a35d121996e9ca55165ce76202095d0b65e2b48a5e8",
+        "path": ".agents/skills/trellis-brainstorm/SKILL.md"
+      },
+      {
+        "digest": "dfb0600e95c19c7a83200465b6a92a5514ec9778ba4083efa881bed541cc74a8",
+        "path": ".agents/skills/trellis-check/SKILL.md"
+      },
+      {
+        "digest": "7723ccf49fbf19d8f086cacc7a080bd8be8db6fc70a32908b80f68efa318d7bf",
+        "path": ".agents/skills/trellis-continue/SKILL.md"
+      },
+      {
+        "digest": "161060fbcd44f787440d3a5c297a9f5223ea7774bb3021a50e376875a9ac5b2d",
+        "path": ".agents/skills/trellis-finish-work/SKILL.md"
+      },
+      {
+        "digest": "ee7bcfd0023def62688339c4b63c50f2fbeea12a34eb89e8bb63a992b58cb168",
+        "path": ".agents/skills/trellis-meta/SKILL.md"
+      },
+      {
+        "digest": "86009ccb5d0373f399582da0bc570c4e5c6053c3c764857424ff93384f0e04e5",
+        "path": ".agents/skills/trellis-meta/references/customize-local/add-project-local-conventions.md"
+      },
+      {
+        "digest": "4216ac3cc570038fd8ce3319a85932bb537fea9e0a7f4d11fa315cfa645c9c85",
+        "path": ".agents/skills/trellis-meta/references/customize-local/change-agents.md"
+      },
+      {
+        "digest": "350d319dc1ab99609ddbf52cf8c06c71bd97ba1a29ce2eac8b97d0bb192938bf",
+        "path": ".agents/skills/trellis-meta/references/customize-local/change-context-loading.md"
+      },
+      {
+        "digest": "4c18b134f05d5ba1609c517ec94c97c9442b5f0670aa2211c487c31ed2a4f358",
+        "path": ".agents/skills/trellis-meta/references/customize-local/change-hooks.md"
+      },
+      {
+        "digest": "5b942e9f512e049a75e8dd9e8cc4d49786f6da61b22afc82bb447acf808f9fe2",
+        "path": ".agents/skills/trellis-meta/references/customize-local/change-skills-or-commands.md"
+      },
+      {
+        "digest": "31eccaad7097d96e66a45c1b4caea1ba4f2e54b7814184c3ebf82c87dafc4841",
+        "path": ".agents/skills/trellis-meta/references/customize-local/change-spec-structure.md"
+      },
+      {
+        "digest": "60ff9efb93604b87a461a4af30322d76750402a51e40f31531a7ff88d309996d",
+        "path": ".agents/skills/trellis-meta/references/customize-local/change-task-lifecycle.md"
+      },
+      {
+        "digest": "43fa780a2ca580de121b10893d49b99f978873deebbf45008c466e5ac6651519",
+        "path": ".agents/skills/trellis-meta/references/customize-local/change-workflow.md"
+      },
+      {
+        "digest": "ce8f09e9f93ce9a48500763fb3a4db2b3908a5fbf4f985ab71dacebb404cf8f4",
+        "path": ".agents/skills/trellis-meta/references/customize-local/overview.md"
+      },
+      {
+        "digest": "aa6a0bf83060205ee4ea621c467fb900a7db06b4476a4ad472cc4e248c887389",
+        "path": ".agents/skills/trellis-meta/references/local-architecture/bundled-skills.md"
+      },
+      {
+        "digest": "8497289bf333b3aa456f317039d1239b7ece79254aa0eb62cfc647714c866084",
+        "path": ".agents/skills/trellis-meta/references/local-architecture/context-injection.md"
+      },
+      {
+        "digest": "7eb2d452eddb4f4226f7578c2ec6d5ee0434ed172ba4c36107cc8bdff7554dc6",
+        "path": ".agents/skills/trellis-meta/references/local-architecture/generated-files.md"
+      },
+      {
+        "digest": "56e5070474aeca872e2d70c46feea5aaafecd3d3ec052c3f7b1877358dca62e9",
+        "path": ".agents/skills/trellis-meta/references/local-architecture/multi-agent-channel.md"
+      },
+      {
+        "digest": "50638fd9eaaba2e0edf2f2a84d920578d5b2fb7934031b174e417d3dc510b2a6",
+        "path": ".agents/skills/trellis-meta/references/local-architecture/overview.md"
+      },
+      {
+        "digest": "b8d8a6a0888b44a232c8f50161b9e20e903cf621ad7be4021715ab6fab226f47",
+        "path": ".agents/skills/trellis-meta/references/local-architecture/spec-system.md"
+      },
+      {
+        "digest": "2b561d49c390f7d0db5391912946133be4bf73189231e2b8cc9afa1c5ac6165a",
+        "path": ".agents/skills/trellis-meta/references/local-architecture/task-system.md"
+      },
+      {
+        "digest": "cfcdc6e4468a5d9c816e929fcca01640cd41cfdaaa4824118b40a8e460c927b6",
+        "path": ".agents/skills/trellis-meta/references/local-architecture/workflow.md"
+      },
+      {
+        "digest": "e6427b46aba744563c2444b30df4043cd856561b7709ec2dece26095416421fd",
+        "path": ".agents/skills/trellis-meta/references/local-architecture/workspace-memory.md"
+      },
+      {
+        "digest": "b806b1f0de6dfc74720014aee15ede767a58925b2b3b964f2e557ed39a65bbc0",
+        "path": ".agents/skills/trellis-meta/references/platform-files/agents.md"
+      },
+      {
+        "digest": "91e9855e418673bcd7770411e24e28390738b123532eef000beba0a29cf154e1",
+        "path": ".agents/skills/trellis-meta/references/platform-files/hooks-and-settings.md"
+      },
+      {
+        "digest": "1aec9087ccedd56a213af877b5db474131aa4b4789b6ac0e8da73b058aa43bd4",
+        "path": ".agents/skills/trellis-meta/references/platform-files/overview.md"
+      },
+      {
+        "digest": "3c0d4546461c06d1aaf006276e34e250e0ca7bbb5b853fb45c58114cebca4042",
+        "path": ".agents/skills/trellis-meta/references/platform-files/platform-map.md"
+      },
+      {
+        "digest": "e39831d860bd27a04e7757f7bd941ab83b3c5b11ad4460cec03975b655f26cc3",
+        "path": ".agents/skills/trellis-meta/references/platform-files/skills-and-commands.md"
+      },
+      {
+        "digest": "d20f1d20c6946e26ba6f848b9a016d9a16c803d87501462e5b11a2ced6f56643",
+        "path": ".agents/skills/trellis-session-insight/SKILL.md"
+      },
+      {
+        "digest": "c520353fe3fc00b9702ed4f780647c8fbd6d342e66527a03647f533a9fe09779",
+        "path": ".agents/skills/trellis-session-insight/references/cli-quick-reference.md"
+      },
+      {
+        "digest": "121ecd23be83d1567e8ce15c366a81073d7a2b1d3ad616fce235c07ca1f1cc20",
+        "path": ".agents/skills/trellis-session-insight/references/triggering-patterns.md"
+      },
+      {
+        "digest": "79a5ba7a2aff3c72e06d7f4cd6942dc4f4f4092dd40f9c8e94f1838024a81e4d",
+        "path": ".agents/skills/trellis-start/SKILL.md"
+      },
+      {
+        "digest": "d13cd05659281a287d7f50c7e25eb6a89c2a6597773511bd6885538acced2855",
+        "path": ".claude/settings.json"
+      },
+      {
+        "digest": "206fd96a8aa17e95ed344cc435661d597093ece571671f298ca64490422fffe0",
+        "path": ".codex/agents/trellis-check.toml"
+      },
+      {
+        "digest": "388fb8f39797e0ee6cf4db447c859c79b4ac15f531f7e1e3c68c1d1d71a1c188",
+        "path": ".codex/agents/trellis-implement.toml"
+      },
+      {
+        "digest": "4435ce73197ba1d29d40359a3279b6423f7e4f559a449f934c016808090066c4",
+        "path": ".codex/agents/trellis-research.toml"
+      },
+      {
+        "digest": "7c2c5640445ea0d98ce6a13126ea105ec4b02ca661ef4a7711240b595efefbbf",
+        "path": ".codex/hooks/inject-subagent-context.py"
+      },
+      {
+        "digest": "89cef2b197dd61a731b946114207d2601b240058941ccf28622ee211d9c62eb3",
+        "path": ".codex/hooks/inject-workflow-state.py"
+      },
+      {
+        "digest": "14de3be1cf6eb9c9feba348d8998b407f3837d6c0756b74210c9200543440677",
+        "path": ".codex/hooks/session-start.py"
+      },
+      {
+        "digest": "3bc42434cbe61c937a1c26ea3c880b496bfad4e7d683750169e27ade509aa798",
+        "path": ".trellis/.gitignore"
+      },
+      {
+        "digest": "4199a63108d33fca2f529174d1d370076d728c3ed569ab95134b66ac32c2f918",
+        "path": ".trellis/.version"
+      },
+      {
+        "digest": "876dad478edf70db59acccaae9cb4db646a155681f730bd99af48de72ddc9881",
+        "path": ".trellis/scripts/add_session.py"
+      },
+      {
+        "digest": "3d5e9347141f0296319a5beb29d69ae714c5a474b9078caeb3edd7c5f6562e22",
+        "path": ".trellis/scripts/common/__init__.py"
+      },
+      {
+        "digest": "bd15c5ee7810814dad915d898889323b3ea97fde92777b053b7ae734d56768bc",
+        "path": ".trellis/scripts/common/active_task.py"
+      },
+      {
+        "digest": "5d6bd9d6f5c631e7e792db7dd343351317f9643bc87b73a9a98abd51cefb4307",
+        "path": ".trellis/scripts/common/cli_adapter.py"
+      },
+      {
+        "digest": "8d2e5f8ccfcd5f622cd2af002aa761f3d3ffcc653182fefb2268afd102e77bca",
+        "path": ".trellis/scripts/common/config.py"
+      },
+      {
+        "digest": "f5f833123abe68890171b4da825a324216d24913f6b5ad9245afc556424ffd7b",
+        "path": ".trellis/scripts/common/developer.py"
+      },
+      {
+        "digest": "6fc5845d0104dd506ebd8b366a24cb4b1e3d8777e4e6acc12ea15c9d8e2662f2",
+        "path": ".trellis/scripts/common/git.py"
+      },
+      {
+        "digest": "fa30ced454f1a91ffc9f8b2abeb32225e3447cbdc90bad783797374eba07265d",
+        "path": ".trellis/scripts/common/git_context.py"
+      },
+      {
+        "digest": "75648caae03d5b1107d7aeccaa785d133b25762266e54a520d90ca8c76b43bdb",
+        "path": ".trellis/scripts/common/io.py"
+      },
+      {
+        "digest": "471df6895cfac80f995edebbf9974f6b7440634b7a688f28b8331c868bc0f3cf",
+        "path": ".trellis/scripts/common/log.py"
+      },
+      {
+        "digest": "efe158d7c99c2268851d0216fbb08de22836e418a8dbeb73575b8cc249eed7b7",
+        "path": ".trellis/scripts/common/packages_context.py"
+      },
+      {
+        "digest": "c26b75bc211b290e7c21ec96fb1db36f282b3ecbb7d2c81475d258a48ea55fb8",
+        "path": ".trellis/scripts/common/paths.py"
+      },
+      {
+        "digest": "baa5c82324eb62154374ec63394ecdc8609bb37d93892e3bcb88f452bb7d6446",
+        "path": ".trellis/scripts/common/safe_commit.py"
+      },
+      {
+        "digest": "3379ef1766e4e5ca77cbb7c040dbba3883fcca2548580299e3b38dbf22f4f7d5",
+        "path": ".trellis/scripts/common/session_context.py"
+      },
+      {
+        "digest": "6fc3abb9e483043bc8cc3477ae48e5503399402009fbfc58db80809472c5690b",
+        "path": ".trellis/scripts/common/task_context.py"
+      },
+      {
+        "digest": "0be61f713462b1fe4574927c82fc4704e678afe72dcb9813543aedf2f9e9e0c5",
+        "path": ".trellis/scripts/common/task_queue.py"
+      },
+      {
+        "digest": "9b05a40113439e2841271f2fc1e616fbef0b6929e7c064dd41350658e4ed203e",
+        "path": ".trellis/scripts/common/task_store.py"
+      },
+      {
+        "digest": "07a599c028b2f7aa4014f56702374aade98c2d1a6ea87b314098e5e86cacf7fe",
+        "path": ".trellis/scripts/common/task_utils.py"
+      },
+      {
+        "digest": "4436a8b0b53c270a35989e26d9dbd92669408c6562d88c02083a404562da85fe",
+        "path": ".trellis/scripts/common/tasks.py"
+      },
+      {
+        "digest": "e282e897183e3ec2f4e6e56349431946e5f98c1c31d3eca4de7fc44e1383a7bf",
+        "path": ".trellis/scripts/common/trellis_config.py"
+      },
+      {
+        "digest": "9962081cc2608fb9d1deb32c6880e336f62cdca6b338e7ae813304701e155ee9",
+        "path": ".trellis/scripts/common/types.py"
+      },
+      {
+        "digest": "79ee522de20246acf1e2c222e8ad180ad25aaec7fec98214a93d9e81b350d9a8",
+        "path": ".trellis/scripts/common/workflow_phase.py"
+      },
+      {
+        "digest": "ca5bf9e90bdb1d75d3de182b95f820f9d108ab28793d29097b24fd71315adcf5",
+        "path": ".trellis/scripts/get_context.py"
+      },
+      {
+        "digest": "152d7298db25b86756583faaba763eacd8611c0070e8f1c176b8257d687102b9",
+        "path": ".trellis/scripts/task.py"
+      },
+      {
+        "digest": "86fd10dc10916c00309714aa2275234f01b0ad40d21a485d43b3422e7ca79397",
+        "path": ".trellis/spec/guides/code-reuse-thinking-guide.md"
+      },
+      {
+        "digest": "4c54130c02a7b8bc43f9a012e0837f798f43e2d137d6bc6d7498d2adb0bac3f4",
+        "path": ".trellis/spec/guides/cross-layer-thinking-guide.md"
+      },
+      {
+        "digest": "aa45e5d0f245aae0b34677b121f7d083620308b4b87cda929bd134c77d1f61fd",
+        "path": ".trellis/spec/guides/index.md"
+      },
+      {
+        "digest": "c694bb7901d48f224ccad940178cff81e28dda46e6e5b24bad67c83970d67808",
+        "path": ".trellis/workflow.md"
+      }
+    ],
+    "payload_digest": "e4a189c8563bd7067851fa8ffda33612f8a3b1a449cf6138ff7d4d3f6c26a49e"
+  },
+  "trellis_base_version": "0.6.15"
+}
