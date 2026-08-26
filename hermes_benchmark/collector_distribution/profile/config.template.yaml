@@ -1,0 +1,53 @@
+profile:
+  name: collector
+  mode: blank
+
+timezone: America/Denver
+providers: {}
+prefill_messages_file: /home/jym/workspace/Hermes trendradar/hermes_benchmark/collector_distribution/profile/prefill/collector-prefill.json
+
+model:
+  default: ""
+  provider: ""
+  base_url: ""
+
+terminal:
+  cwd: /home/jym/workspace/Hermes trendradar
+  env_passthrough: []
+  docker_forward_env: []
+  docker_env: {}
+  docker_volumes: []
+
+memory:
+  memory_enabled: false
+  user_profile_enabled: false
+
+plugins:
+  enabled:
+    - stock-runtime
+
+tools:
+  enabled_toolsets:
+    - stock_runtime
+  disabled_toolsets:
+    - terminal
+    - file
+    - code_execution
+    - web
+    - browser
+    - computer_use
+    - delegation
+    - memory
+    - session_search
+    - cronjob
+    - vision
+    - image_gen
+    - tts
+
+platforms:
+  feishu:
+    enabled: false
+  weixin:
+    enabled: false
+  api_server:
+    enabled: false

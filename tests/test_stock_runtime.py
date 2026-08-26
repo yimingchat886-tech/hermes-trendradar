@@ -175,15 +175,22 @@ def test_collector_distribution_assets_pin_tool_allowlist_and_generic_denies() -
     plugin = plugin_root.joinpath("plugin.yaml").read_text(encoding="utf-8")
     package_data = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["tool"]["setuptools"]["package-data"]
 
-    assert package_data["hermes_benchmark.collector_distribution"] == ["README.md", "collector_config.template.yaml"]
+    assert package_data["hermes_benchmark.collector_distribution"] == [
+        "README.md",
+        "collector_config.template.yaml",
+        "profile/config.template.yaml",
+        "profile/env.guardrails.example",
+        "profile/prefill/collector-prefill.json",
+    ]
     assert package_data["hermes_benchmark.collector_distribution.stock_runtime_plugin"] == ["plugin.yaml"]
     assert "enabled_toolsets:\n    - stock_runtime\n" in config
     for toolset in ("terminal", "file", "code_execution"):
         assert f"    - {toolset}\n" in config
     assert "plugins:\n  enabled:\n    - stock-runtime\n" in config
-    assert "profile_ref: /home/jym/workspace/Hermes stock/profiles/local/hermes.v1.4.douyin.local.json" in config
-    assert "cwd: /home/jym/workspace/Hermes stock" in config
-    assert "does not deploy it to `~/.hermes/profiles`" in readme
+    assert "profile_ref: /home/jym/workspace/Hermes trendradar/profiles/local/hermes.v1.4.douyin.local.json" in config
+    assert "cwd: /home/jym/workspace/Hermes trendradar" in config
+    assert "does not deploy anything to `~/.hermes/profiles`" in readme
+    assert "profile/SOUL.md" not in readme
 
     expected_tools = tuple(STOCK_TOOL_SCHEMAS)
     assert plugin.count("  - stock_") == len(expected_tools)

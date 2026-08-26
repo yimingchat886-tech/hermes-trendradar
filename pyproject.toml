@@ -17,5 +17,5 @@ trendradar-media = "hermes_benchmark.media_jobs:main"
 include = ["hermes_benchmark*"]
 
 [tool.setuptools.package-data]
-"hermes_benchmark.collector_distribution" = ["README.md", "collector_config.template.yaml"]
+"hermes_benchmark.collector_distribution" = ["README.md", "collector_config.template.yaml", "profile/config.template.yaml", "profile/env.guardrails.example", "profile/prefill/collector-prefill.json"]
 "hermes_benchmark.collector_distribution.stock_runtime_plugin" = ["plugin.yaml"]

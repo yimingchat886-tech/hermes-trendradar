@@ -1,12 +1,12 @@
-# Collector Hermes profile distribution template (source only; do not deploy live in Case 3).
-# Copy these settings into the future blank `collector` profile only after Case 3 review.
+# Collector Hermes profile distribution template (source only; do not deploy live in Case 4A).
+# Copy into a blank collector profile only after a separate Case 4D activation review.
 
 plugins:
   enabled:
     - stock-runtime
 
 tools:
-  # The collector production session should expose only this profile-local toolset.
+  # Expose only the profile-local stock_runtime toolset from the stock-runtime plugin.
   enabled_toolsets:
     - stock_runtime
   disabled_toolsets:
@@ -24,14 +24,22 @@ tools:
     - image_gen
     - tts
 
+platforms:
+  feishu:
+    enabled: false
+  weixin:
+    enabled: false
+  api_server:
+    enabled: false
+
 stock_runtime:
   executable:
     - hermes-benchmark
-  cwd: /home/jym/workspace/Hermes stock
-  profile_ref: /home/jym/workspace/Hermes stock/profiles/local/hermes.v1.4.douyin.local.json
+  cwd: /home/jym/workspace/Hermes trendradar
+  profile_ref: /home/jym/workspace/Hermes trendradar/profiles/local/hermes.v1.4.douyin.local.json
   # storage_root may be omitted; the plugin resolves it from the fixed profile.
-  # Keep it explicit in deployed collector if the operator wants an extra pin.
-  # storage_root: /home/jym/workspace/_external/hermes-stock-runs
+  # Keep it explicit in a deployed collector only when the operator wants an extra pin.
+  # storage_root: /home/jym/workspace/_external/hermes-trendradar-runs
   timeout_seconds: 60
   stdout_cap_bytes: 65536
   stderr_cap_bytes: 16384
