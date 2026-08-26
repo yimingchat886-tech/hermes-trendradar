@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "targets": [
+    {
+      "id": "qivance-music",
+      "root": "/home/jym/workspace/qivance-music",
+      "expected_origin": "github.com/yimingchat886-tech/qivance-music"
+    },
+    {
+      "id": "hermes-trendradar",
+      "root": "/home/jym/workspace/Hermes trendradar",
+      "expected_origin": "github.com/alcor-ming/hermes-trendradar"
+    },
+    {
+      "id": "rag-v2",
+      "root": "/home/jym/workspace/RAG v2",
+      "expected_origin": "github.com/yimingchat886-tech/qivance-rag-v2"
+    },
+    {
+      "id": "familios",
+      "root": "/home/jym/workspace/FamiliOS",
+      "expected_origin": "github.com/yimingchat886-tech/familios"
+    }
+  ]
+}
