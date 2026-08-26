@@ -342,6 +342,88 @@ def test_allowed_field_secret_or_path_leaks_fail_closed_without_leaking_value(tm
         assert "token" not in encoded
 
 
+def test_analysis_package_file_uri_path_refs_fail_closed_without_stdout_leak(tmp_path: Path) -> None:
+    bad_refs = [
+        "file:/home/jym/leaked-package.json",
+        "file:///home/jym/leaked-package.json",
+        "file:/mnt/c/Users/Jym/leaked-package.json",
+        r"file:C:\Users\Jym\leaked-package.json",
+    ]
+    for bad_ref in bad_refs:
+        stdout = io.StringIO()
+
+        def fake(argv: list[str], _cwd: Path, _timeout_seconds: float, bad_ref: str = bad_ref) -> tuple[int, bytes, bytes]:
+            if argv[1] == "validate-config":
+                return 0, _ok_validate(), b""
+            if argv[1] == "healthcheck":
+                return 0, _ok_health(), b""
+            return 0, _ok_run(extra={"analysis_package_ref": bad_ref}), b""
+
+        code = runner.main(
+            [],
+            command_runner=fake,
+            manifest_loader=lambda: VALID_RETRY_MANIFEST,
+            sleeper=lambda _seconds: None,
+            lock_dir=tmp_path / str(len(bad_ref)),
+            stdout=stdout,
+        )
+        raw_stdout = stdout.getvalue()
+        receipt = json.loads(raw_stdout)
+
+        assert code == 2
+        assert receipt["error"]["code"] in {"contract_mismatch", "secret_like_output"}
+        lowered = raw_stdout.lower()
+        assert bad_ref.lower() not in lowered
+        assert "leaked-package" not in lowered
+        assert "/home/" not in lowered
+        assert "/mnt/c/" not in lowered
+        assert r"c:\users" not in lowered
+
+
+def test_analysis_package_ref_must_exactly_match_safe_run_id_artifact_ref(tmp_path: Path) -> None:
+    valid_run_id = "run_ABC-123.4"
+
+    def valid_fake(argv: list[str], _cwd: Path, _timeout_seconds: float) -> tuple[int, bytes, bytes]:
+        if argv[1] == "validate-config":
+            return 0, _ok_validate(), b""
+        if argv[1] == "healthcheck":
+            return 0, _ok_health(), b""
+        return (
+            0,
+            _ok_run(
+                extra={
+                    "run_id": valid_run_id,
+                    "analysis_package_ref": f"file:{valid_run_id}/artifacts/analysis_package.json",
+                }
+            ),
+            b"",
+        )
+
+    code, receipt, _stderr = _invoke([], valid_fake, tmp_path)
+    assert code == 0
+    assert receipt["data"]["analysis_package_ref"] == f"file:{valid_run_id}/artifacts/analysis_package.json"
+
+    bad_payloads = [
+        _ok_run(extra={"analysis_package_ref": f"file:{RUN_ID}/artifacts/analysis_package.json.bak"}),
+        _ok_run(extra={"analysis_package_ref": "file:other_run/artifacts/analysis_package.json"}),
+        _ok_run(extra={"run_id": "bad/run", "analysis_package_ref": "file:bad/run/artifacts/analysis_package.json"}),
+        _ok_run(extra={"run_id": r"bad\run", "analysis_package_ref": r"file:bad\run/artifacts/analysis_package.json"}),
+        _ok_run(extra={"run_id": "bad:run", "analysis_package_ref": "file:bad:run/artifacts/analysis_package.json"}),
+        _ok_run(extra={"run_id": "bad\nrun", "analysis_package_ref": "file:bad\nrun/artifacts/analysis_package.json"}),
+    ]
+    for payload in bad_payloads:
+        def fake(argv: list[str], _cwd: Path, _timeout: float, payload: bytes = payload) -> tuple[int, bytes, bytes]:
+            if argv[1] == "validate-config":
+                return 0, _ok_validate(), b""
+            if argv[1] == "healthcheck":
+                return 0, _ok_health(), b""
+            return 0, payload, b""
+
+        code, receipt, _stderr = _invoke([], fake, tmp_path)
+        assert code == 2
+        assert receipt["error"]["code"] in {"contract_mismatch", "secret_like_output"}
+
+
 def test_manifest_loader_projects_retry_block_from_bounded_profile_json(tmp_path: Path) -> None:
     profile_path = tmp_path / "profile.json"
     profile_path.write_text(

@@ -62,6 +62,8 @@ SECRET_VALUE_RE = re.compile(
     r"(?i)(?:\b(?:authorization|bearer|cookie|password|secret|session|token)\b\s*[:=]?\s*\S+|\b(?:sk-[A-Za-z0-9_-]{12,}|xox[baprs]-[A-Za-z0-9-]{8,}))"
 )
 SAFE_BACKOFF_REF_RE = re.compile(r"^env:[A-Z0-9_]{1,128}$")
+SAFE_RUN_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+ANALYSIS_PACKAGE_ARTIFACT = "artifacts/analysis_package.json"
 ERROR_CODE_ALLOWLIST = {
     "collection_failed",
     "command_failed",
@@ -437,11 +439,19 @@ def _receipt_command(command: str) -> str:
 def _project_run_data(data: Any) -> dict[str, Any]:
     if not isinstance(data, Mapping):
         raise RunnerError("contract_mismatch", command="run-daily")
+    run_id = data.get("run_id")
+    if run_id not in (None, ""):
+        _validate_run_id(run_id)
+    elif data.get("analysis_package_ref") not in (None, ""):
+        raise RunnerError("contract_mismatch", command="run-daily")
+
     projected: dict[str, Any] = {}
     for key in RUN_DATA_ALLOWLIST:
         if key not in data or data[key] in (None, ""):
             continue
         value = data[key]
+        if key == "analysis_package_ref":
+            _validate_analysis_package_ref(value, run_id)
         if key in SUMMARY_ALLOWLIST:
             if not isinstance(value, Mapping):
                 raise RunnerError("contract_mismatch", command="run-daily")
@@ -452,6 +462,19 @@ def _project_run_data(data: Any) -> dict[str, Any]:
         projected[key] = value
     _assert_no_forbidden_values(projected)
     return projected
+
+
+def _validate_run_id(value: Any) -> None:
+    if not isinstance(value, str) or SAFE_RUN_ID_RE.fullmatch(value) is None:
+        raise RunnerError("contract_mismatch", command="run-daily")
+
+
+def _validate_analysis_package_ref(value: Any, run_id: Any) -> None:
+    if not isinstance(value, str):
+        raise RunnerError("contract_mismatch", command="run-daily")
+    _assert_text_safe(value)
+    if not isinstance(run_id, str) or value != f"file:{run_id}/{ANALYSIS_PACKAGE_ARTIFACT}":
+        raise RunnerError("contract_mismatch", command="run-daily")
 
 
 def _assert_no_forbidden_values(value: Any) -> None:
