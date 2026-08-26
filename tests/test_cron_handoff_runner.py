@@ -252,6 +252,47 @@ def test_nonretryable_failure_and_run_lock_conflict_do_not_retry_or_run_daily(tm
         assert receipt["retryable"] is False
 
 
+def test_failure_envelope_rejects_sensitive_error_codes_without_stdout_leak(tmp_path: Path) -> None:
+    unsafe_codes = [
+        "/home/jym/workspace/Hermes trendradar/profiles/local/hermes.v1.4.douyin.local.json",
+        "https://www.douyin.com/video/123",
+        "cookie=session_token=abcdef123456",
+    ]
+    for unsafe_code in unsafe_codes:
+        commands: list[str] = []
+        stdout = io.StringIO()
+
+        def fake(argv: list[str], _cwd: Path, _timeout_seconds: float, unsafe_code: str = unsafe_code) -> tuple[int, bytes, bytes]:
+            commands.append(argv[1])
+            if argv[1] == "validate-config":
+                return 0, _ok_validate(), b""
+            if argv[1] == "healthcheck":
+                return 0, _ok_health(), b""
+            return 4, _envelope("run-daily", ok=False, exit_code=4, error_code=unsafe_code, retryable=False), b""
+
+        code = runner.main(
+            [],
+            command_runner=fake,
+            manifest_loader=lambda: VALID_RETRY_MANIFEST,
+            clock=lambda: datetime(2026, 8, 25, 12, 0, tzinfo=timezone.utc),
+            sleeper=lambda _seconds: None,
+            lock_dir=tmp_path / str(len(commands)),
+            stdout=stdout,
+        )
+        raw_stdout = stdout.getvalue()
+        receipt = json.loads(raw_stdout)
+
+        assert code == 4
+        assert commands == ["validate-config", "healthcheck", "run-daily"]
+        assert receipt["error"] == {"code": "secret_like_output"}
+        assert unsafe_code not in raw_stdout
+        lowered = raw_stdout.lower()
+        assert "/home/" not in lowered
+        assert "douyin.com" not in lowered
+        assert "cookie" not in lowered
+        assert "token" not in lowered
+
+
 def test_invalid_json_oversize_timeout_and_exit_mismatch_fail_closed(tmp_path: Path) -> None:
     cases = [
         (lambda _argv, _cwd, _timeout: (0, b"not-json", b""), "invalid_json", 2),

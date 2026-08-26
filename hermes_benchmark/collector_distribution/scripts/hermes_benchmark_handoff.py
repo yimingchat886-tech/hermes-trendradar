@@ -62,6 +62,27 @@ SECRET_VALUE_RE = re.compile(
     r"(?i)(?:\b(?:authorization|bearer|cookie|password|secret|session|token)\b\s*[:=]?\s*\S+|\b(?:sk-[A-Za-z0-9_-]{12,}|xox[baprs]-[A-Za-z0-9-]{8,}))"
 )
 SAFE_BACKOFF_REF_RE = re.compile(r"^env:[A-Z0-9_]{1,128}$")
+ERROR_CODE_ALLOWLIST = {
+    "collection_failed",
+    "command_failed",
+    "command_timeout",
+    "config_invalid",
+    "contract_mismatch",
+    "field_too_large",
+    "handoff_package_invalid",
+    "invalid_arguments",
+    "invalid_json",
+    "manifest_invalid",
+    "manifest_oversize",
+    "manifest_unavailable",
+    "output_too_large",
+    "run_lock_conflict",
+    "runner_internal_error",
+    "secret_like_output",
+    "unexpected_stderr",
+    "upstream_error_code_rejected",
+}
+RECEIPT_COMMAND_ALLOWLIST = {"runner", "validate-config", "healthcheck", "run-daily"}
 CommandRunner = Callable[[list[str], Path, float], tuple[int, bytes, bytes]]
 Clock = Callable[[], datetime]
 Sleeper = Callable[[int], None]
@@ -370,21 +391,47 @@ def _receipt_from_envelope(envelope: Mapping[str, Any], *, data: Mapping[str, An
 def _error_receipt(command: str, code: str, exit_code: int, *, retryable: bool) -> dict[str, Any]:
     receipt = {
         "contract_version": CONTRACT_VERSION,
-        "command": command,
+        "command": _receipt_command(command),
         "ok": False,
         "exit_code": exit_code,
         "retryable": retryable,
-        "error": {"code": code},
+        "error": {"code": _public_error_code(code)},
     }
     receipt.update(RECEIPT_STATUS)
+    try:
+        _assert_no_forbidden_values(receipt)
+    except RunnerError:
+        receipt["command"] = "runner"
+        receipt["error"] = {"code": "secret_like_output"}
+    except Exception:
+        receipt["command"] = "runner"
+        receipt["error"] = {"code": "runner_internal_error"}
     return receipt
 
 
 def _error_code(envelope: Mapping[str, Any]) -> str:
     error = envelope.get("error")
     if isinstance(error, dict) and isinstance(error.get("code"), str) and error["code"]:
-        return error["code"][:96]
+        return _public_error_code(error["code"])
     return "command_failed"
+
+
+def _public_error_code(code: Any) -> str:
+    if not isinstance(code, str) or not code:
+        return "command_failed"
+    if code in ERROR_CODE_ALLOWLIST:
+        return code
+    try:
+        _assert_text_safe(code)
+    except Exception:
+        return "secret_like_output"
+    return "upstream_error_code_rejected"
+
+
+def _receipt_command(command: str) -> str:
+    if command in RECEIPT_COMMAND_ALLOWLIST:
+        return command
+    return "runner"
 
 
 def _project_run_data(data: Any) -> dict[str, Any]:
