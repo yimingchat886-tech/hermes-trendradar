@@ -1,0 +1,6 @@
+{
+  "schema_version": "hermes-content-pipeline-profile.v1",
+  "content_pipeline_root": "/home/USER/trendradar-content-pipeline",
+  "hermes_profile_ref": "file:hermes.v1.4.douyin.sample.json",
+  "media_profile_ref": "file:media.v2.0.sample.json"
+}
