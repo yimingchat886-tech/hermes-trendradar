@@ -3,9 +3,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any
 
 import pytest
 
+from hermes_benchmark.account_registry import benchmark_accounts
+from hermes_benchmark.collection_runner import mediacrawler_douyin_row
 from hermes_benchmark.content_pipeline import (
     ContentPipelineError,
     _read_media_manifest,
@@ -19,12 +22,13 @@ from hermes_benchmark.content_pipeline import (
     validate_request,
     validate_pipeline_profile,
 )
+from hermes_benchmark.mediacrawler_import import import_mediacrawler_rows
 
 
-def _request(scope: dict, *, copy_mode: str | None = None) -> dict:
+def _request(scope: dict, *, copy_mode: str | None = None, account_id: str = "acct_1") -> dict:
     value = {
         "schema_version": "hermes-content-request.v1",
-        "target": {"platform": "douyin", "account_id": "acct_1"},
+        "target": {"platform": "douyin", "account_id": account_id},
         "scope": scope,
     }
     if copy_mode is not None:
@@ -36,10 +40,85 @@ def _profile(root: Path) -> SimpleNamespace:
     return SimpleNamespace(root={"content_pipeline_root": str(root)})
 
 
+def _imported_mediacrawler_row(platform_content_id: str = "7665571270808931626") -> tuple[dict[str, Any], dict[str, Any]]:
+    account: Any = next(account for account in benchmark_accounts() if account.get("platform") == "douyin")
+    row = mediacrawler_douyin_row(
+        {
+            "aweme_id": platform_content_id,
+            "aweme_url": f"https://www.douyin.com/video/{platform_content_id}",
+            "create_time": 1782950400,
+            "last_modify_ts": 1782950500,
+            "desc": "MediaCrawler imported content",
+        },
+        account,
+    )
+    imported = import_mediacrawler_rows([row], [account])
+    assert imported["source_health"] == []
+    return dict(account), dict(imported["contents"][0])
+
+
 def _error_code(callable_, *args, **kwargs) -> str:
     with pytest.raises(ContentPipelineError) as error:
         callable_(*args, **kwargs)
     return error.value.code
+
+
+def test_imported_mediacrawler_row_selects_and_processes_by_canonical_id(tmp_path: Path) -> None:
+    account, row = _imported_mediacrawler_row()
+    canonical_id = "content-douyin-7665571270808931626"
+    assert row["id"] == canonical_id
+    assert row["platform_content_id"] == "7665571270808931626"
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    root = tmp_path / "runs"
+    receipt = execute_content_pipeline(
+        _profile(root),
+        _request({"content_ids": [canonical_id]}, account_id=account["id"]),
+        lambda _target, _scope: [row],
+        lambda _row: b"media",
+        lambda _path: {"text": "canonical transcript"},
+        repo_root=repo,
+    )
+
+    run_dir = root / receipt["run_id"]
+    assert receipt["status"] == "success"
+    assert receipt["items"][0]["content_id"] == canonical_id
+    assert receipt["items"][0]["source"]["platform_content_id"] == "7665571270808931626"
+    assert (run_dir / canonical_id / "transcript.original.md").read_text(encoding="utf-8") == "canonical transcript"
+    assert not (run_dir / "7665571270808931626").exists()
+
+
+@pytest.mark.parametrize(
+    ("row_id_field", "content_id"),
+    [("content_id", "legacy-content-id"), ("platform_content_id", "7665571270808931626")],
+)
+def test_execute_keeps_legacy_content_id_and_platform_id_row_shapes(
+    tmp_path: Path,
+    row_id_field: str,
+    content_id: str,
+) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    row = {
+        "platform": "douyin",
+        "account_id": "acct_1",
+        row_id_field: content_id,
+        "url": f"https://www.douyin.com/video/{content_id}",
+        "published_at": "2026-07-02T00:00:00Z",
+    }
+
+    receipt = execute_content_pipeline(
+        _profile(tmp_path / "runs"),
+        _request({"content_ids": [content_id]}),
+        lambda _target, _scope: [row],
+        lambda _row: b"media",
+        lambda _path: {"text": "legacy transcript"},
+        repo_root=repo,
+    )
+
+    assert receipt["status"] == "success"
+    assert receipt["items"][0]["content_id"] == content_id
 
 
 def test_request_is_strict_and_defaults_copy_mode() -> None:

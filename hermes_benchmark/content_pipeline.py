@@ -630,7 +630,7 @@ def _select_rows(
 
 
 def _row_content_id(row: Mapping[str, Any]) -> str:
-    return str(row.get("content_id") or row.get("platform_content_id") or row.get("id") or "")
+    return str(row.get("id") or row.get("content_id") or row.get("platform_content_id") or "")
 
 
 def _process_item(
@@ -641,7 +641,7 @@ def _process_item(
     media_fetcher: MediaFetcher,
     transcriber: Transcriber,
 ) -> dict[str, Any]:
-    content_id = str(row.get("content_id") or row.get("platform_content_id") or row.get("id"))
+    content_id = _row_content_id(row)
     item_dir = run_dir / content_id
     source, source_error = _source_identity(row, request["target"], content_id)
     if source_error:
@@ -1155,7 +1155,7 @@ def _read_json(path: Path) -> dict[str, Any]:
 
 def _row_sort_key(row: Mapping[str, Any]) -> tuple[float, str]:
     published = _parse_time(row.get("published_at"))
-    return (-(published.timestamp() if published else 0.0), str(row.get("content_id") or row.get("platform_content_id") or row.get("id") or ""))
+    return (-(published.timestamp() if published else 0.0), _row_content_id(row))
 
 
 def _assert_no_symlink_parents(path: Path) -> None:
