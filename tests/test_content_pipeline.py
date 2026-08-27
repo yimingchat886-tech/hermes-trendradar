@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 from types import SimpleNamespace
@@ -11,6 +12,7 @@ from hermes_benchmark.account_registry import benchmark_accounts
 from hermes_benchmark.collection_runner import mediacrawler_douyin_row
 from hermes_benchmark.content_pipeline import (
     ContentPipelineError,
+    _fetch_media_job,
     _read_media_manifest,
     build_mediacrawler_command,
     deterministic_run_id,
@@ -40,18 +42,22 @@ def _profile(root: Path) -> SimpleNamespace:
     return SimpleNamespace(root={"content_pipeline_root": str(root)})
 
 
-def _imported_mediacrawler_row(platform_content_id: str = "7665571270808931626") -> tuple[dict[str, Any], dict[str, Any]]:
+def _imported_mediacrawler_row(
+    platform_content_id: str = "7665571270808931626",
+    *,
+    video_download_url: str | None = None,
+) -> tuple[dict[str, Any], dict[str, Any]]:
     account: Any = next(account for account in benchmark_accounts() if account.get("platform") == "douyin")
-    row = mediacrawler_douyin_row(
-        {
-            "aweme_id": platform_content_id,
-            "aweme_url": f"https://www.douyin.com/video/{platform_content_id}",
-            "create_time": 1782950400,
-            "last_modify_ts": 1782950500,
-            "desc": "MediaCrawler imported content",
-        },
-        account,
-    )
+    raw = {
+        "aweme_id": platform_content_id,
+        "aweme_url": f"https://www.douyin.com/video/{platform_content_id}",
+        "create_time": 1782950400,
+        "last_modify_ts": 1782950500,
+        "desc": "MediaCrawler imported content",
+    }
+    if video_download_url is not None:
+        raw["video_download_url"] = video_download_url
+    row = mediacrawler_douyin_row(raw, account)
     imported = import_mediacrawler_rows([row], [account])
     assert imported["source_health"] == []
     return dict(account), dict(imported["contents"][0])
@@ -61,6 +67,142 @@ def _error_code(callable_, *args, **kwargs) -> str:
     with pytest.raises(ContentPipelineError) as error:
         callable_(*args, **kwargs)
     return error.value.code
+
+
+def _write_media_job_success(profile: dict[str, Any], request: dict[str, Any], media: bytes = b"media") -> Path:
+    job_dir = Path(profile["run_root"]) / request["job_id"]
+    media_path = job_dir / "media" / "download.mp4"
+    media_path.parent.mkdir(parents=True)
+    media_path.write_bytes(media)
+    (job_dir / "media-manifest.private.jsonl").write_text(
+        json.dumps(
+            {
+                "source_id": request["sources"][0]["source_id"],
+                "download_status": "succeeded",
+                "local_media_path": str(media_path),
+                "media_hash": "sha256:" + hashlib.sha256(media).hexdigest(),
+            },
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return media_path
+
+
+def test_imported_mediacrawler_direct_url_uses_direct_backend_without_receipt_leak(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    signed_url = "https://video.example/media.mp4?X-Signature=do-not-leak"
+    account, row = _imported_mediacrawler_row(video_download_url=signed_url)
+    canonical_id = "content-douyin-7665571270808931626"
+    public_url = "https://www.douyin.com/video/7665571270808931626"
+    assert row["video_download_url"] == signed_url
+    assert row["url"] == public_url
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    root = tmp_path / "runs"
+    media_profile: dict[str, Any] = {"run_root": tmp_path / "media-runs", "timeout_seconds": 60, "max_bytes": 1024, "backends": {}}
+    request = _request({"content_ids": [canonical_id]}, account_id=account["id"])
+    run_id = deterministic_run_id(request)
+    captured: list[dict[str, Any]] = []
+
+    def fake_fetch(profile: dict[str, Any], request_path: Path) -> dict[str, Any]:
+        media_request = json.loads(request_path.read_text(encoding="utf-8"))
+        captured.append(media_request)
+        _write_media_job_success(profile, media_request, b"direct media")
+        return {}
+
+    monkeypatch.setattr("hermes_benchmark.content_pipeline.media_jobs.fetch", fake_fetch)
+
+    receipt = execute_content_pipeline(
+        _profile(root),
+        request,
+        lambda _target, _scope: [row],
+        lambda item: _fetch_media_job(media_profile, item, root / run_id / canonical_id, run_id),
+        lambda _path: {"text": "direct transcript"},
+        repo_root=repo,
+    )
+
+    assert captured[0]["sources"] == [
+        {"source_id": captured[0]["sources"][0]["source_id"], "platform": "direct", "url": signed_url}
+    ]
+    assert receipt["status"] == "success"
+    assert receipt["items"][0]["source"]["url"] == public_url
+    assert signed_url not in json.dumps(receipt, ensure_ascii=False, sort_keys=True)
+    assert "do-not-leak" not in json.dumps(receipt, ensure_ascii=False, sort_keys=True)
+
+
+def test_fetch_media_job_without_direct_url_keeps_douyin_page_route(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    public_url = "https://www.douyin.com/video/page-route"
+    row = {
+        "id": "content-douyin-page-route",
+        "platform_content_id": "page-route",
+        "raw_source_url": public_url,
+    }
+    profile: dict[str, Any] = {"run_root": tmp_path / "media-runs", "timeout_seconds": 60, "max_bytes": 1024, "backends": {}}
+    item_dir = tmp_path / "item"
+    item_dir.mkdir()
+    captured: list[dict[str, Any]] = []
+
+    def fake_fetch(profile: dict[str, Any], request_path: Path) -> dict[str, Any]:
+        media_request = json.loads(request_path.read_text(encoding="utf-8"))
+        captured.append(media_request)
+        _write_media_job_success(profile, media_request)
+        return {}
+
+    monkeypatch.setattr("hermes_benchmark.content_pipeline.media_jobs.fetch", fake_fetch)
+
+    _fetch_media_job(profile, row, item_dir, "run-page-route")
+
+    expected_job_id = "pipeline-" + hashlib.sha256(
+        f"run-page-route\0content-douyin-page-route\0{public_url}".encode()
+    ).hexdigest()[:32]
+    assert captured[0]["job_id"] == expected_job_id
+    assert captured[0]["sources"] == [
+        {"source_id": captured[0]["sources"][0]["source_id"], "platform": "douyin", "url": public_url}
+    ]
+
+
+def test_fetch_media_job_direct_url_refresh_uses_distinct_job_ids(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    public_url = "https://www.douyin.com/video/refreshed"
+    row = {
+        "id": "content-douyin-refreshed",
+        "platform_content_id": "refreshed",
+        "raw_source_url": public_url,
+    }
+    profile: dict[str, Any] = {"run_root": tmp_path / "media-runs", "timeout_seconds": 60, "max_bytes": 1024, "backends": {}}
+    item_dir = tmp_path / "item"
+    item_dir.mkdir()
+    captured: list[dict[str, Any]] = []
+
+    def fake_fetch(profile: dict[str, Any], request_path: Path) -> dict[str, Any]:
+        media_request = json.loads(request_path.read_text(encoding="utf-8"))
+        captured.append(media_request)
+        _write_media_job_success(profile, media_request)
+        return {}
+
+    monkeypatch.setattr("hermes_benchmark.content_pipeline.media_jobs.fetch", fake_fetch)
+
+    for suffix in ("first", "second"):
+        _fetch_media_job(
+            profile,
+            row | {"video_download_url": f"https://video.example/refreshed.mp4?signature={suffix}"},
+            item_dir,
+            "run-refreshed",
+        )
+
+    assert [request["sources"][0]["platform"] for request in captured] == ["direct", "direct"]
+    assert captured[0]["sources"][0]["source_id"] == captured[1]["sources"][0]["source_id"]
+    assert captured[0]["job_id"] != captured[1]["job_id"]
 
 
 def test_imported_mediacrawler_row_selects_and_processes_by_canonical_id(tmp_path: Path) -> None:

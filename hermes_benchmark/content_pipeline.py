@@ -491,19 +491,36 @@ def _fetch_media_job(
     canonical_url = _canonical_source_url(url)
     if not content_id or canonical_url is None:
         raise ContentPipelineError("media_source_invalid")
+    direct_url = _collected_direct_media_url(row)
+    media_url = direct_url or canonical_url
+    media_platform = "direct" if direct_url else PLATFORM
     source_id = "source-" + hashlib.sha256(f"{content_id}\0{canonical_url}".encode()).hexdigest()[:24]
-    job_id = "pipeline-" + hashlib.sha256(f"{run_id}\0{content_id}\0{canonical_url}".encode()).hexdigest()[:32]
+    job_key = f"{run_id}\0{content_id}\0{canonical_url}"
+    if direct_url:
+        job_key = f"{job_key}\0direct\0{direct_url}"
+    job_id = "pipeline-" + hashlib.sha256(job_key.encode()).hexdigest()[:32]
     request_path = item_dir / "media-request.private.json"
     _atomic_write_json(
         request_path,
         {
             "schema_version": "2.0",
             "job_id": job_id,
-            "sources": [{"source_id": source_id, "platform": PLATFORM, "url": canonical_url}],
+            "sources": [{"source_id": source_id, "platform": media_platform, "url": media_url}],
         },
     )
     media_jobs.fetch(profile, request_path)
     return _read_media_manifest(profile, job_id, source_id)
+
+
+def _collected_direct_media_url(row: Mapping[str, Any]) -> str | None:
+    url = row.get("video_download_url")
+    if not isinstance(url, str) or not url or any(character.isspace() for character in url):
+        return None
+    url, _ = urldefrag(url)
+    parsed = urlsplit(url)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc or parsed.username is not None or parsed.password is not None:
+        return None
+    return url
 
 
 def _read_media_manifest(

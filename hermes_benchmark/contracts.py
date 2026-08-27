@@ -64,6 +64,7 @@ class BenchmarkContent(TypedDict, total=False):
     topics: list[str]
     comments_summary: str
     raw_source_url: str
+    video_download_url: str
     evidence_state: EvidenceState
     trace: Trace
 
