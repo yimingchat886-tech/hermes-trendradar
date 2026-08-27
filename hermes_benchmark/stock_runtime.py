@@ -13,12 +13,14 @@ import json
 import os
 import re
 import subprocess
+import tempfile
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 from typing import Any
 
+from .content_pipeline import COPY_MODES, PIPELINE_SCHEMA_VERSION, REQUEST_SCHEMA_VERSION, ContentPipelineError, validate_request
 from .handoff import HandoffPackageError, validate_handoff_package
 from .profile import load_profile
 from .runtime_cdp import resolve_runtime_config
@@ -33,13 +35,23 @@ RUN_ID_RE = re.compile(r"^run_[A-Za-z0-9._-]{8,80}$")
 HASH_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
 OPAQUE_REF_RE = re.compile(r"^[A-Za-z0-9._:/#-]{1,160}$")
 REASON_CODE_RE = re.compile(r"^[a-z0-9_-]{1,64}$")
+CONTENT_RUN_ID_RE = re.compile(r"^run-[A-Za-z0-9._-]{8,80}$")
+RAW_DOUYIN_AWEME_ID_RE = re.compile(r"^[0-9]{1,64}$")
+CANONICAL_DOUYIN_CONTENT_ID_RE = re.compile(r"^content-douyin-[A-Za-z0-9][A-Za-z0-9_.:-]{0,128}$")
+HEX_DIGEST_RE = re.compile(r"^[0-9a-f]{64}$")
+CONTENT_FILE_REF_RE = re.compile(r"^[A-Za-z0-9._:/-]{1,240}$")
+CONTENT_ERROR_CODE_RE = re.compile(r"^[A-Za-z0-9_.:-]{1,64}$")
 ABSOLUTE_LOCAL_PATH_RE = re.compile(r"(?<![A-Za-z0-9:/._-])(?:/(?:tmp|var/tmp|home|mnt|Users)/|[A-Za-z]:\\\\)")
+FILE_ABSOLUTE_LOCAL_PATH_RE = re.compile(r"(?i)file:(?:/(?:tmp|var/tmp|home|mnt|Users)/|[A-Za-z]:\\\\)")
 LOCAL_ENDPOINT_RE = re.compile(r"https?://(?:127\.0\.0\.1|localhost)(?::\d+)?", re.IGNORECASE)
 SECRET_VALUE_RE = re.compile(
     r"(?i)(?:\b(?:authorization|bearer|cookie|password|secret|session|token)\b\s*[:=]\s*\S+|\b(?:sk-[A-Za-z0-9_-]{12,}|xox[baprs]-[A-Za-z0-9-]{8,}))"
 )
+CONTENT_PIPELINE_MAX_SCHEMA_ITEMS = 50
 
 JSON_OBJECT_TYPE = {"type": "object", "additionalProperties": True}
+SAFE_ID_SCHEMA = {"type": "string", "pattern": r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,159}$"}
+CONTENT_ID_SCHEMA = {"type": "string", "pattern": r"^(?:[0-9]{1,64}|content-douyin-[A-Za-z0-9][A-Za-z0-9_.:-]{0,128})$"}
 STOCK_TOOL_SCHEMAS: dict[str, dict[str, Any]] = {
     "stock_validate_config": {
         "name": "stock_validate_config",
@@ -58,6 +70,35 @@ STOCK_TOOL_SCHEMAS: dict[str, dict[str, Any]] = {
             "type": "object",
             "properties": {"date": {"type": "string", "description": "Run date in YYYY-MM-DD format."}},
             "required": ["date"],
+            "additionalProperties": False,
+        },
+    },
+    "stock_run_content_pipeline": {
+        "name": "stock_run_content_pipeline",
+        "description": "Run the fixed local TrendRadar content pipeline for a configured Douyin account with one scope selector.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "account_id": SAFE_ID_SCHEMA,
+                "content_ids": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": CONTENT_PIPELINE_MAX_SCHEMA_ITEMS,
+                    "uniqueItems": True,
+                    "items": CONTENT_ID_SCHEMA,
+                },
+                "published_since": {"type": "string", "minLength": 1, "maxLength": 64},
+                "max_items": {"type": "integer", "minimum": 1, "maximum": CONTENT_PIPELINE_MAX_SCHEMA_ITEMS},
+                "all_visible": {"type": "boolean", "const": True},
+                "copy_mode": {"type": "string", "enum": sorted(COPY_MODES)},
+            },
+            "required": ["account_id", "copy_mode"],
+            "oneOf": [
+                {"required": ["content_ids"], "not": {"anyOf": [{"required": ["published_since"]}, {"required": ["max_items"]}, {"required": ["all_visible"]}]}},
+                {"required": ["published_since"], "not": {"anyOf": [{"required": ["content_ids"]}, {"required": ["max_items"]}, {"required": ["all_visible"]}]}},
+                {"required": ["max_items"], "not": {"anyOf": [{"required": ["content_ids"]}, {"required": ["published_since"]}, {"required": ["all_visible"]}]}},
+                {"required": ["all_visible"], "not": {"anyOf": [{"required": ["content_ids"]}, {"required": ["published_since"]}, {"required": ["max_items"]}]}},
+            ],
             "additionalProperties": False,
         },
     },
@@ -149,6 +190,18 @@ COMMAND_DATA_ALLOWLIST: dict[str, tuple[str, ...]] = {
         "artifact_refs",
         "errors",
     ),
+    "content-pipeline": (
+        "schema_version",
+        "run_id",
+        "request_digest",
+        "status",
+        "copy_mode",
+        "summary",
+        "items",
+        "error_code",
+        "artifact_refs",
+        "replayed",
+    ),
     "record-analysis-result": (
         "schema_version",
         "analysis_result_id",
@@ -204,9 +257,10 @@ PACKAGE_CONTENT_FIELDS = (
 class StockRuntimeError(ValueError):
     """Fail-closed adapter error with a safe, bounded public message."""
 
-    def __init__(self, code: str, message: str, *, retryable: bool = False):
+    def __init__(self, code: str, message: str, *, retryable: bool = False, data: Mapping[str, Any] | None = None):
         self.code = code
         self.retryable = retryable
+        self.data = dict(data) if data is not None else None
         super().__init__(_safe_message(message))
 
 
@@ -215,10 +269,13 @@ class StockRuntimeSettings:
     executable: tuple[str, ...] = ("hermes-benchmark",)
     cwd: Path = Path(".")
     profile_ref: Path = Path("profiles/local/hermes.v1.4.douyin.local.json")
+    content_pipeline_profile_ref: Path | None = None
     storage_root: Path | None = None
     timeout_seconds: float = 60.0
+    content_pipeline_timeout_seconds: float = 1800.0
     stdout_cap_bytes: int = 64 * 1024
     stderr_cap_bytes: int = 16 * 1024
+    content_request_cap_bytes: int = 16 * 1024
     package_cap_bytes: int = 256 * 1024
     result_cap_bytes: int = 64 * 1024
     digest_cap_bytes: int = 256 * 1024
@@ -254,15 +311,19 @@ def settings_from_hermes_config() -> StockRuntimeSettings:
     profile_value = raw.get("profile_ref") or raw.get("profile")
     if not profile_value:
         raise StockRuntimeError("stock_runtime_config_invalid", "stock_runtime.profile_ref is required")
+    content_profile_value = raw.get("content_pipeline_profile_ref") or raw.get("content_pipeline_profile")
     storage_value = raw.get("storage_root")
     return StockRuntimeSettings(
         executable=executable,
         cwd=cwd,
         profile_ref=Path(str(profile_value)).expanduser(),
+        content_pipeline_profile_ref=Path(str(content_profile_value)).expanduser() if content_profile_value else None,
         storage_root=Path(str(storage_value)).expanduser() if storage_value else None,
         timeout_seconds=float(raw.get("timeout_seconds") or 60),
+        content_pipeline_timeout_seconds=float(raw.get("content_pipeline_timeout_seconds") or 1800),
         stdout_cap_bytes=int(raw.get("stdout_cap_bytes") or 64 * 1024),
         stderr_cap_bytes=int(raw.get("stderr_cap_bytes") or 16 * 1024),
+        content_request_cap_bytes=int(raw.get("content_request_cap_bytes") or 16 * 1024),
         package_cap_bytes=int(raw.get("package_cap_bytes") or 256 * 1024),
         result_cap_bytes=int(raw.get("result_cap_bytes") or 64 * 1024),
         digest_cap_bytes=int(raw.get("digest_cap_bytes") or 256 * 1024),
@@ -290,6 +351,48 @@ def stock_run_daily(settings: StockRuntimeSettings, run_date: str) -> dict[str, 
         return _call_cli(settings, "run-daily", ("--date", run_date, "--analysis-mode", "hermes-handoff"))
 
     return _run_tool("stock_run_daily", action)
+
+
+def stock_run_content_pipeline(
+    settings: StockRuntimeSettings,
+    *,
+    account_id: str,
+    copy_mode: str,
+    content_ids: Any = None,
+    published_since: Any = None,
+    max_items: Any = None,
+    all_visible: Any = None,
+) -> dict[str, Any]:
+    def action() -> dict[str, Any]:
+        if settings.content_pipeline_profile_ref is None:
+            raise StockRuntimeError("stock_runtime_config_invalid", "stock_runtime.content_pipeline_profile_ref is required")
+        request = _content_pipeline_request(
+            settings,
+            account_id=account_id,
+            copy_mode=copy_mode,
+            content_ids=content_ids,
+            published_since=published_since,
+            max_items=max_items,
+            all_visible=all_visible,
+        )
+        payload = _canonical_json_bytes(request)
+        if len(payload) > settings.content_request_cap_bytes:
+            raise StockRuntimeError("content_request_too_large", "content pipeline request exceeds the adapter size cap")
+        with tempfile.TemporaryDirectory(prefix="stock-content-request-") as temp_dir:
+            request_path = Path(temp_dir) / "request.json"
+            descriptor = os.open(request_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            with os.fdopen(descriptor, "wb") as stream:
+                stream.write(payload)
+            return _call_cli(
+                settings,
+                "content-pipeline",
+                ("--request", str(request_path)),
+                profile_ref=settings.content_pipeline_profile_ref,
+                include_error_data=True,
+                timeout_seconds=settings.content_pipeline_timeout_seconds,
+            )
+
+    return _run_tool("stock_run_content_pipeline", action)
 
 
 def stock_read_analysis_package(settings: StockRuntimeSettings, package_ref: str) -> dict[str, Any]:
@@ -421,26 +524,104 @@ def stock_record_feedback(
     return _run_tool("stock_record_feedback", action)
 
 
+def _normalize_content_pipeline_content_ids(content_ids: Sequence[Any]) -> list[str]:
+    normalized: list[str] = []
+    for item in content_ids:
+        if not isinstance(item, str):
+            raise StockRuntimeError("content_request_content_ids", "content_ids must be raw aweme ids or canonical Douyin content ids")
+        if RAW_DOUYIN_AWEME_ID_RE.fullmatch(item):
+            normalized.append(f"content-douyin-{item}")
+        elif CANONICAL_DOUYIN_CONTENT_ID_RE.fullmatch(item):
+            normalized.append(item)
+        else:
+            raise StockRuntimeError("content_request_content_ids", "content_ids must be raw aweme ids or canonical Douyin content ids")
+    return normalized
+
+
+def _content_pipeline_request(
+    settings: StockRuntimeSettings,
+    *,
+    account_id: str,
+    copy_mode: str,
+    content_ids: Any,
+    published_since: Any,
+    max_items: Any,
+    all_visible: Any,
+) -> dict[str, Any]:
+    scope: dict[str, Any] = {}
+    active: list[str] = []
+    if content_ids is not None:
+        if not isinstance(content_ids, list) or not content_ids:
+            raise StockRuntimeError("content_request_content_ids", "content_ids must be a non-empty list of opaque ids")
+        if len(content_ids) > settings.max_package_contents:
+            raise StockRuntimeError("content_request_too_large", "content_ids exceeds the adapter item cap")
+        scope["content_ids"] = _normalize_content_pipeline_content_ids(content_ids)
+        active.append("content_ids")
+    if published_since is not None:
+        if not isinstance(published_since, str) or not published_since:
+            raise StockRuntimeError("content_request_published_since", "published_since must be a timestamp string")
+        scope["published_since"] = published_since
+        active.append("published_since")
+    if max_items is not None:
+        if isinstance(max_items, bool) or not isinstance(max_items, int) or max_items < 1:
+            raise StockRuntimeError("content_request_max_items", "max_items must be a positive integer")
+        if max_items > settings.max_package_contents:
+            raise StockRuntimeError("content_request_too_large", "max_items exceeds the adapter item cap")
+        scope["max_items"] = max_items
+        active.append("max_items")
+    if all_visible is not None:
+        if all_visible is not True:
+            raise StockRuntimeError("content_request_scope", "all_visible must be true when supplied")
+        scope["all_visible"] = True
+        active.append("all_visible")
+    if not active:
+        raise StockRuntimeError("content_pipeline_scope_selector_required", "exactly one content pipeline scope selector is required")
+    if len(active) != 1:
+        raise StockRuntimeError("content_pipeline_scope_selector_conflict", "exactly one content pipeline scope selector is allowed")
+
+    try:
+        return validate_request(
+            {
+                "schema_version": REQUEST_SCHEMA_VERSION,
+                "target": {"platform": "douyin", "account_id": account_id},
+                "scope": scope,
+                "copy_mode": copy_mode,
+            }
+        )
+    except ContentPipelineError as exc:
+        raise StockRuntimeError(exc.code, str(exc)) from exc
+
+
 def _run_tool(tool: str, action: Callable[[], dict[str, Any]]) -> dict[str, Any]:
     try:
         data = action()
         _assert_no_forbidden_values(data)
         return {"ok": True, "tool": tool, "data": data, "error": None, "retryable": False}
     except StockRuntimeError as exc:
-        return {"ok": False, "tool": tool, "data": None, "error": {"code": exc.code, "message": str(exc)}, "retryable": exc.retryable}
+        if exc.data is not None:
+            _assert_no_forbidden_values(exc.data)
+        return {"ok": False, "tool": tool, "data": exc.data, "error": {"code": exc.code, "message": str(exc)}, "retryable": exc.retryable}
 
 
-def _call_cli(settings: StockRuntimeSettings, command: str, extra_args: Sequence[str]) -> dict[str, Any]:
+def _call_cli(
+    settings: StockRuntimeSettings,
+    command: str,
+    extra_args: Sequence[str],
+    *,
+    profile_ref: Path | None = None,
+    include_error_data: bool = False,
+    timeout_seconds: float | None = None,
+) -> dict[str, Any]:
     if not settings.executable:
         raise StockRuntimeError("stock_runtime_config_invalid", "stock runtime executable is not configured")
     cwd = settings.cwd.resolve()
     if not cwd.exists() or not cwd.is_dir():
         raise StockRuntimeError("stock_runtime_config_invalid", "stock runtime cwd is not available")
-    argv = [*settings.executable, command, "--profile", str(settings.profile_ref), *extra_args, "--json"]
+    argv = [*settings.executable, command, "--profile", str(profile_ref or settings.profile_ref), *extra_args, "--json"]
     env = {name: os.environ[name] for name in settings.env_allowlist if name in os.environ}
     runner = settings.runner or _subprocess_runner
     try:
-        returncode, stdout, stderr = runner(tuple(str(item) for item in argv), cwd, env, settings.timeout_seconds)
+        returncode, stdout, stderr = runner(tuple(str(item) for item in argv), cwd, env, settings.timeout_seconds if timeout_seconds is None else timeout_seconds)
     except subprocess.TimeoutExpired as exc:
         raise StockRuntimeError("stock_runtime_timeout", "Hermes stock command timed out", retryable=True) from exc
     except OSError as exc:
@@ -463,11 +644,15 @@ def _call_cli(settings: StockRuntimeSettings, command: str, extra_args: Sequence
         error: Mapping[str, Any] = raw_error if isinstance(raw_error, dict) else {}
         code = str(error.get("code") or "cli_error")
         message = str(error.get("message") or "Hermes stock command failed")
-        raise StockRuntimeError(code, message, retryable=bool(envelope.get("retryable")))
+        error_data = None
+        raw_data = envelope.get("data")
+        if include_error_data and isinstance(raw_data, dict):
+            error_data = _allowlisted_data(command, raw_data, settings=settings)
+        raise StockRuntimeError(code, message, retryable=bool(envelope.get("retryable")), data=error_data)
     data = envelope.get("data")
     if not isinstance(data, dict):
         raise StockRuntimeError("contract_mismatch", "Hermes stock command data must be an object")
-    return _allowlisted_data(command, data)
+    return _allowlisted_data(command, data, settings=settings)
 
 
 def _subprocess_runner(argv: Sequence[str], cwd: Path, env: Mapping[str, str], timeout_seconds: float) -> tuple[int, bytes, bytes]:
@@ -497,11 +682,129 @@ def _validate_envelope(envelope: Mapping[str, Any], command: str, returncode: in
         raise StockRuntimeError("contract_mismatch", "Hermes stock failure exit returned a successful envelope")
 
 
-def _allowlisted_data(command: str, data: Mapping[str, Any]) -> dict[str, Any]:
+def _allowlisted_data(command: str, data: Mapping[str, Any], *, settings: StockRuntimeSettings | None = None) -> dict[str, Any]:
+    if command == "content-pipeline":
+        return _allowlisted_content_pipeline_data(data, settings=settings)
     fields = COMMAND_DATA_ALLOWLIST.get(command)
     if fields is None:
         raise StockRuntimeError("contract_mismatch", "Hermes stock command is not allowlisted")
     return {field: data[field] for field in fields if field in data}
+
+
+def _allowlisted_content_pipeline_data(data: Mapping[str, Any], *, settings: StockRuntimeSettings | None = None) -> dict[str, Any]:
+    if data.get("schema_version") != PIPELINE_SCHEMA_VERSION:
+        raise StockRuntimeError("contract_mismatch", "content pipeline receipt schema did not match")
+    run_id = _content_run_id(data.get("run_id"))
+    request_digest = data.get("request_digest")
+    if not isinstance(request_digest, str) or not HEX_DIGEST_RE.fullmatch(request_digest):
+        raise StockRuntimeError("contract_mismatch", "content pipeline receipt digest is invalid")
+    status = data.get("status")
+    if status not in {"success", "partial", "no_op", "blocked"}:
+        raise StockRuntimeError("contract_mismatch", "content pipeline receipt status is invalid")
+    copy_mode = data.get("copy_mode")
+    if copy_mode not in COPY_MODES:
+        raise StockRuntimeError("contract_mismatch", "content pipeline receipt copy_mode is invalid")
+    raw_items = data.get("items")
+    if not isinstance(raw_items, list):
+        raise StockRuntimeError("contract_mismatch", "content pipeline receipt items must be a list")
+    max_items = settings.max_package_contents if settings is not None else CONTENT_PIPELINE_MAX_SCHEMA_ITEMS
+    if len(raw_items) > max_items:
+        raise StockRuntimeError("content_receipt_too_large", "content pipeline receipt contains too many items")
+    items = [_allowlisted_content_pipeline_item(item, run_id) for item in raw_items]
+    error_code = _optional_content_error_code(data.get("error_code"))
+    projected = {
+        "schema_version": PIPELINE_SCHEMA_VERSION,
+        "run_id": run_id,
+        "request_digest": request_digest,
+        "status": status,
+        "copy_mode": copy_mode,
+        "summary": _content_pipeline_summary(data.get("summary")),
+        "items": items,
+        "error_code": error_code,
+        "artifact_refs": _content_artifact_refs(data.get("artifact_refs"), run_id, item_prefix=None),
+        "replayed": _content_replayed(data.get("replayed")),
+    }
+    _assert_no_forbidden_values(projected)
+    return projected
+
+
+def _allowlisted_content_pipeline_item(value: Any, run_id: str) -> dict[str, Any]:
+    if not isinstance(value, Mapping):
+        raise StockRuntimeError("contract_mismatch", "content pipeline item must be an object")
+    content_id = value.get("content_id")
+    if not isinstance(content_id, str) or not SAFE_ID_RE.fullmatch(content_id):
+        raise StockRuntimeError("contract_mismatch", "content pipeline item content_id is invalid")
+    stage = value.get("stage")
+    status = value.get("status")
+    if stage not in {"completed", "blocked"} or status not in {"completed", "blocked"} or stage != status:
+        raise StockRuntimeError("contract_mismatch", "content pipeline item status is invalid")
+    return {
+        "content_id": content_id,
+        "stage": stage,
+        "status": status,
+        "artifact_refs": _content_artifact_refs(value.get("artifact_refs"), run_id, item_prefix=content_id),
+        "media_sha256": _optional_hash(value.get("media_sha256"), "media_sha256"),
+        "transcript_original_sha256": _optional_hash(value.get("transcript_original_sha256"), "transcript_original_sha256"),
+        "error_code": _optional_content_error_code(value.get("error_code")),
+    }
+
+
+def _content_pipeline_summary(value: Any) -> dict[str, int]:
+    if not isinstance(value, Mapping):
+        raise StockRuntimeError("contract_mismatch", "content pipeline summary must be an object")
+    projected: dict[str, int] = {}
+    for field in ("selected", "completed", "blocked"):
+        raw = value.get(field)
+        if isinstance(raw, bool) or not isinstance(raw, int) or raw < 0 or raw > 1_000_000:
+            raise StockRuntimeError("contract_mismatch", "content pipeline summary count is invalid")
+        projected[field] = raw
+    return projected
+
+
+def _content_artifact_refs(value: Any, run_id: str, *, item_prefix: str | None) -> list[str]:
+    if not isinstance(value, list) or len(value) > 20:
+        raise StockRuntimeError("contract_mismatch", "content pipeline artifact_refs are invalid")
+    refs: list[str] = []
+    for ref in value:
+        if not isinstance(ref, str) or not CONTENT_FILE_REF_RE.fullmatch(ref):
+            raise StockRuntimeError("contract_mismatch", "content pipeline artifact ref is invalid")
+        rel = _relative_file_ref(ref, "content pipeline artifact ref")
+        if not rel.parts or rel.parts[0] != run_id:
+            raise StockRuntimeError("ref_out_of_bounds", "content pipeline artifact ref must be scoped to the content run")
+        if item_prefix is not None and (len(rel.parts) < 2 or rel.parts[1] != item_prefix):
+            raise StockRuntimeError("ref_out_of_bounds", "content pipeline item artifact ref must be scoped to the content item")
+        refs.append(ref)
+    if len(set(refs)) != len(refs):
+        raise StockRuntimeError("contract_mismatch", "content pipeline artifact refs must be unique")
+    return refs
+
+
+def _content_run_id(value: Any) -> str:
+    if not isinstance(value, str) or not CONTENT_RUN_ID_RE.fullmatch(value):
+        raise StockRuntimeError("contract_mismatch", "content pipeline run_id is invalid")
+    return value
+
+
+def _optional_hash(value: Any, field: str) -> str | None:
+    if value is None:
+        return None
+    if not isinstance(value, str) or not HASH_RE.fullmatch(value):
+        raise StockRuntimeError("contract_mismatch", f"content pipeline {field} is invalid")
+    return value
+
+
+def _optional_content_error_code(value: Any) -> str | None:
+    if value is None:
+        return None
+    if not isinstance(value, str) or not CONTENT_ERROR_CODE_RE.fullmatch(value):
+        raise StockRuntimeError("contract_mismatch", "content pipeline error_code is invalid")
+    return value
+
+
+def _content_replayed(value: Any) -> bool:
+    if not isinstance(value, bool):
+        raise StockRuntimeError("contract_mismatch", "content pipeline replay flag is invalid")
+    return value
 
 
 def _load_package(settings: StockRuntimeSettings, package_ref: str) -> dict[str, Any]:
@@ -678,14 +981,14 @@ def _assert_no_forbidden_values(value: Any) -> None:
 
 
 def _assert_text_safe(value: str) -> None:
-    if ABSOLUTE_LOCAL_PATH_RE.search(value) or LOCAL_ENDPOINT_RE.search(value) or SECRET_VALUE_RE.search(value):
+    if ABSOLUTE_LOCAL_PATH_RE.search(value) or FILE_ABSOLUTE_LOCAL_PATH_RE.search(value) or LOCAL_ENDPOINT_RE.search(value) or SECRET_VALUE_RE.search(value):
         raise StockRuntimeError("secret_like_output", "adapter output contained a forbidden local path, endpoint, or secret-like value")
     if len(value) > 32_000:
         raise StockRuntimeError("field_too_large", "adapter output field exceeded the safety cap")
 
 
 def _safe_message(message: str) -> str:
-    if not message or ABSOLUTE_LOCAL_PATH_RE.search(message) or LOCAL_ENDPOINT_RE.search(message) or SECRET_VALUE_RE.search(message):
+    if not message or ABSOLUTE_LOCAL_PATH_RE.search(message) or FILE_ABSOLUTE_LOCAL_PATH_RE.search(message) or LOCAL_ENDPOINT_RE.search(message) or SECRET_VALUE_RE.search(message):
         return "stock_runtime failed closed"
     return message[:240]
 

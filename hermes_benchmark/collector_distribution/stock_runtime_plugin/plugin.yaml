@@ -5,6 +5,7 @@ provides_tools:
   - stock_validate_config
   - stock_healthcheck
   - stock_run_daily
+  - stock_run_content_pipeline
   - stock_read_analysis_package
   - stock_record_analysis_result
   - stock_build_internal_digest

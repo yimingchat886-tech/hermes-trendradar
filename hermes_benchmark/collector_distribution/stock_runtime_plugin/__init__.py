@@ -12,9 +12,16 @@ _OPERATOR_REPO_ROOT = Path("/home/jym/workspace/Hermes trendradar")
 _OPERATOR_PACKAGE = "hermes_benchmark"
 
 
-def _bootstrap_repo_source(repo_root: Path = _OPERATOR_REPO_ROOT) -> Path:
+def _default_repo_root() -> Path:
+    source_root = Path(__file__).resolve().parents[3]
+    if (source_root / _OPERATOR_PACKAGE / "__init__.py").is_file():
+        return source_root
+    return _OPERATOR_REPO_ROOT
+
+
+def _bootstrap_repo_source(repo_root: Path | None = None) -> Path:
     """Make the fixed operator-owned repo source importable, or fail closed."""
-    root = Path(repo_root)
+    root = Path(repo_root or _default_repo_root())
     package_root = root / _OPERATOR_PACKAGE
     if not root.is_dir() or not package_root.is_dir() or not (package_root / "__init__.py").is_file():
         raise ModuleNotFoundError(f"No module named '{_OPERATOR_PACKAGE}' from fixed repo source")
@@ -36,6 +43,7 @@ from hermes_benchmark.stock_runtime import (  # noqa: E402 - requires fixed sys.
     stock_read_analysis_package,
     stock_record_analysis_result,
     stock_record_feedback,
+    stock_run_content_pipeline,
     stock_run_daily,
     stock_validate_config,
 )
@@ -65,6 +73,25 @@ def register(ctx: Any) -> None:
         handler=_handler("stock_run_daily", lambda args: stock_run_daily(settings_from_hermes_config(), str(args.get("date") or ""))),
         description=STOCK_TOOL_SCHEMAS["stock_run_daily"]["description"],
         emoji="📈",
+    )
+    ctx.register_tool(
+        name="stock_run_content_pipeline",
+        toolset="stock_runtime",
+        schema=STOCK_TOOL_SCHEMAS["stock_run_content_pipeline"],
+        handler=_handler(
+            "stock_run_content_pipeline",
+            lambda args: stock_run_content_pipeline(
+                settings_from_hermes_config(),
+                account_id=str(args.get("account_id") or ""),
+                copy_mode=str(args.get("copy_mode") or ""),
+                content_ids=args.get("content_ids"),
+                published_since=args.get("published_since"),
+                max_items=args.get("max_items"),
+                all_visible=args.get("all_visible"),
+            ),
+        ),
+        description=STOCK_TOOL_SCHEMAS["stock_run_content_pipeline"]["description"],
+        emoji="🎬",
     )
     ctx.register_tool(
         name="stock_read_analysis_package",

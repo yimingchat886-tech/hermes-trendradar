@@ -21,6 +21,7 @@ REPO_PATH = "/home/jym/workspace/Hermes trendradar"
 EXPECTED_EXECUTABLE = "/home/jym/.local/bin/hermes-benchmark"
 OLD_REPO_PATH = "/home/jym/workspace/Hermes stock"
 PREFILL_PATH = "/home/jym/.hermes/profiles/collector/prefill/collector-prefill.json"
+CONTENT_PIPELINE_PROFILE = f"{REPO_PATH}/profiles/local/hermes-content-pipeline.v1.local.json"
 EXPECTED_TOOLS = tuple(STOCK_TOOL_SCHEMAS)
 GENERIC_DISABLED_TOOLSETS = {
     "terminal",
@@ -171,14 +172,17 @@ def test_collector_runtime_fragment_uses_trendradar_paths_and_stock_runtime_only
     assert Path(config["stock_runtime"]["executable"][0]).is_absolute()
     assert config["stock_runtime"]["cwd"] == REPO_PATH
     assert config["stock_runtime"]["profile_ref"] == f"{REPO_PATH}/profiles/local/hermes.v1.4.douyin.local.json"
+    assert config["stock_runtime"]["content_pipeline_profile_ref"] == CONTENT_PIPELINE_PROFILE
+    assert config["stock_runtime"]["timeout_seconds"] == 60
+    assert config["stock_runtime"]["content_pipeline_timeout_seconds"] == 1800
 
 
-def test_stock_runtime_plugin_manifest_matches_the_seven_schema_tools() -> None:
+def test_stock_runtime_plugin_manifest_matches_the_eight_schema_tools() -> None:
     manifest = _parse_simple_yaml((DIST_ROOT / "stock_runtime_plugin" / "plugin.yaml").read_text(encoding="utf-8"))
 
     assert manifest["name"] == "stock-runtime"
     assert tuple(manifest["provides_tools"]) == EXPECTED_TOOLS
-    assert len(manifest["provides_tools"]) == 7
+    assert len(manifest["provides_tools"]) == 8
     assert all(tool.startswith("stock_") for tool in manifest["provides_tools"])
 
     config_text = (PROFILE_ROOT / "config.template.yaml").read_text(encoding="utf-8")
@@ -188,6 +192,8 @@ def test_stock_runtime_plugin_manifest_matches_the_seven_schema_tools() -> None:
     for tool in EXPECTED_TOOLS:
         assert f"`{tool}`" in readme
         assert tool in prefill
+    assert CONTENT_PIPELINE_PROFILE in config_text
+    assert "content_pipeline_timeout_seconds: 1800" in config_text
 
 
 def test_stock_runtime_distribution_plugin_loads_from_non_repo_cwd_with_isolated_sys_path(tmp_path: Path) -> None:
@@ -331,9 +337,42 @@ def test_distribution_package_data_includes_profile_templates_without_repo_soul(
         "profile/config.template.yaml",
         "profile/env.guardrails.example",
         "profile/prefill/collector-prefill.json",
+        "profile/skills/trendradar-content-download/SKILL.md",
     }
     assert "profile/SOUL.md" not in collector_assets
     assert package_data["hermes_benchmark.collector_distribution.stock_runtime_plugin"] == ["plugin.yaml"]
+
+
+def test_distribution_includes_collector_local_content_download_skill() -> None:
+    skill_path = PROFILE_ROOT / "skills" / "trendradar-content-download" / "SKILL.md"
+    text = skill_path.read_text(encoding="utf-8")
+    frontmatter_text, body = text.split("---", 2)[1:]
+    frontmatter = _parse_simple_yaml(frontmatter_text)
+    normalized = body.lower()
+
+    assert set(frontmatter) == {"name", "description"}
+    assert frontmatter["name"] == "trendradar-content-download"
+    assert "stock_run_content_pipeline" in body
+    for required in (
+        "configured douyin accounts",
+        "content ids",
+        "raw numeric aweme",
+        "adapter normalizes raw numeric ids",
+        "once per single video id",
+        "do not batch an ordered list",
+        "all-visible",
+        "sequentially",
+        "operator-pinned local pipeline roots",
+        "never upload to feishu/wiki/external channels",
+        "structured receipts",
+        "artifact refs",
+        "avoid direct wrapper",
+        "agent reach",
+        "yt-dlp",
+        "asr commands",
+        "never ask for cookie contents",
+    ):
+        assert required in normalized
 
 
 def test_distribution_docs_capture_deployment_validation_and_deferred_boundaries() -> None:
@@ -352,6 +391,8 @@ def test_distribution_docs_capture_deployment_validation_and_deferred_boundaries
     assert "start gateway" in readme
     assert "platform login" in readme
     assert "structured read-only" in readme
+    assert "1800-second timeout" in readme
+    assert "normalizes raw numeric douyin aweme ids" in readme.lower()
     assert "Case 4D" in readme
     assert "Case 4B" in readme
     assert "~/.hermes/profiles/collector/SOUL.md" in readme

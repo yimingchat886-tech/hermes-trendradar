@@ -45,12 +45,15 @@ stock_runtime:
     - /home/jym/.local/bin/hermes-benchmark
   cwd: /home/jym/workspace/Hermes trendradar
   profile_ref: /home/jym/workspace/Hermes trendradar/profiles/local/hermes.v1.4.douyin.local.json
+  content_pipeline_profile_ref: /home/jym/workspace/Hermes trendradar/profiles/local/hermes-content-pipeline.v1.local.json
   # storage_root may be omitted; the plugin resolves it from the fixed profile.
   # Keep it explicit in a deployed collector only when the operator wants an extra pin.
   # storage_root: /home/jym/workspace/_external/hermes-trendradar-runs
   timeout_seconds: 60
+  content_pipeline_timeout_seconds: 1800
   stdout_cap_bytes: 65536
   stderr_cap_bytes: 16384
+  content_request_cap_bytes: 16384
   package_cap_bytes: 262144
   result_cap_bytes: 65536
   digest_cap_bytes: 262144

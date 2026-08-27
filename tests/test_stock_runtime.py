@@ -4,6 +4,7 @@ import json
 import sys
 import tempfile
 import tomllib
+import types
 from collections.abc import Mapping, Sequence
 from importlib import resources
 from pathlib import Path
@@ -15,6 +16,8 @@ from hermes_benchmark.stock_runtime import (
     STOCK_TOOL_SCHEMAS,
     StockRuntimeError,
     StockRuntimeSettings,
+    settings_from_hermes_config,
+    stock_run_content_pipeline,
     stock_read_analysis_package,
     stock_record_analysis_result,
     stock_run_daily,
@@ -29,11 +32,57 @@ from hermes_benchmark.stock_runtime_self_check import (
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_stock_runtime_uses_fixed_argv_and_minimal_env_without_raw_process_details() -> None:
-    calls = []
+def _content_pipeline_receipt(run_id: str = "run-abcdef1234567890abcdef12") -> dict[str, object]:
+    return {
+        "schema_version": "hermes-content-pipeline.v1",
+        "run_id": run_id,
+        "request_digest": "a" * 64,
+        "status": "success",
+        "copy_mode": "original",
+        "target": {"platform": "douyin", "account_id": "acct_1"},
+        "scope": {"content_ids": ["content-douyin-123"], "published_since": None, "max_items": None, "all_visible": False},
+        "summary": {"selected": 1, "completed": 1, "blocked": 0},
+        "items": [
+            {
+                "content_id": "content-douyin-123",
+                "source": {"url": "https://www.douyin.com/video/123"},
+                "stage": "completed",
+                "status": "completed",
+                "artifact_refs": [
+                    f"file:{run_id}/content-douyin-123/media/original.mp4",
+                    f"file:{run_id}/content-douyin-123/transcript.original.md",
+                ],
+                "media_sha256": "sha256:" + "b" * 64,
+                "transcript_original_sha256": "sha256:" + "c" * 64,
+                "error_code": None,
+            }
+        ],
+        "error_code": None,
+        "artifact_refs": [f"file:{run_id}/receipt.json"],
+        "replayed": False,
+        "stdout": "raw process detail must be stripped",
+    }
 
-    def runner(argv: Sequence[str], cwd: Path, env: Mapping[str, str], _timeout: float) -> tuple[int, bytes, bytes]:
-        calls.append((list(argv), cwd, dict(env)))
+
+def _content_pipeline_envelope(data: dict[str, object] | None = None, *, ok: bool = True, exit_code: int = 0) -> bytes:
+    payload = {
+        "contract_version": "2.0",
+        "ok": ok,
+        "command": "content-pipeline",
+        "mode": "runtime",
+        "data": _content_pipeline_receipt() if data is None else data,
+        "error": None if ok else {"code": "content_pipeline_blocked", "message": "content pipeline blocked"},
+        "exit_code": exit_code,
+        "retryable": False,
+    }
+    return json.dumps(payload).encode()
+
+
+def test_stock_runtime_uses_fixed_argv_and_minimal_env_without_raw_process_details() -> None:
+    calls: list[tuple[list[str], Path, dict[str, str], float]] = []
+
+    def runner(argv: Sequence[str], cwd: Path, env: Mapping[str, str], timeout: float) -> tuple[int, bytes, bytes]:
+        calls.append((list(argv), cwd, dict(env), timeout))
         envelope = {
             "contract_version": "2.0",
             "ok": True,
@@ -60,6 +109,7 @@ def test_stock_runtime_uses_fixed_argv_and_minimal_env_without_raw_process_detai
             cwd=Path(tmp),
             profile_ref=Path(tmp) / "profile.json",
             storage_root=Path(tmp) / "storage",
+            timeout_seconds=12,
             env_allowlist=("PATH",),
             runner=runner,
         )
@@ -69,10 +119,302 @@ def test_stock_runtime_uses_fixed_argv_and_minimal_env_without_raw_process_detai
     assert calls[0][0] == ["hermes-benchmark", "validate-config", "--profile", str(settings.profile_ref), "--json"]
     assert calls[0][1] == Path(tmp).resolve()
     assert set(calls[0][2]).issubset({"PATH"})
+    assert calls[0][3] == 12
     encoded = json.dumps(result, ensure_ascii=False, sort_keys=True)
     assert "command" not in encoded
     assert "stdout" not in encoded
     assert "stderr" not in encoded
+
+
+def test_stock_run_content_pipeline_builds_canonical_request_with_fixed_argv_timeout_and_cleans_request_file() -> None:
+    calls: list[tuple[list[str], Path, dict[str, str], float]] = []
+    captured: dict[str, object] = {}
+
+    def runner(argv: Sequence[str], cwd: Path, env: Mapping[str, str], timeout: float) -> tuple[int, bytes, bytes]:
+        calls.append((list(argv), cwd, dict(env), timeout))
+        request_path = Path(argv[5])
+        captured["request_path"] = request_path
+        captured["request"] = json.loads(request_path.read_text(encoding="utf-8"))
+        return 0, _content_pipeline_envelope(), b""
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        settings = StockRuntimeSettings(
+            executable=("hermes-benchmark",),
+            cwd=root,
+            profile_ref=root / "stock-profile.json",
+            content_pipeline_profile_ref=root / "content-pipeline-profile.json",
+            storage_root=root / "storage",
+            timeout_seconds=12,
+            env_allowlist=("PATH",),
+            runner=runner,
+        )
+        result = stock_run_content_pipeline(
+            settings,
+            account_id="acct_1",
+            copy_mode="original",
+            content_ids=["0007665571270808931626", "content-douyin-aweme-epoch"],
+        )
+        request_path = captured["request_path"]
+
+    assert result["ok"] is True
+    assert calls[0][0] == [
+        "hermes-benchmark",
+        "content-pipeline",
+        "--profile",
+        str(settings.content_pipeline_profile_ref),
+        "--request",
+        str(request_path),
+        "--json",
+    ]
+    assert calls[0][1] == Path(tmp).resolve()
+    assert set(calls[0][2]).issubset({"PATH"})
+    assert calls[0][3] == 1800
+    assert captured["request"] == {
+        "schema_version": "hermes-content-request.v1",
+        "target": {"platform": "douyin", "account_id": "acct_1"},
+        "scope": {
+            "content_ids": ["content-douyin-0007665571270808931626", "content-douyin-aweme-epoch"],
+            "published_since": None,
+            "max_items": None,
+            "all_visible": False,
+        },
+        "copy_mode": "original",
+    }
+    assert isinstance(request_path, Path)
+    assert not request_path.exists()
+    assert not request_path.parent.exists()
+    assert result["data"]["run_id"] == "run-abcdef1234567890abcdef12"
+    assert result["data"]["artifact_refs"] == ["file:run-abcdef1234567890abcdef12/receipt.json"]
+    assert set(result["data"]["items"][0]) == {
+        "content_id",
+        "stage",
+        "status",
+        "artifact_refs",
+        "media_sha256",
+        "transcript_original_sha256",
+        "error_code",
+    }
+    encoded = json.dumps(result, ensure_ascii=False, sort_keys=True)
+    assert "stdout" not in encoded
+    assert "stderr" not in encoded
+    assert str(Path(tmp)) not in encoded
+
+
+def test_stock_run_content_pipeline_rejects_unstructured_selectors_before_runner() -> None:
+    calls = []
+
+    def runner(argv: Sequence[str], cwd: Path, env: Mapping[str, str], timeout: float) -> tuple[int, bytes, bytes]:
+        calls.append((argv, cwd, env, timeout))
+        raise AssertionError("runner should not be called for invalid content-pipeline inputs")
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        settings = StockRuntimeSettings(
+            executable=("hermes-benchmark",),
+            cwd=root,
+            profile_ref=root / "stock-profile.json",
+            content_pipeline_profile_ref=root / "content-pipeline-profile.json",
+            storage_root=root / "storage",
+            runner=runner,
+        )
+        cases = [
+            {"account_id": "acct_1", "copy_mode": "original"},
+            {"account_id": "acct_1", "copy_mode": "original", "content_ids": ["123"], "max_items": 1},
+            {"account_id": "acct_1", "copy_mode": "original", "all_visible": False},
+            {"account_id": "acct_1", "copy_mode": "raw", "max_items": 1},
+            {"account_id": "../acct", "copy_mode": "original", "max_items": 1},
+            {"account_id": "acct_1", "copy_mode": "original", "content_ids": []},
+            {"account_id": "acct_1", "copy_mode": "original", "content_ids": ["content-1"]},
+            {"account_id": "acct_1", "copy_mode": "original", "content_ids": ["766abc"]},
+            {"account_id": "acct_1", "copy_mode": "original", "content_ids": [7665571270808931626]},
+        ]
+        results = [stock_run_content_pipeline(settings, **case) for case in cases]
+
+    assert calls == []
+    assert all(result["ok"] is False for result in results)
+    assert {result["error"]["code"] for result in results} >= {
+        "content_pipeline_scope_selector_required",
+        "content_pipeline_scope_selector_conflict",
+        "content_request_copy_mode",
+        "content_request_target",
+        "content_request_content_ids",
+    }
+
+
+def test_stock_run_content_pipeline_schema_allows_only_business_inputs_and_one_selector() -> None:
+    parameters = STOCK_TOOL_SCHEMAS["stock_run_content_pipeline"]["parameters"]
+
+    assert parameters["additionalProperties"] is False
+    assert parameters["required"] == ["account_id", "copy_mode"]
+    assert set(parameters["properties"]) == {
+        "account_id",
+        "content_ids",
+        "published_since",
+        "max_items",
+        "all_visible",
+        "copy_mode",
+    }
+    assert len(parameters["oneOf"]) == 4
+    assert parameters["properties"]["content_ids"]["items"]["pattern"] == r"^(?:[0-9]{1,64}|content-douyin-[A-Za-z0-9][A-Za-z0-9_.:-]{0,128})$"
+    for forbidden in ("argv", "command", "cwd", "profile", "profile_ref", "request", "output_root", "env", "cookie", "deliver", "feishu"):
+        assert forbidden not in parameters["properties"]
+
+
+def test_stock_run_content_pipeline_preserves_blocked_receipt_without_raw_or_path_leaks() -> None:
+    run_id = "run-blocked1234567890abcdef"
+    data = _content_pipeline_receipt(run_id)
+    data["status"] = "blocked"
+    data["summary"] = {"selected": 1, "completed": 0, "blocked": 1}
+    data["items"] = [
+        {
+            "content_id": "content-douyin-123",
+            "source": {"url": "https://www.douyin.com/video/123"},
+            "stage": "blocked",
+            "status": "blocked",
+            "artifact_refs": [],
+            "media_sha256": None,
+            "transcript_original_sha256": None,
+            "error_code": "transcription_failed",
+        }
+    ]
+    data["error_code"] = "transcription_failed"
+
+    def runner(_argv: Sequence[str], _cwd: Path, _env: Mapping[str, str], _timeout: float) -> tuple[int, bytes, bytes]:
+        return 4, _content_pipeline_envelope(data, ok=False, exit_code=4), b""
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        settings = StockRuntimeSettings(
+            executable=("hermes-benchmark",),
+            cwd=root,
+            profile_ref=root / "stock-profile.json",
+            content_pipeline_profile_ref=root / "content-pipeline-profile.json",
+            storage_root=root / "storage",
+            runner=runner,
+        )
+        result = stock_run_content_pipeline(settings, account_id="acct_1", copy_mode="original", content_ids=["content-douyin-123"])
+
+    assert result["ok"] is False
+    assert result["error"]["code"] == "content_pipeline_blocked"
+    assert result["data"]["status"] == "blocked"
+    assert result["data"]["items"][0] == {
+        "content_id": "content-douyin-123",
+        "stage": "blocked",
+        "status": "blocked",
+        "artifact_refs": [],
+        "media_sha256": None,
+        "transcript_original_sha256": None,
+        "error_code": "transcription_failed",
+    }
+    encoded = json.dumps(result, ensure_ascii=False, sort_keys=True)
+    assert "stdout" not in encoded
+    assert "stderr" not in encoded
+    assert str(Path(tmp)) not in encoded
+
+
+def test_stock_run_content_pipeline_rejects_file_absolute_path_leaks_from_receipt() -> None:
+    data = _content_pipeline_receipt()
+    data["artifact_refs"] = ["file:/home/jym/private/receipt.json"]
+
+    def runner(_argv: Sequence[str], _cwd: Path, _env: Mapping[str, str], _timeout: float) -> tuple[int, bytes, bytes]:
+        return 0, _content_pipeline_envelope(data), b""
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        settings = StockRuntimeSettings(
+            executable=("hermes-benchmark",),
+            cwd=root,
+            profile_ref=root / "stock-profile.json",
+            content_pipeline_profile_ref=root / "content-pipeline-profile.json",
+            storage_root=root / "storage",
+            runner=runner,
+        )
+        result = stock_run_content_pipeline(settings, account_id="acct_1", copy_mode="original", content_ids=["content-douyin-123"])
+
+    assert result["ok"] is False
+    assert result["error"]["code"] == "secret_like_output"
+    encoded = json.dumps(result, ensure_ascii=False, sort_keys=True)
+    assert "/home/" not in encoded
+
+
+def test_stock_run_content_pipeline_is_callable_through_plugin_with_business_only_input(monkeypatch) -> None:
+    from hermes_benchmark.collector_distribution import stock_runtime_plugin
+
+    calls: list[list[str]] = []
+    captured_requests: list[dict[str, object]] = []
+
+    def runner(argv: Sequence[str], _cwd: Path, _env: Mapping[str, str], _timeout: float) -> tuple[int, bytes, bytes]:
+        calls.append(list(argv))
+        captured_requests.append(json.loads(Path(argv[5]).read_text(encoding="utf-8")))
+        return 0, _content_pipeline_envelope(), b""
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        settings = StockRuntimeSettings(
+            executable=("hermes-benchmark",),
+            cwd=root,
+            profile_ref=root / "stock-profile.json",
+            content_pipeline_profile_ref=root / "content-pipeline-profile.json",
+            storage_root=root / "storage",
+            runner=runner,
+        )
+        monkeypatch.setattr(stock_runtime_plugin, "settings_from_hermes_config", lambda: settings)
+
+        class Ctx:
+            def __init__(self) -> None:
+                self.tools: list[dict[str, object]] = []
+
+            def register_tool(self, **kwargs: object) -> None:
+                self.tools.append(kwargs)
+
+        ctx = Ctx()
+        stock_runtime_plugin.register(ctx)
+        tool = next(item for item in ctx.tools if item["name"] == "stock_run_content_pipeline")
+        result = json.loads(
+            tool["handler"](
+                {
+                    "account_id": "acct_1",
+                    "all_visible": True,
+                    "copy_mode": "optimized",
+                    "cwd": "/tmp/evil",
+                    "request": "/tmp/evil/request.json",
+                    "argv": ["rm", "-rf", "/"],
+                    "deliver": "feishu",
+                }
+            )
+        )
+
+    assert result["ok"] is True
+    assert tool["schema"] == STOCK_TOOL_SCHEMAS["stock_run_content_pipeline"]
+    assert calls[0][:4] == ["hermes-benchmark", "content-pipeline", "--profile", str(settings.content_pipeline_profile_ref)]
+    assert captured_requests[0]["scope"] == {"content_ids": [], "published_since": None, "max_items": None, "all_visible": True}
+    combined = json.dumps({"argv": calls, "request": captured_requests, "result": result}, ensure_ascii=False, sort_keys=True)
+    assert "/tmp/evil" not in combined
+    assert "feishu" not in combined.lower()
+    assert all(arg not in {"rm", "-rf", "/"} for arg in calls[0])
+
+
+def test_stock_runtime_config_parses_optional_content_pipeline_profile_without_requiring_it(monkeypatch) -> None:
+    package = types.ModuleType("hermes_cli")
+    config_module = types.ModuleType("hermes_cli.config")
+    config_module.load_config = lambda: {  # type: ignore[attr-defined]
+        "stock_runtime": {
+            "executable": ["hermes-benchmark"],
+            "cwd": "/operator/repo",
+            "profile_ref": "/operator/profiles/stock.json",
+            "content_pipeline_profile_ref": "/operator/profiles/content-pipeline.json",
+            "content_pipeline_timeout_seconds": 2400,
+        }
+    }
+    monkeypatch.setitem(sys.modules, "hermes_cli", package)
+    monkeypatch.setitem(sys.modules, "hermes_cli.config", config_module)
+
+    settings = settings_from_hermes_config()
+
+    assert settings.profile_ref == Path("/operator/profiles/stock.json")
+    assert settings.content_pipeline_profile_ref == Path("/operator/profiles/content-pipeline.json")
+    assert settings.content_pipeline_timeout_seconds == 2400
 
 
 def test_stock_runtime_fails_closed_on_invalid_json_exit_mismatch_oversize_and_secret_like_output() -> None:
@@ -181,6 +523,7 @@ def test_collector_distribution_assets_pin_tool_allowlist_and_generic_denies() -
         "profile/config.template.yaml",
         "profile/env.guardrails.example",
         "profile/prefill/collector-prefill.json",
+        "profile/skills/trendradar-content-download/SKILL.md",
     ]
     assert package_data["hermes_benchmark.collector_distribution.stock_runtime_plugin"] == ["plugin.yaml"]
     assert "toolsets:\n  - stock_runtime\n" in config
@@ -192,6 +535,8 @@ def test_collector_distribution_assets_pin_tool_allowlist_and_generic_denies() -
         assert f"    - {toolset}\n" in config
     assert "plugins:\n  enabled:\n    - stock-runtime\n" in config
     assert "profile_ref: /home/jym/workspace/Hermes trendradar/profiles/local/hermes.v1.4.douyin.local.json" in config
+    assert "content_pipeline_profile_ref: /home/jym/workspace/Hermes trendradar/profiles/local/hermes-content-pipeline.v1.local.json" in config
+    assert "content_pipeline_timeout_seconds: 1800" in config
     assert "cwd: /home/jym/workspace/Hermes trendradar" in config
     assert "executable:\n    - /home/jym/.local/bin/hermes-benchmark\n" in config
     assert "prepared-not-activated" in readme
