@@ -563,7 +563,10 @@ def _read_media_manifest(
         raise ContentPipelineError("media_manifest_invalid")
     media_path = Path(raw_path)
     try:
-        media_path.relative_to(job_dir.resolve())
+        resolved_media_path = media_path.resolve(strict=True)
+        if media_path != resolved_media_path:
+            raise ContentPipelineError("media_manifest_boundary")
+        resolved_media_path.relative_to(job_dir.resolve(strict=True))
         _assert_no_symlink_parents(media_path.parent)
         info = media_path.lstat()
         if stat.S_ISLNK(info.st_mode) or not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or info.st_size < 1:

@@ -969,6 +969,33 @@ def test_media_manifest_hash_mismatch_is_a_boundary_failure(tmp_path: Path) -> N
     ) == "media_manifest_boundary"
 
 
+def test_media_manifest_parent_traversal_is_a_boundary_failure(tmp_path: Path) -> None:
+    run_root = tmp_path / "media-runs"
+    job_dir = run_root / "pipeline-job"
+    job_dir.mkdir(parents=True)
+    media_path = run_root / "outside.mp4"
+    media_path.write_bytes(b"media")
+    source_id = "source-test"
+    (job_dir / "media-manifest.private.jsonl").write_text(
+        json.dumps(
+            {
+                "source_id": source_id,
+                "download_status": "succeeded",
+                "local_media_path": str(job_dir / ".." / media_path.name),
+                "media_hash": "sha256:" + hashlib.sha256(b"media").hexdigest(),
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    assert _error_code(
+        _read_media_manifest,
+        {"run_root": run_root},
+        "pipeline-job",
+        source_id,
+    ) == "media_manifest_boundary"
+
+
 def test_content_pipeline_parser_requires_profile_and_request() -> None:
     from hermes_benchmark import cli
 
