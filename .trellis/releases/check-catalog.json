@@ -566,6 +566,289 @@
         "mutation": "read_only",
         "timeout": 180
       }
+    },
+    "0.6.15": {
+      "trellis.task_cli.help": {
+        "environment": {
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "argv": [
+          "python3",
+          "./.trellis/scripts/task.py",
+          "--help"
+        ],
+        "mutation": "read_only",
+        "timeout": 30
+      },
+      "trellis.unittest.focused": {
+        "environment": {
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "PYTHONPATH": ".trellis/scripts:.trellis/scripts/tests",
+          "TMPDIR": "/tmp"
+        },
+        "argv": [
+          "python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          ".trellis/scripts/tests",
+          "-p",
+          "test_unified_*.py",
+          "-q"
+        ],
+        "mutation": "read_only",
+        "timeout": 180
+      },
+      "trellis.diff.check": {
+        "argv": [
+          "git",
+          "diff",
+          "--check"
+        ],
+        "mutation": "read_only",
+        "timeout": 30
+      },
+      "uil.migration.dry_run": {
+        "environment": {
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "PYTHONPATH": ".trellis/scripts:.trellis/scripts/tests",
+          "TMPDIR": "/tmp"
+        },
+        "argv": [
+          "python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          ".trellis/scripts/tests",
+          "-p",
+          "test_unified_task_migration_surface.py",
+          "-q"
+        ],
+        "mutation": "read_only",
+        "timeout": 180
+      },
+      "uil.authority.full": {
+        "environment": {
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "PYTHONPATH": ".trellis/scripts:.trellis/scripts/tests",
+          "TMPDIR": "/tmp"
+        },
+        "argv": [
+          "python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          ".trellis/scripts/tests",
+          "-p",
+          "test_unified_task_authority.py",
+          "-q"
+        ],
+        "mutation": "read_only",
+        "timeout": 180
+      },
+      "uil.task_loop.full": {
+        "environment": {
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "PYTHONPATH": ".trellis/scripts:.trellis/scripts/tests",
+          "TMPDIR": "/tmp"
+        },
+        "argv": [
+          "python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          ".trellis/scripts/tests",
+          "-p",
+          "test_unified_task_loop.py",
+          "-q"
+        ],
+        "mutation": "read_only",
+        "timeout": 180
+      },
+      "uil.review.full": {
+        "environment": {
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "PYTHONPATH": ".trellis/scripts:.trellis/scripts/tests",
+          "TMPDIR": "/tmp"
+        },
+        "argv": [
+          "python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          ".trellis/scripts/tests",
+          "-p",
+          "test_unified_task_review_projection.py",
+          "-q"
+        ],
+        "mutation": "read_only",
+        "timeout": 180
+      },
+      "uil.closeout.fault_matrix": {
+        "environment": {
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "PYTHONPATH": ".trellis/scripts:.trellis/scripts/tests",
+          "TMPDIR": "/tmp"
+        },
+        "argv": [
+          "python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          ".trellis/scripts/tests",
+          "-p",
+          "test_unified_task_closeout.py",
+          "-q"
+        ],
+        "mutation": "read_only",
+        "timeout": 180
+      },
+      "uil.release_adapter.full": {
+        "environment": {
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "PYTHONPATH": ".trellis/scripts:.trellis/scripts/tests",
+          "TMPDIR": "/tmp"
+        },
+        "argv": [
+          "python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          ".trellis/scripts/tests",
+          "-p",
+          "test_harness_release_and_sync.py",
+          "-q"
+        ],
+        "mutation": "read_only",
+        "timeout": 240
+      },
+      "uil.sync.partial_dirty": {
+        "environment": {
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "PYTHONPATH": ".trellis/scripts:.trellis/scripts/tests",
+          "TMPDIR": "/tmp"
+        },
+        "argv": [
+          "python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          ".trellis/scripts/tests",
+          "-p",
+          "test_harness_release_and_sync.py",
+          "-q"
+        ],
+        "mutation": "read_only",
+        "timeout": 240
+      },
+      "uil.migration.replay": {
+        "environment": {
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "PYTHONPATH": ".trellis/scripts:.trellis/scripts/tests",
+          "TMPDIR": "/tmp"
+        },
+        "argv": [
+          "python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          ".trellis/scripts/tests",
+          "-p",
+          "test_unified_task_migration_surface.py",
+          "-q"
+        ],
+        "mutation": "read_only",
+        "timeout": 180
+      },
+      "uil.legacy.zero_write": {
+        "environment": {
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "PYTHONPATH": ".trellis/scripts:.trellis/scripts/tests",
+          "TMPDIR": "/tmp"
+        },
+        "argv": [
+          "python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          ".trellis/scripts/tests",
+          "-p",
+          "test_unified_task_migration_surface.py",
+          "-q"
+        ],
+        "mutation": "read_only",
+        "timeout": 180
+      },
+      "uil.agent_surface.text": {
+        "environment": {
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "PYTHONPATH": ".trellis/scripts:.trellis/scripts/tests",
+          "TMPDIR": "/tmp"
+        },
+        "argv": [
+          "python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          ".trellis/scripts/tests",
+          "-p",
+          "test_agent_surface.py",
+          "-q"
+        ],
+        "mutation": "read_only",
+        "timeout": 180
+      },
+      "uil.full_regression": {
+        "environment": {
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "PYTHONPATH": ".trellis/scripts:.trellis/scripts/tests",
+          "TMPDIR": "/tmp"
+        },
+        "argv": [
+          "python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          ".trellis/scripts/tests",
+          "-p",
+          "test_*.py",
+          "-q"
+        ],
+        "mutation": "read_only",
+        "timeout": 300
+      },
+      "uil.candidate_review": {
+        "environment": {
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "PYTHONPATH": ".trellis/scripts:.trellis/scripts/tests",
+          "TMPDIR": "/tmp"
+        },
+        "argv": [
+          "python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          ".trellis/scripts/tests",
+          "-p",
+          "test_unified_task_review_projection.py",
+          "-q"
+        ],
+        "mutation": "read_only",
+        "timeout": 180
+      }
     }
   }
 }

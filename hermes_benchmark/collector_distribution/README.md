@@ -1,15 +1,51 @@
 # Collector profile distribution
 
-This directory is the versioned source-of-truth for the future blank Hermes `collector` profile. Case 3 does not deploy it to `~/.hermes/profiles` and does not create a live profile.
+This directory is the versioned source-of-truth for the prepared-not-activated Hermes `collector` profile. Case 4A prepared source templates; Case 4C adds the deterministic no-agent cron handoff runner. A live collector profile and a paused cron draft may already exist from separate authorization; that is still profile preparation, not activation. This source can be deployed only to keep that prepared state aligned. It does not resume or activate cron, start gateway, perform platform login, write RAG/outbox state, send externally, or run `run-daily` during validation.
 
 Included assets:
 
 - `stock_runtime_plugin/` — Hermes plugin directory source for the profile-local `stock_runtime` toolset.
-- `collector_config.template.yaml` — config fragment showing the intended collector tool allowlist and the fixed Hermes stock runtime adapter settings.
+- `collector_config.template.yaml` — config fragment for the fixed runtime adapter and the real Hermes toolset keys (`toolsets`, `platform_toolsets`, and `agent.disabled_toolsets`).
+- `scripts/hermes_benchmark_handoff.py` — deterministic no-agent cron runner source for a prepared collector profile script.
+- `profile/config.template.yaml` — source template for a blank local collector profile.
+- `profile/prefill/collector-prefill.json` — valid JSON prefill message array.
+- `profile/skills/trendradar-content-download/SKILL.md` — collector-local source skill that routes approved local Douyin content download/transcription through `stock_run_content_pipeline`.
+- `profile/env.guardrails.example` — blank/false environment guardrail overrides for local deployment.
 
 Runtime contract:
 
-1. The plugin registers exactly seven tools: `stock_validate_config`, `stock_healthcheck`, `stock_run_daily`, `stock_read_analysis_package`, `stock_record_analysis_result`, `stock_build_internal_digest`, and `stock_record_feedback`.
-2. All Hermes stock CLI calls use fixed argv lists, fixed cwd, fixed profile ref, no shell, a minimal subprocess env allowlist, timeout, stdout/stderr caps, JSON envelope validation, and allowlisted result fields.
-3. Package/result/digest refs must be `file:` refs under the configured Hermes stock storage root and scoped to the run id.
-4. Case 3 self-check is local-only and fixture-only. It does not start Feishu, does not send messages, does not collect live accounts, and does not modify any live Hermes profile.
+1. The plugin manifest registers exactly eight tools: `stock_validate_config`, `stock_healthcheck`, `stock_run_daily`, `stock_run_content_pipeline`, `stock_read_analysis_package`, `stock_record_analysis_result`, `stock_build_internal_digest`, and `stock_record_feedback`.
+2. The collector profile exposes only the `stock_runtime` toolset from `stock-runtime` through the Hermes-supported `toolsets` and `platform_toolsets.cli` keys; generic toolsets such as terminal, file, code_execution, web, browser, memory, session_search, and cronjob stay disabled through `agent.disabled_toolsets`.
+3. The profile plugin has a fixed repo-source dependency: before importing `hermes_benchmark`, it bootstraps `/home/jym/workspace/Hermes trendradar` onto `sys.path` after verifying that root and its `hermes_benchmark` package exist. It never reads repo paths from env vars, args, or model-provided input.
+4. Daily stock CLI adapter calls use fixed argv lists, fixed cwd `/home/jym/workspace/Hermes trendradar`, fixed profile ref `/home/jym/workspace/Hermes trendradar/profiles/local/hermes.v1.4.douyin.local.json`, no shell, a minimal subprocess env allowlist, timeout, stdout/stderr caps, JSON envelope validation, and allowlisted result fields.
+5. Content download/transcription calls are exposed only as `stock_run_content_pipeline`; the model supplies account id, one scope selector, and copy mode. The adapter builds `hermes-content-request.v1` internally, normalizes raw numeric Douyin aweme IDs to `content-douyin-<aweme_id>`, and invokes `content-pipeline --profile /home/jym/workspace/Hermes trendradar/profiles/local/hermes-content-pipeline.v1.local.json --request <private temp request> --json` with a content-pipeline-specific 1800-second timeout, no shell, minimal env, capped output, leak rejection, and allowlisted-receipt boundaries.
+6. Package/result/digest/content-pipeline refs must be opaque `file:` refs scoped to their run id. The adapter never returns raw stdout/stderr, local absolute paths, cookie values, or request file paths.
+7. Feishu, Weixin, API server, wiki, and external publishing surfaces are disabled in config and blanked/false in the env guardrail example. No real platform values or credentials belong in this distribution.
+
+Prepared-not-activated boundary:
+
+- Case 4A prepares committed source templates.
+- Case 4C commits the runner source for profile preparation. It does not activate cron and must not run production `run-daily`.
+- A live collector profile and a paused cron draft may be present after separate preparation authorization. They remain prepared-not-activated until a separate Case 4D activation authorization.
+- Preparation must not resume or activate cron, start gateway, perform platform login, run production `run-daily`, `stock_run_daily`, or `stock_run_content_pipeline`, write RAG adopted-content outbox data, create the outbox, or send/publish externally. Later local download/transcription must use `stock_run_content_pipeline` only after explicit authorization for configured Douyin accounts.
+- Safe validation paths are `validate-config`, `healthcheck`, `scripts/hermes_benchmark_handoff.py --check-only`, source/config readback, and structured read-only reconciliation of emitted JSON envelopes and `file:` refs.
+- To prepare source files in an authorized blank local `collector` profile, copy `scripts/hermes_benchmark_handoff.py` to `~/.hermes/profiles/collector/scripts/hermes_benchmark_handoff.py`, place the prefill JSON at live path `/home/jym/.hermes/profiles/collector/prefill/collector-prefill.json`, and keep any no-agent cron/script job paused at `0 6 * * *` with timezone `America/Denver`.
+- The runner itself is not a scheduler: it computes `RUN_DATE` with `ZoneInfo("America/Denver")`, validates config, takes a non-blocking `run_date + profile_hash` lock, healthchecks, and only then calls `run-daily --analysis-mode hermes-handoff` when activation later permits production flow.
+- `--check-only` is the safe validation path: it runs only `validate-config` and `healthcheck`, emits a redacted receipt, and must not call `run-daily` or write business state.
+- The live collector SOUL must be created only in Case 4B at `~/.hermes/profiles/collector/SOUL.md`; this repository intentionally has no SOUL template asset. Profile SOUL content belongs only in the live Hermes profile, not in repo source.
+- Local scheduling is only planned/prepared here: 06:00 America/Denver, runner-authorized `fixed:300` backoff, and manifest-projected max attempts (the current v1.4 manifest is max2).
+- The RAG adopted-content outbox is planned, not implemented. Do not write RAG, create the outbox, activate cron, or run collector production flow before a separate Case 4D.
+
+Validation commands:
+
+```bash
+python3 -m pytest tests/test_stock_runtime.py tests/test_collector_profile_distribution.py tests/test_cron_handoff_runner.py -q
+python3 -m pytest -q
+python3 -m compileall hermes_benchmark/collector_distribution
+uvx --from ruff==0.15.20 ruff check hermes_benchmark/collector_distribution/scripts/hermes_benchmark_handoff.py tests/test_cron_handoff_runner.py tests/test_collector_profile_distribution.py tests/test_stock_runtime.py
+git diff --check
+git check-ignore profiles/local/hermes.v1.4.douyin.local.json collector.local.yaml collector.production.yaml
+python3 hermes_benchmark/collector_distribution/scripts/hermes_benchmark_handoff.py --check-only
+```
+
+The `git check-ignore` command must report all three probe paths. Do not inspect or commit anything under `profiles/local/` while validating this distribution.

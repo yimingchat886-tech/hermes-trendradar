@@ -114,7 +114,7 @@ def mediacrawler_douyin_row(row: Mapping[str, Any], account: BenchmarkAccount) -
     title = _text(row, "title", "desc")
     desc = _text(row, "desc", "title")
     comment_count = _int(row.get("comment_count"))
-    return {
+    result = {
         "platform": "douyin",
         "platform_content_id": aweme_id,
         "url": aweme_url,
@@ -130,6 +130,10 @@ def mediacrawler_douyin_row(row: Mapping[str, Any], account: BenchmarkAccount) -
         },
         "comments_summary": f"comment_count={comment_count}",
     }
+    video_download_url = _text(row, "video_download_url")
+    if video_download_url:
+        result["video_download_url"] = video_download_url
+    return result
 
 
 def enabled_douyin_accounts(profile: LoadedProfile) -> list[BenchmarkAccount]:

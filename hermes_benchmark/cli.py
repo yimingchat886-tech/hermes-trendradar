@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sqlite3
 import subprocess
 import sys
@@ -24,6 +25,13 @@ from .collection_runner import (
     load_mediacrawler_jsonl,
     mediacrawler_creator_command,
 )
+from .content_pipeline import (
+    ContentPipelineError,
+    load_pipeline_profile,
+    load_request_file,
+    run_real_content_pipeline,
+)
+from . import media_jobs, transcript_batch
 from .external_runtime import redact_text, run_process
 from .handoff import (
     HandoffPackageError,
@@ -107,13 +115,41 @@ def main(argv: Sequence[str] | None = None) -> int:
         else:
             print(f"error: {exc}", file=sys.stderr)
         return EXIT_CONTRACT_MISMATCH
-    except ProfileError as exc:
-        payload = config_error_envelope(exc, command_name or "validate-config")
+    except ContentPipelineError as exc:
+        payload = _content_pipeline_exception_envelope(exc)
         if wants_json(args_list):
             print_json(payload)
         else:
-            print(f"error: {exc}", file=sys.stderr)
+            print(f"error: {payload['error']['message']}", file=sys.stderr)
+        return int(payload["exit_code"])
+    except ProfileError as exc:
+        payload = (
+            _content_pipeline_exception_envelope(exc)
+            if command_name == "content-pipeline"
+            else config_error_envelope(exc, command_name or "validate-config")
+        )
+        if wants_json(args_list):
+            print_json(payload)
+        else:
+            if command_name == "content-pipeline":
+                print(f"error: {payload['error']['message']}", file=sys.stderr)
+            else:
+                print(f"error: {exc}", file=sys.stderr)
         return EXIT_CONFIG_INVALID
+    except media_jobs.MediaJobError as exc:
+        payload = _content_pipeline_exception_envelope(exc)
+        if wants_json(args_list):
+            print_json(payload)
+        else:
+            print(f"error: {payload['error']['message']}", file=sys.stderr)
+        return int(payload["exit_code"])
+    except transcript_batch.TranscriptConfigError as exc:
+        payload = _content_pipeline_exception_envelope(exc)
+        if wants_json(args_list):
+            print_json(payload)
+        else:
+            print(f"error: {payload['error']['message']}", file=sys.stderr)
+        return int(payload["exit_code"])
     except AnalysisResultError as exc:
         payload = command_error_envelope(
             "record-analysis-result",
@@ -149,6 +185,11 @@ def build_parser() -> argparse.ArgumentParser:
     add_command(subparsers, "smoke-mediacrawler", smoke_mediacrawler, profile=True)
     add_command(subparsers, "run-daily", run_daily, profile=True, daily=True, self_check=True)
     add_command(subparsers, "apply-limited-live", apply_limited_live, profile=True, self_check=True)
+    content = subparsers.add_parser("content-pipeline")
+    content.add_argument("--profile", required=True, help="Path to a content pipeline profile.")
+    content.add_argument("--request", required=True, help="Path to a hermes-content-request.v1 JSON file.")
+    content.add_argument("--json", action="store_true", help="Print a JSON envelope.")
+    content.set_defaults(handler=content_pipeline)
     analysis = subparsers.add_parser("record-analysis-result")
     analysis.add_argument("--profile", default="", help="Path to a local runtime profile.")
     analysis.add_argument("--config", default="", help="Compatibility alias for --profile.")
@@ -231,6 +272,45 @@ def healthcheck(args: argparse.Namespace) -> dict[str, Any]:
         ERROR_CONTRACT_MISMATCH,
         "healthcheck requires --profile or explicit --self-check",
         EXIT_CONTRACT_MISMATCH,
+    )
+
+
+def content_pipeline(args: argparse.Namespace) -> dict[str, Any]:
+    try:
+        pipeline_profile = load_pipeline_profile(args.profile)
+        request = load_request_file(args.request)
+        receipt = run_real_content_pipeline(pipeline_profile, request)
+    except (ContentPipelineError, ProfileError, media_jobs.MediaJobError, transcript_batch.TranscriptConfigError) as exc:
+        return _content_pipeline_exception_envelope(exc)
+
+    if not isinstance(receipt, dict):
+        return command_error_envelope(
+            "content-pipeline",
+            "runtime",
+            "content_pipeline_failed",
+            "content pipeline failed",
+            EXIT_COLLECTION_FAILED,
+        )
+    status = receipt.get("status")
+    if status in {"success", "partial", "no_op"}:
+        return success_envelope("content-pipeline", receipt, mode="runtime")
+    if status == "blocked":
+        code = _safe_pipeline_code(receipt.get("error_code"), "content_pipeline_blocked")
+        return command_error_envelope(
+            "content-pipeline",
+            "runtime",
+            code,
+            _content_pipeline_message(code),
+            _content_pipeline_exit_code(code),
+            data=receipt,
+        )
+    return command_error_envelope(
+        "content-pipeline",
+        "runtime",
+        "content_pipeline_failed",
+        "content pipeline failed",
+        EXIT_COLLECTION_FAILED,
+        data=receipt,
     )
 
 
@@ -643,6 +723,62 @@ def command_error_envelope(
         "exit_code": exit_code,
         "retryable": exit_code in {EXIT_RUNTIME_UNAVAILABLE, EXIT_COLLECTION_FAILED, EXIT_RUN_LOCK_CONFLICT},
     }
+
+
+def _content_pipeline_exception_envelope(error: object) -> dict[str, Any]:
+    if isinstance(error, ProfileError):
+        code = "profile_invalid"
+        mode = "profile"
+    elif isinstance(error, media_jobs.MediaJobError):
+        code = _safe_pipeline_code(error.code, "media_job_failed")
+        mode = "runtime"
+    elif isinstance(error, transcript_batch.TranscriptConfigError):
+        code = "transcription_config_invalid"
+        mode = "runtime"
+    elif isinstance(error, ContentPipelineError):
+        code = _safe_pipeline_code(error.code, "content_pipeline_failed")
+        mode = "contract" if _content_pipeline_exit_code(code) == EXIT_CONTRACT_MISMATCH else "runtime"
+    else:
+        code = "content_pipeline_failed"
+        mode = "runtime"
+    return command_error_envelope(
+        "content-pipeline",
+        mode,
+        code,
+        _content_pipeline_message(code),
+        _content_pipeline_exit_code(code),
+    )
+
+
+def _safe_pipeline_code(value: object, fallback: str) -> str:
+    return value if isinstance(value, str) and re.fullmatch(r"[A-Za-z0-9_.:-]{1,64}", value) else fallback
+
+
+def _content_pipeline_exit_code(code: str) -> int:
+    if code == "profile_invalid" or code in {"config_invalid", "request_invalid", "contract_mismatch"}:
+        return EXIT_CONFIG_INVALID
+    if (
+        code.startswith("content_request_")
+        or code.startswith("content_pipeline_profile_")
+        or code.startswith("content_pipeline_root_")
+        or code == "content_pipeline_path_boundary"
+    ):
+        return EXIT_CONTRACT_MISMATCH
+    return EXIT_COLLECTION_FAILED
+
+
+def _content_pipeline_message(code: str) -> str:
+    if code.startswith("content_request_") or code in {"contract_mismatch", "profile_invalid"}:
+        return "content pipeline request/profile is invalid"
+    if code == "target_not_configured":
+        return "requested target is not configured"
+    if code.startswith("media_") or code.startswith("media_job"):
+        return "media fetch failed"
+    if code.startswith("transcription_"):
+        return "transcription failed"
+    if code == "content_pipeline_blocked":
+        return "content pipeline blocked"
+    return "content pipeline failed"
 
 
 def _handoff_transcript_summary(contents: list[dict[str, Any]]) -> dict[str, Any]:

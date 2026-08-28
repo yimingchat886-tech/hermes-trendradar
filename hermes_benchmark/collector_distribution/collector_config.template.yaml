@@ -1,14 +1,18 @@
-# Collector Hermes profile distribution template (source only; do not deploy live in Case 3).
-# Copy these settings into the future blank `collector` profile only after Case 3 review.
+# Collector Hermes profile distribution template (profile preparation deployable).
+# Activation requires separate authorization; keep cron paused and gateway/platforms disabled.
 
 plugins:
   enabled:
     - stock-runtime
 
-tools:
-  # The collector production session should expose only this profile-local toolset.
-  enabled_toolsets:
+toolsets:
+  - stock_runtime
+
+platform_toolsets:
+  cli:
     - stock_runtime
+
+agent:
   disabled_toolsets:
     - terminal
     - file
@@ -23,18 +27,33 @@ tools:
     - vision
     - image_gen
     - tts
+    - skills
+    - clarify
+    - moa
+    - homeassistant
+
+platforms:
+  feishu:
+    enabled: false
+  weixin:
+    enabled: false
+  api_server:
+    enabled: false
 
 stock_runtime:
   executable:
-    - hermes-benchmark
-  cwd: /home/jym/workspace/Hermes stock
-  profile_ref: /home/jym/workspace/Hermes stock/profiles/local/hermes.v1.4.douyin.local.json
+    - /home/jym/.local/bin/hermes-benchmark
+  cwd: /home/jym/workspace/Hermes trendradar
+  profile_ref: /home/jym/workspace/Hermes trendradar/profiles/local/hermes.v1.4.douyin.local.json
+  content_pipeline_profile_ref: /home/jym/workspace/Hermes trendradar/profiles/local/hermes-content-pipeline.v1.local.json
   # storage_root may be omitted; the plugin resolves it from the fixed profile.
-  # Keep it explicit in deployed collector if the operator wants an extra pin.
-  # storage_root: /home/jym/workspace/_external/hermes-stock-runs
+  # Keep it explicit in a deployed collector only when the operator wants an extra pin.
+  # storage_root: /home/jym/workspace/_external/hermes-trendradar-runs
   timeout_seconds: 60
+  content_pipeline_timeout_seconds: 1800
   stdout_cap_bytes: 65536
   stderr_cap_bytes: 16384
+  content_request_cap_bytes: 16384
   package_cap_bytes: 262144
   result_cap_bytes: 65536
   digest_cap_bytes: 262144

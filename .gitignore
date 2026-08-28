@@ -1,1 +1,5 @@
 /BOARD.md
+/.gitnexus/
+profiles/local/
+*.local.*
+*.production.*

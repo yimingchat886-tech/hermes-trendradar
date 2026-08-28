@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from collections.abc import Iterable, Mapping
 from pathlib import Path
-from typing import Any, TypedDict
+from typing import Any, TypedDict, cast
 from urllib.parse import urldefrag
 
 from .account_registry import benchmark_accounts, validate_account_registry
@@ -108,7 +108,7 @@ def _content(
     metrics = _metrics(row)
     comments_summary = _text(row, "comments_summary", "comments")
     evidence_state = "sufficient" if _has_core_evidence(metrics, comments_summary) else "insufficient"
-    return {
+    content: dict[str, Any] = {
         "id": content_id,
         "source_id": account["source_id"],
         "account_id": account["id"],
@@ -127,6 +127,10 @@ def _content(
         "evidence_state": evidence_state,
         "trace": _trace(content_id, account["source_id"], url, row_number),
     }
+    video_download_url = _text(row, "video_download_url")
+    if video_download_url:
+        content["video_download_url"] = video_download_url
+    return cast(BenchmarkContent, content)
 
 
 def _metrics(row: Mapping[str, Any]) -> dict[str, int]:

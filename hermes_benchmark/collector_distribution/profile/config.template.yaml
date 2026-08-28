@@ -1,0 +1,79 @@
+profile:
+  name: collector
+  mode: blank
+
+timezone: America/Denver
+providers: {}
+prefill_messages_file: /home/jym/.hermes/profiles/collector/prefill/collector-prefill.json
+
+model:
+  default: ""
+  provider: ""
+  base_url: ""
+
+terminal:
+  cwd: /home/jym/workspace/Hermes trendradar
+  env_passthrough: []
+  docker_forward_env: []
+  docker_env: {}
+  docker_volumes: []
+
+memory:
+  memory_enabled: false
+  user_profile_enabled: false
+
+plugins:
+  enabled:
+    - stock-runtime
+
+toolsets:
+  - stock_runtime
+
+platform_toolsets:
+  cli:
+    - stock_runtime
+
+agent:
+  disabled_toolsets:
+    - terminal
+    - file
+    - code_execution
+    - web
+    - browser
+    - computer_use
+    - delegation
+    - memory
+    - session_search
+    - cronjob
+    - vision
+    - image_gen
+    - tts
+    - skills
+    - clarify
+    - moa
+    - homeassistant
+
+platforms:
+  feishu:
+    enabled: false
+  weixin:
+    enabled: false
+  api_server:
+    enabled: false
+
+stock_runtime:
+  executable:
+    - /home/jym/.local/bin/hermes-benchmark
+  cwd: /home/jym/workspace/Hermes trendradar
+  profile_ref: /home/jym/workspace/Hermes trendradar/profiles/local/hermes.v1.4.douyin.local.json
+  content_pipeline_profile_ref: /home/jym/workspace/Hermes trendradar/profiles/local/hermes-content-pipeline.v1.local.json
+  timeout_seconds: 60
+  content_pipeline_timeout_seconds: 1800
+  stdout_cap_bytes: 65536
+  stderr_cap_bytes: 16384
+  content_request_cap_bytes: 16384
+  package_cap_bytes: 262144
+  result_cap_bytes: 65536
+  digest_cap_bytes: 262144
+  max_package_contents: 50
+  max_string_chars: 4000

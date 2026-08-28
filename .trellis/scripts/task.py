@@ -29,9 +29,13 @@ from taskrun import (
     record_check_result,
     record_review,
     run_task,
+    sync_registered_targets,
     sync_targets,
     task_status,
 )
+from taskrun.downstream_registry import preflight_registry, registry_snapshot
+from taskrun.release import build_adoption_report, load_overlay
+from taskrun.upstream_candidate import candidate_status, refresh_candidate
 
 
 LEGACY_WRITERS = {
@@ -54,7 +58,10 @@ LEGACY_WRITERS = {
     "soft-archive",
     "start",
 }
-PUBLIC_COMMANDS = ("plan", "run", "status", "resume", "close", "cancel")
+PUBLIC_COMMANDS = (
+    "plan", "run", "status", "resume", "close", "cancel",
+    "upstream-refresh", "upstream-status", "upstream-adopt", "registry-status",
+)
 
 
 def repo_root() -> Path:
@@ -120,6 +127,26 @@ def build_parser() -> argparse.ArgumentParser:
     cancel.add_argument("--task", required=True)
     cancel.add_argument("--authorization-ref", required=True)
 
+    upstream_refresh = commands.add_parser(
+        "upstream-refresh", help="Capture one immutable stable upstream candidate"
+    )
+    upstream_refresh.add_argument("--version")
+    upstream_refresh.add_argument("--cli", default="trellis")
+
+    commands.add_parser(
+        "upstream-status", help="Read locally captured upstream candidates"
+    )
+
+    upstream_adopt = commands.add_parser(
+        "upstream-adopt", help="Classify every path in one AVAILABLE candidate"
+    )
+    upstream_adopt.add_argument("--candidate", required=True)
+
+    registry_status = commands.add_parser(
+        "registry-status", help="Read the exact downstream registry snapshot"
+    )
+    registry_status.add_argument("--preflight", action="store_true")
+
     claim = commands.add_parser("action-claim", help=argparse.SUPPRESS)
     claim.add_argument("--task", required=True)
     claim.add_argument("--worker", required=True)
@@ -155,14 +182,18 @@ def build_parser() -> argparse.ArgumentParser:
     commands.add_parser("projection-rebuild", help="Rebuild task and BOARD views")
 
     release_build = commands.add_parser("release-build", help=argparse.SUPPRESS)
-    release_build.add_argument("--managed-path", action="append", required=True)
+    release_build.add_argument("--managed-path", action="append")
     release_build.add_argument("--delete", action="append", default=[])
     release_build.add_argument("--qualification", required=True)
+    release_build.add_argument("--candidate-id", required=True)
+    release_build.add_argument("--adoption-report", required=True)
+    release_build.add_argument("--task")
     release_build.add_argument("--qualify", action="store_true")
 
     sync = commands.add_parser("sync", help="Plan/apply/verify named target slots")
     sync.add_argument("--task", required=True)
-    sync.add_argument("--target", action="append", required=True)
+    sync.add_argument("--target", action="append")
+    sync.add_argument("--registered", action="store_true")
     sync.add_argument("--current-source", action="store_true")
 
     dry = commands.add_parser("migrate-dry-run", help="Render deterministic cutover plan")
@@ -233,6 +264,28 @@ def execute(args: argparse.Namespace) -> object:
         return close_task(root, args.task, authorization_ref=args.authorization_ref)
     if args.command == "cancel":
         return cancel_task(root, args.task, authorization_ref=args.authorization_ref)
+    if args.command == "upstream-refresh":
+        manifest = refresh_candidate(root, version=args.version, cli_executable=args.cli)
+        return {
+            "artifact_locator": manifest["artifact_locator"],
+            "candidate_id": manifest["candidate_id"],
+            "delta_count": len(manifest["delta"]),
+            "full_inventory_count": len(manifest["full_inventory"]),
+            "observed_at": manifest["observed_at"],
+            "state": manifest["state"],
+            "version": manifest["identity"]["package"]["version"],
+        }
+    if args.command == "upstream-status":
+        return candidate_status(root)
+    if args.command == "upstream-adopt":
+        report = build_adoption_report(root, args.candidate)
+        return {
+            "candidate_id": report["candidate_id"],
+            "disposition_count": len(report["dispositions"]),
+            "report_digest": report["report_digest"],
+        }
+    if args.command == "registry-status":
+        return preflight_registry(root) if args.preflight else registry_snapshot(root)
     if args.command == "action-claim":
         return {"actions": claim_actions(root, args.task, args.worker)}
     if args.command == "action-result":
@@ -280,16 +333,34 @@ def execute(args: argparse.Namespace) -> object:
     if args.command == "projection-rebuild":
         return rebuild_projections(root)
     if args.command == "release-build":
+        overlay = load_overlay(root)
+        managed_paths = args.managed_path or [
+            entry["path"]
+            for entry in overlay["entries"]
+            if entry["owner"] == "overlay" and entry["scope"] != "external"
+        ]
         manifest = build_release(
             root,
-            managed_paths=args.managed_path,
+            managed_paths=managed_paths,
             intentional_deletions=args.delete,
             semantic_qualification=load_json(args.qualification),
+            upstream_candidate_id=args.candidate_id,
+            adoption_report=load_json(args.adoption_report),
         )
         if args.qualify:
-            qualify_release(root, manifest)
+            if not args.task:
+                raise AuthorityError("release-build --qualify requires --task")
+            qualify_release(root, manifest, task_id=args.task)
         return manifest
     if args.command == "sync":
+        if bool(args.registered) == bool(args.target):
+            raise AuthorityError("sync requires either --registered or one or more --target values")
+        if args.registered:
+            return sync_registered_targets(
+                root,
+                args.task,
+                current_source=args.current_source,
+            )
         return sync_targets(
             root,
             args.task,

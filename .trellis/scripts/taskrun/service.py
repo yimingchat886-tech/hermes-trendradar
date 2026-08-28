@@ -91,7 +91,13 @@ def _working_candidate_digest(
         if path.is_symlink():
             rows.append((raw, f"symlink:{os.readlink(path)}"))
         elif path.is_file():
-            rows.append((raw, sha256(path.read_bytes()).hexdigest()))
+            rows.append(
+                (
+                    raw,
+                    f"{path.stat().st_mode & 0o777:o}:"
+                    f"{sha256(path.read_bytes()).hexdigest()}",
+                )
+            )
     return digest({"files": rows, "head": _head(root)})
 
 
@@ -595,6 +601,36 @@ def append_binding(
                 operation_input=operation_input,
             )
             return generation
+        closeout_steps = authority.all(
+            """SELECT partition_id,ordinal,state,evidence_json FROM closeout_steps
+               WHERE task_id=? ORDER BY partition_id,ordinal""",
+            (task_id,),
+        )
+        if closeout_steps:
+            if any(row["partition_id"] != "source" for row in closeout_steps):
+                raise AuthorityError(
+                    "Binding revision cannot reset target closeout partitions"
+                )
+            if git(task_root, "diff", "--cached", "--quiet", check=False).returncode:
+                raise AuthorityError(
+                    "Binding revision cannot reset closeout with staged changes"
+                )
+            effect_ordinal = CLOSEOUT_STEPS.index("scoped_commit") + 1
+            effect_started = any(
+                int(row["ordinal"]) >= effect_ordinal
+                and (
+                    row["state"] == "completed"
+                    or "commit_plan" in json.loads(row["evidence_json"])
+                )
+                for row in closeout_steps
+            )
+            if effect_started:
+                raise AuthorityError(
+                    "Binding revision cannot reset closeout after Git effects begin"
+                )
+            authority.execute(
+                "DELETE FROM closeout_steps WHERE task_id=?", (task_id,)
+            )
         generation = int(task["active_binding_generation"]) + 1
         task_path = task_root / task["prd_path"]
         _write_if_changed(task_path, prd_bytes)
@@ -622,14 +658,19 @@ def append_binding(
             )
         authority.execute(
             """UPDATE tasks SET prd_digest=?,active_binding_generation=?,
-               work_state='human_blocked',verified_candidate_digest=NULL,
+               work_state='human_blocked',closeout_state='not_started',
+               verified_candidate_digest=NULL,
                updated_at=? WHERE task_id=?""",
             (prd_digest, generation, now, task_id),
         )
         authority.record_event(
             operation_id,
             "binding_accepted",
-            {"generation": generation, "prd_digest": prd_digest},
+            {
+                "closeout_steps_reset": len(closeout_steps),
+                "generation": generation,
+                "prd_digest": prd_digest,
+            },
             task_id=task_id,
             operation_input=operation_input,
         )
@@ -1023,9 +1064,10 @@ def record_review(
         actual_candidate = _working_candidate_digest(task_root)
         if candidate_digest != actual_candidate:
             raise AuthorityError("Review candidate digest does not match the worktree")
-        from .release import repository_snapshot
+        from .release import repository_inventory, repository_snapshot
 
         current_snapshot = repository_snapshot(task_root)
+        opened_inventory = repository_inventory(task_root)
         stale_actions = authority.all(
             """SELECT actions.action_id FROM actions
                WHERE actions.run_id=? AND actions.binding_generation=?
@@ -1052,9 +1094,19 @@ def record_review(
             raise AuthorityError(
                 "Model review requires checks against the exact final candidate"
             )
+        binding_event = authority.one(
+            """SELECT seq FROM events
+               WHERE task_id=? AND event_type IN (
+                 'task_planned','binding_accepted','bootstrap_imported',
+                 'legacy_continuation_imported'
+               )
+               ORDER BY seq DESC LIMIT 1""",
+            (task_id,),
+        )
         review_count = authority.one(
-            "SELECT COUNT(*) AS count FROM reviews WHERE run_id=?",
-            (run["run_id"],),
+            """SELECT COUNT(*) AS count FROM events
+               WHERE run_id=? AND event_type='candidate_reviewed' AND seq>?""",
+            (run["run_id"], binding_event["seq"] if binding_event else 0),
         )["count"]
         review_no = int(review_count) + 1
         if review_no > 2:
@@ -1102,11 +1154,13 @@ def record_review(
                      scope_json=excluded.scope_json,
                      opened_candidate_digest=excluded.opened_candidate_digest,
                      status='open',
-                     closure_evidence_json='{}'""",
+                     closure_evidence_json=excluded.closure_evidence_json""",
                 (
                     finding_id, run["run_id"], normalized_item["source"], severity,
                     category, canonical_json(requirements), canonical_json(scope),
-                    candidate_digest, "open", "{}",
+                    candidate_digest,
+                    "open",
+                    canonical_json({"opened_inventory": opened_inventory}),
                 ),
             )
         authority.execute(
@@ -1189,7 +1243,7 @@ def close_finding(
             (finding["run_id"],),
         )
         task_root = Path(str(task["worktree_path"] or authority.repo_root))
-        from .release import repository_snapshot
+        from .release import repository_inventory, repository_snapshot
 
         current_snapshot = repository_snapshot(task_root)
         if any(
@@ -1200,11 +1254,26 @@ def close_finding(
                 "Finding closure checks do not bind the current candidate"
             )
         task_prefix = f".trellis/tasks/{task['task_dir_name']}/"
-        actual_delta = [
-            path
-            for path in _changed_paths(task_root)
-            if path != "BOARD.md" and not path.startswith(task_prefix)
-        ]
+        opened = json.loads(finding["closure_evidence_json"]).get(
+            "opened_inventory"
+        )
+        if isinstance(opened, list):
+            before = dict(opened)
+            after = dict(repository_inventory(task_root))
+            actual_delta = sorted(
+                path
+                for path in before.keys() | after.keys()
+                if before.get(path) != after.get(path)
+                and path != "BOARD.md"
+                and not path.startswith(task_prefix)
+            )
+        else:
+            changed = set(_changed_paths(task_root))
+            actual_delta = sorted(set(delta_paths))
+            if any(path not in changed for path in actual_delta):
+                raise AuthorityError(
+                    "Legacy finding delta is not present in the current candidate"
+                )
         if set(actual_delta) - set(delta_paths):
             raise AuthorityError("Finding delta evidence omits changed worktree paths")
         historical = authority.all(
@@ -2015,11 +2084,27 @@ def _target_closeout_handler(
         git(target, "merge", "--ff-only", branch)
         return {"base_commit": candidate, "base_branch": base_branch}
     if step == "record_completion":
+        if "gitnexus_asset_digest" in receipt:
+            from .gitnexus_foundation import prove_gitnexus
+
+            proof = prove_gitnexus(target, str(slot["target_id"]))
+            if not proof["verified"]:
+                raise AuthorityError(str(proof["degraded"]))
+            receipt["gitnexus_primary_proof"] = proof
         authority.execute(
-            "UPDATE target_slots SET state='merged',updated_at=? WHERE run_id=? AND target_id=?",
-            (utc_now(), slot["run_id"], slot["target_id"]),
+            """UPDATE target_slots SET state='merged',receipt_json=?,updated_at=?
+               WHERE run_id=? AND target_id=?""",
+            (
+                canonical_json(receipt),
+                utc_now(),
+                slot["run_id"],
+                slot["target_id"],
+            ),
         )
-        return {"state": "merged"}
+        return {
+            "gitnexus_primary_proof": receipt.get("gitnexus_primary_proof"),
+            "state": "merged",
+        }
     if step == "logical_archive":
         authority.execute(
             "UPDATE target_slots SET state='closed',updated_at=? WHERE run_id=? AND target_id=?",
